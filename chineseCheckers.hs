@@ -1,14 +1,20 @@
 import Data.Sequence
 import Data.Foldable
 
-type Table = [[Square]]
-type Pgoal = Int
-data Square = Empty Pgoal | Piece Pgoal
+type Table = [Square]
+data Color = Blue | Red | Pink | Green | Black | Yellow | White
+data Piece = Player Color
+data Square = Empty Color Coord | Piece Color Coord
 
-
+type Coord = (Int,Int)
 
 startTable :: Table
-startTable = [[]]
+startTable =                                    [(Player Black, Blue, (12,0)), 
+                                        (Player Black, Blue, (11,1)), (Player Black, Player Blue , (13,1))
+                                (Piece, 5, (10,2)),(Piece, 5, (12,2)), (Piece, 5, (14,2))
+                        (Piece, 5, (9,3)),(Piece, 5, (11,3)), (Piece, 5, (13,3)), (Piece, 5, (15,3))
+                (Piece, 5, (8,4)),(Piece, 5, (10,4)), (Piece, 5, (12,4)), (Piece, 5, (14,4)), (Piece, 5, (16,4))]
+(Piece, 4, (0,5)),(Piece, 4, (2,5)), (Piece, 4, (4,5)), (Piece, 4, (6,5)), (Piece, 0, (8,5)), (Piece, 4, (10,5))]
 
 
 remove :: Table -> (Int, Int) -> Table
@@ -22,10 +28,7 @@ place' :: Table -> Square -> (Int,Int) -> Table
 place' t s (x,y) = undefined
 
 
-insert2Dlist :: (Int,Int) -> a -> [[a]] -> [[a]]
---insert2Dlist (x,y) a xs = (fst(Prelude.splitAt (y+1) xs)) ++ [replaceAt x a (Prelude.concat (snd(Prelude.splitAt (y+1) xs)))] ++ (snd(Prelude.splitAt (y+1) xs))
 
-insert2Dlist (x,y) a xs = (fst(Prelude.splitAt (y+1) xs)) ++ replaceAt x a head . snd(Prelude.splitAt (y+1) xs) ++ (snd(Prelude.splitAt (y+1) xs))
 
 move :: Table -> (Int, Int) -> (Int, Int) -> Table
 move t (x1,y1) (x2, y2) = undefined
