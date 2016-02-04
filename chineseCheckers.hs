@@ -66,4 +66,17 @@ removePlayer c = filter (isPlayer)
 
 
 
+-- | printing Color
+putColor :: Color -> IO ()
+putColor = putChar . head . show 
+
+-- | Priting cell
+putSquare :: Square -> IO ()
+putSquare (Square content c _) = case content of 
+                                        Empty -> putColor c
+                                        (Piece color) -> putColor color
+
 gameLoop = undefined
+
+
+
