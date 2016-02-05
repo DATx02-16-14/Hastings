@@ -5,7 +5,7 @@ data Color = Blue | Red | Pink | Green | Black | Yellow | White
  deriving (Show, Eq)
 
 data Content = Empty | Piece Color
- deriving (Show)
+ deriving (Show, Eq)
 
 data Square = Square Content Color Coord
  deriving (Show)

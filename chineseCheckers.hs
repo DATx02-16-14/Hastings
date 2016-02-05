@@ -58,5 +58,31 @@ putSquare (Square content c _) = case content of
                                         Empty -> putColor c
                                         (Piece color) -> putColor color
 
+
+isReachable :: Coord -> Table -> Table
+isReachable c t = filter (isReachable' c) t
+
+isReachable' :: Coord -> Square -> Bool
+isReachable' (x,y) (Square _ _ (x1,y1)) = (abs(x-x1) == 2 && abs(y-y1) == 0) || (abs(x-x1) == 1 && abs(y-y1) == 1) || (abs(x-x1) == 2 && abs(y-y1) == 2) || (abs(x-x1) == 4 && abs(y-y1) == 0)
+
+
+
+canMove :: Coord -> Table -> Table
+canMove (x,y) t = filter (checkusPrimus (x,y)) $ filter isEmpty t
+
+    where checkusPrimus (x,y) (Square c _ (x1,y1)) | (x+4) == x1 && y1 == y && (content (x+2,y) == Empty) = False
+                                                   | (x-4) == x1 && y1 == y && (content (x-2,y) == Empty) = False
+                                                   | (x-2) == x1 && (y+2) == y1 && (content (x-1,y+1)== Empty) = False
+                                                   | (x+2) == x1 && (y+2) == y1 && (content (x+1,y+1) == Empty) = False
+                                                   | (x+2) == x1 && (y-2) == y1 && (content (x+1,y-1) == Empty) = False
+                                                   | (x-2) == x1 && (y-2) == y1 && (content (x-1,y-1) == Empty) = False
+                                                   | otherwise = True
+          content = squareContent t
+
+
+isEmpty :: Square -> Bool
+isEmpty c = case c of 
+                (Square Empty _ _) -> True
+                otherwise -> False
 gameLoop = undefined
 
