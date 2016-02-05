@@ -1,5 +1,18 @@
 module Table where
 
+type Table = [Square]
+data Color = Blue | Red | Pink | Green | Black | Yellow | White
+ deriving (Show, Eq)
+
+data Content = Empty | Piece Color
+ deriving (Show)
+
+data Square = Square Content Color Coord
+ deriving (Show)
+
+type Coord = (Int,Int)
+
+
 startTable :: Table
 startTable =                                    [(Square (Piece Black) Blue (12,0)), 
                                         (Square (Piece Black) Blue (11,1)), (Square (Piece Black) Blue (13,1)),
