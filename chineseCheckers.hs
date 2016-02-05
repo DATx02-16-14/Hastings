@@ -33,6 +33,7 @@ squareContent (t:ts) (x,y) = case t of
             where check (x1,y1) = x1 == x && y1 == y
 
 
+
 -- | puts a checker on the table
 putPiece :: Table -> Content -> Coord -> Table
 putPiece (t:ts) c (x,y) = case t of
@@ -62,7 +63,7 @@ removePlayer c = filter (isPlayer)
 
        where isPlayer (Square content _ _) = case content of
                                             Empty -> True
-                                            Piece color -> color == c
+                                            Piece color -> not $ color == c
 
 
 
@@ -77,6 +78,4 @@ putSquare (Square content c _) = case content of
                                         (Piece color) -> putColor color
 
 gameLoop = undefined
-
-
 
