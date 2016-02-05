@@ -1,18 +1,12 @@
 
 type Table = [Square]
 data Color = Blue | Red | Pink | Green | Black | Yellow | White
-<<<<<<< HEAD
-data Content = Empty | Piece Color
-data Square = Square Content Color Coord
-=======
- deriving (Show, Eq)
 
 data Content = Empty | Piece Color
  deriving (Show)
 
 data Square = Square Content Color Coord
  deriving (Show)
->>>>>>> db1a8b2ce6f43f5248312160f298f6c210acb712
 
 type Coord = (Int,Int)
 
@@ -50,7 +44,7 @@ removePiece :: Table -> Coord -> Table
 removePiece (t:ts) (x,y) = case t of 
                         (Square _ color coord) | check coord -> (Square Empty color coord):ts
                                                | otherwise -> t:(removePiece ts (x,y))
->>>>>>> db1a8b2ce6f43f5248312160f298f6c210acb712
+
 
              where check (x1,y1) = x1 == x && y1 == y
 
