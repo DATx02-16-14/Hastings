@@ -80,10 +80,30 @@ canMove (x,y) t = filter (checkusPrimus (x,y)) $ filter isEmpty t
                                                    | otherwise = True
           content = squareContent t
 
+-- | Takes a square and checks if the piece on it is "home", meaning on the square with same color
+pieceHome :: Square -> Bool
+pieceHome (Square content col _) = case content of 
+                                         Piece c -> c == col
+                                         _       -> False
+
+-- | Checks if a player has all pieces "home"
+playerHome :: Color -> Table -> Bool
+playerHome c1 t = and $ map pieceHome $ filter playerOnly t
+
+    where playerOnly (Square cont _ _) = case cont of
+                                           Piece col -> col == c1
+                                           otherwise -> False
+
+
+-- | Game is over when all pieces have reached their "home"
+gameOver :: Table -> Bool
+gameOver t = and $ map pieceHome t
+
 
 isEmpty :: Square -> Bool
 isEmpty c = case c of 
                 (Square Empty _ _) -> True
                 otherwise -> False
-gameLoop = undefined
 
+
+gameLoop = undefined
