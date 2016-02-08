@@ -1,3 +1,4 @@
+module ChineseCheckers where
 import Table
 
 
@@ -31,7 +32,7 @@ removePiece (t:ts) (x,y) = case t of
 
              where check (x1,y1) = x1 == x && y1 == y
 
--- | moves a piece from its original positon to the new
+-- | moves a piece from it's original positon to the new
 movePiece :: Table -> Coord -> Coord -> Table
 movePiece t (x1,y1) (x2,y2) = removePiece (putPiece t content (x2,y2)) (x1,y1)
    where content = squareContent t (x1,y1)
