@@ -8,7 +8,7 @@ data Content = Empty | Piece Color
  deriving (Show, Eq)
 
 data Square = Square Content Color Coord
- deriving (Show)
+ deriving (Show, Eq)
 
 type Coord = (Int,Int)
 
