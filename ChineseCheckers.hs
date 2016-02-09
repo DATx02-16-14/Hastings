@@ -1,3 +1,5 @@
+module ChineseCheckers where
+
 import Table
 
 
