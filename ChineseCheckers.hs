@@ -87,7 +87,8 @@ movePlayer :: Coord -> Coord -> Table -> Table
 movePlayer c1 c2 t | elem c2 $ map coordinates (canMove c1 t) = movePiece t c1 c2
                    | otherwise = error "Can't move"
 
-               where coordinates (Square _ _ coord) = coord
+coordinates :: Square -> Coord
+coordinates (Square _ _ coord) = coord
 
 -- | Takes a square and checks if the piece on it is "home", meaning on the square with same color
 pieceHome :: Square -> Bool

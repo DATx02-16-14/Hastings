@@ -16,6 +16,24 @@ instance Arbitrary Color where
 --instance Arbitrary Square where
 --  arbitrary = choose (Square )
 
+instance Arbitrary Content where
+    arbitrary = do
+            col <- arbitrary :: Gen Color
+            elements [Empty, Piece col]
+
+
+instance Arbitrary Square where
+    arbitrary = do 
+            content <- arbitrary :: Gen Content
+            color <- arbitrary :: Gen Color
+            n1 <- arbitrary :: Gen Int
+            n2 <- arbitrary :: Gen Int
+            return $ (Square content color (n1,n2))
+
+prop_putPiece' :: Table -> Content -> (Int,Int) -> Property
+prop_putPiece' t c coord = and [length t > 0, elem coord (map coordinates t)] ==> squareContent (removePiece (putPiece t c coord) coord) coord == Empty 
+
+
 prop_putPiece :: Table -> Content -> (Int,Int) -> Bool
 prop_putPiece xs c (x,y) = squareContent (putPiece xs c (x,y)) (x,y) == c
                -- where types = xs :: Table, c :: Content
