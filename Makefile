@@ -1,7 +1,7 @@
 all: ghc jcsr embed run
 
 clean:
-	rm main main.js main.jsmod main.hi main.o
+	rm Main Main.js Main.jsmod Main.hi Main.o
 
 ghc: 
 	ghc --make Main.hs
