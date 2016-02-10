@@ -1,10 +1,9 @@
 
 import Haste.App
+import Haste.App.Standalone
 
 main :: IO ()
-main = do
-  runApp (mkConfig "localhost" 24601) $ do
-    undefined
+main = runStandaloneApp $ do
 
     runClient $ do
-      undefined
+      return ()

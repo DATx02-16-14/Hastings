@@ -111,3 +111,4 @@ Session.vim
 # Our own ignores
 *.js
 *.jsmod
+Main
