@@ -83,6 +83,10 @@ canMove (x,y) t = filter (checkusPrimus (x,y)) $ filter isEmpty t
           content = squareContent t
 
 
+moveAgain :: Coord -> Coord -> Bool
+moveAgain (x,y) (x1,y1) = (abs(x1-x) == 4 && abs(y1-y) == 0) || (abs(x1-x) == 2 && abs(y1-y) == 2)
+
+
 movePlayer :: Coord -> Coord -> Table -> Table
 movePlayer c1 c2 t | elem c2 $ map coordinates (canMove c1 t) = movePiece t c1 c2
                    | otherwise = error "Can't move"
@@ -128,12 +132,14 @@ checkPlayer :: Color -> Content -> Bool
 checkPlayer c Empty = False
 checkPlayer c (Piece c1) = c == c1
 
-playerMove :: Color -> Table -> IO Table
-playerMove col t = do
+playerMove :: Color -> Table -> Bool -> IO (Table,Bool)
+playerMove col t b = do
                 (c1,c2) <- getCoord
                 case (checkPlayer col (squareContent t c1)) of 
                                           False -> error "Not your piece!!"
-                                          True -> return $ movePlayer c1 c2 t 
+                                          True | (b && moveAgain c1 c2) -> return $ (movePlayer c1 c2 t, moveAgain c1 c2)
+                                               | (b && not (moveAgain c1 c2)) -> error "Illegal move!"
+                                               | otherwise -> return $ (movePlayer c1 c2 t, moveAgain c1 c2)
 
 startGame :: [String] -> IO ()
 startGame player = case (length player) of 
@@ -143,13 +149,25 @@ startGame player = case (length player) of
                       otherwise -> error "Not correct number of players for game to start"
               where mkPlayer a b = (a,b)
 
-gameLoop :: Color -> Table -> IO Table
-gameLoop c t = playerMove c t  
+
+--gameLoop :: Color -> Table -> IO Table
+--gameLoop c t = playerMove c t  
 
 startGame' :: Table -> [(String,Color)] -> IO ()
 startGame' t ((s,col):xs) | gameOver t = putStrLn "GAME OVER!"
                           | otherwise = do 
                                       putStrLn $ s ++ "s speltur"
-                                      newTable <- playerMove col t
+                                      (newTable,again) <- playerMove col t False
                                       putStrLn (show newTable)
-                                      startGame' newTable $ xs ++ [(s,col)]
+                                      case again of 
+                                        True -> jumpAgain newTable $ ((s,col):xs)
+                                        False -> startGame' newTable $ xs ++ [(s,col)]
+
+
+jumpAgain :: Table -> [(String,Color)] -> IO ()
+jumpAgain t ((s,col):xs) = do 
+                            putStrLn $ s ++ "s speltur!"
+                            (newTable,again) <- playerMove col t True
+                            case again of
+                              True -> jumpAgain newTable ((s,col):xs)
+                              _    -> startGame' newTable $ xs ++ [(s,col)]
