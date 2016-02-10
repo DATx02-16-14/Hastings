@@ -1,4 +1,5 @@
-
+module Main
+    where
 import Haste.App
 import Haste.App.Standalone
 
