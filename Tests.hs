@@ -3,18 +3,34 @@ import Table
 import Test.QuickCheck
 
 
-cell :: Gen Content
-cell = elements [Piece x | x <- [Blue, Red, Pink, Green, Black, Yellow, White]]
+newtype Test = Test (Table, Content, (Int,Int))
+        deriving (Show)
+
+newtype OnlyPiece = OnlyPiece Content
+
+
+instance Arbitrary OnlyPiece where
+  arbitrary = do
+            con   <- arbitrary :: Gen Content
+            onlyP <- elements $ map not con 
+            return $ OnlyPiece (onlyP)
+
+
+instance Arbitrary Test where
+  arbitrary = do
+            con   <- arbitrary :: Gen Content
+            table <- listOf1 $ arbitrary :: Gen Table
+            coord <-  elements $ map getCoord' table
+            return $ Test (table,con,coord)
+            
+
+getCoord' :: Square -> Coord
+getCoord' (Square _ _ c) = c
+
+
 instance Arbitrary Color where
   arbitrary = elements [Blue, Red, Pink, Green, Black, Yellow, White]
 
---instance Arbitrary Content where
--- arbitrary = do
---     Color x <- arbitrary
---     return $ choose (Empty, Piece Color)
-
---instance Arbitrary Square where
---  arbitrary = choose (Square )
 
 instance Arbitrary Content where
     arbitrary = do
@@ -26,19 +42,17 @@ instance Arbitrary Square where
     arbitrary = do 
             content <- arbitrary :: Gen Content
             color <- arbitrary :: Gen Color
-            n1 <- arbitrary :: Gen Int
-            n2 <- arbitrary :: Gen Int
-            return $ (Square content color (n1,n2))
+            x <- arbitrary :: Gen Int
+            y <- arbitrary :: Gen Int
+            return $ (Square content color (x,y))
 
-prop_putPiece' :: Table -> Content -> (Int,Int) -> Property
-prop_putPiece' t c coord = and [length t > 0, elem coord (map coordinates t)] ==> squareContent (removePiece (putPiece t c coord) coord) coord == Empty 
+prop_removePiece :: Test -> Bool
+prop_removePiece (Test (t, c, coord)) = squareContent (removePiece (putPiece t c coord) coord) coord == Empty 
 
+prop_putPiece :: Test -> Bool
+prop_putPiece (Test (t, c, coord)) = squareContent (putPiece t c coord) coord /= Empty
 
-prop_putPiece :: Table -> Content -> (Int,Int) -> Bool
-prop_putPiece xs c (x,y) = squareContent (putPiece xs c (x,y)) (x,y) == c
-               -- where types = xs :: Table, c :: Content
-
---tests the start table if all squares are white 
+--tests the start table if all squares with no pieces are white 
 testStartTable :: Table -> Bool
 testStartTable xs
                   |testStartTable' xs > 1 = False
