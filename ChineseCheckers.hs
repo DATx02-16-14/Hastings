@@ -2,10 +2,6 @@ module ChineseCheckers where
 
 import Table
 
-
-testTable :: Table
-testTable = [(Square Empty Red (1,0)),(Square (Piece Blue) Black (2,0)),(Square Empty Blue (0,1))]
-
 squareContent :: Table -> Coord -> Content
 squareContent [] _         = error "Table does not contain coordinate"
 squareContent (t:ts) (x,y) = case t of
@@ -83,14 +79,16 @@ canMove (x,y) t = filter (checkusPrimus (x,y)) $ filter isEmpty t
           content = squareContent t
 
 
+-- | Checks if a player jumped over a piece, then it should be able to move again
 moveAgain :: Coord -> Coord -> Bool
 moveAgain (x,y) (x1,y1) = (abs(x1-x) == 4 && abs(y1-y) == 0) || (abs(x1-x) == 2 && abs(y1-y) == 2)
 
-
+-- | 
 movePlayer :: Coord -> Coord -> Table -> Table
 movePlayer c1 c2 t | elem c2 $ map coordinates (canMove c1 t) = movePiece t c1 c2
                    | otherwise = error "Can't move"
 
+-- | Returns coordinates of a square
 coordinates :: Square -> Coord
 coordinates (Square _ _ coord) = coord
 
@@ -113,12 +111,14 @@ gameOver :: Table -> Bool
 gameOver t = and $ map pieceHome t
 
 
+-- | Checks if a square has Empty content
 isEmpty :: Square -> Bool
 isEmpty c = case c of 
                 (Square Empty _ _) -> True
                 otherwise -> False
 
 
+-- | Get coordinates from stdin
 getCoord :: IO (Coord,Coord)
 getCoord = do 
             putStrLn "From which coordinate do you want to move?"
@@ -127,11 +127,13 @@ getCoord = do
             coord2 <- getLine
             return (read coord :: (Int,Int), read coord2 :: (Int,Int))
 
-
+-- | Checks if the piece belogns to the the player, meaning they are of the same color
 checkPlayer :: Color -> Content -> Bool
 checkPlayer c Empty = False
 checkPlayer c (Piece c1) = c == c1
 
+
+-- | Get coordinates and moves a piece belonging to the current player
 playerMove :: Color -> Table -> Bool -> IO (Table,Bool)
 playerMove col t b = do
                 (c1,c2) <- getCoord
@@ -141,6 +143,7 @@ playerMove col t b = do
                                                | (b && not (moveAgain c1 c2)) -> error "Illegal move!"
                                                | otherwise -> return $ (movePlayer c1 c2 t, moveAgain c1 c2)
 
+-- | Takes a list of player names and creates a new game
 startGame :: [String] -> IO ()
 startGame player = case (length player) of 
                       2         -> startGame' startTable $ zipWith mkPlayer player [Blue,Red]
@@ -150,9 +153,7 @@ startGame player = case (length player) of
               where mkPlayer a b = (a,b)
 
 
---gameLoop :: Color -> Table -> IO Table
---gameLoop c t = playerMove c t  
-
+-- | Game loop 
 startGame' :: Table -> [(String,Color)] -> IO ()
 startGame' t ((s,col):xs) | gameOver t = putStrLn "GAME OVER!"
                           | otherwise = do 
@@ -163,7 +164,7 @@ startGame' t ((s,col):xs) | gameOver t = putStrLn "GAME OVER!"
                                         True -> jumpAgain newTable $ ((s,col):xs)
                                         False -> startGame' newTable $ xs ++ [(s,col)]
 
-
+-- | Help function for the game loop, for when a player can move again
 jumpAgain :: Table -> [(String,Color)] -> IO ()
 jumpAgain t ((s,col):xs) = do 
                             putStrLn $ s ++ "s speltur!"
