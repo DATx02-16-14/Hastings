@@ -34,7 +34,7 @@ instance Arbitrary Color where
 
 instance Arbitrary Content where
     arbitrary = do
-            col <- arbitrary :: Gen Color
+            col <- arbitrary
             elements [Empty, Piece col]
 
 
