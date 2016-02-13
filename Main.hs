@@ -17,6 +17,7 @@ main = runStandaloneApp $ do
       onSessionEnd $ srvCloseConnection playersList
 
       runClient $ do
+         liftIO createLobbyDOM
 
          name <- prompt "Hello! Please enter your name:"
          onServer $ handshake <.> name
