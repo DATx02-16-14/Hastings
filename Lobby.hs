@@ -48,3 +48,8 @@ createLobbyDOM = do
 
    appendChild createGamebtn crGamebtnText
    appendChild documentBody createGamebtn
+
+deleteLobbyDOM :: IO ()
+deleteLobbyDOM =
+   withElems ["createGamebtn"] $ \[createGamebtn] ->
+      deleteChild documentBody createGamebtn
