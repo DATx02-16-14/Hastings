@@ -36,3 +36,15 @@ srvCreateGame remoteGames remotePlayers = do
       case maybePlayer of
          Just p -> return $ ("string", [p]) : gs
          Nothing -> return gs
+
+
+createLobbyDOM :: IO ()
+createLobbyDOM = do
+   createGamebtn <- newElem "button" `with`
+      [
+         prop "id" =: "createGamebtn"
+      ]
+   crGamebtnText <- newTextElem "Create new game"
+
+   appendChild createGamebtn crGamebtnText
+   appendChild documentBody createGamebtn
