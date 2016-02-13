@@ -28,6 +28,8 @@ main = runStandaloneApp $ do
                   case mb of
                      Just MouseLeft -> do
                         onServer createGame
+                        liftIO deleteLobbyDOM
+                        -- Draw new game lobby
                      _ -> return ()
 
 
