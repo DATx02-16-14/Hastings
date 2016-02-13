@@ -1,13 +1,16 @@
 module Lobby
   where
 import Haste.App
-import Haste.DOM
-import qualified Control.Concurrent as CC
+import Data.UUID
 
+import qualified Control.Concurrent as CC
 
 type Name = String
 type Player = (SessionID, Name)
 type PlayerList = CC.MVar [Player]
+
+type LobbyGame = (UUID, [Player])
+type GamesList = CC.MVar [LobbyGame]
 
 srvHandshake :: Server PlayerList -> Name -> Server ()
 srvHandshake remotePlayers name = do
