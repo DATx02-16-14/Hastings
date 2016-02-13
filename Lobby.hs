@@ -1,7 +1,6 @@
 module Lobby
   where
 import Haste.App
-import Data.UUID
 
 import qualified Control.Concurrent as CC
 
@@ -9,7 +8,7 @@ type Name = String
 type Player = (SessionID, Name)
 type PlayerList = CC.MVar [Player]
 
-type LobbyGame = (UUID, [Player])
+type LobbyGame = (String, [Player])
 type GamesList = CC.MVar [LobbyGame]
 
 srvHandshake :: Server PlayerList -> Name -> Server ()
