@@ -1,6 +1,7 @@
 module Lobby
   where
 import Haste.App
+import Haste.DOM
 
 import qualified Control.Concurrent as CC
 
@@ -23,3 +24,5 @@ srvCloseConnection remotePlayers sid = do
   players <- remotePlayers
   liftIO $ CC.modifyMVar_ players $ \ps ->
     return $ filter ((sid /=) . fst) ps
+deleteDOM :: String -> IO ()
+deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
