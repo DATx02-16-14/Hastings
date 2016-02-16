@@ -3,6 +3,7 @@ module Main
 import Haste.App
 import Haste.App.Standalone
 import Haste.DOM
+import Haste.Events
 import Lobby
 import qualified Control.Concurrent as CC
 
@@ -13,6 +14,7 @@ main = runStandaloneApp $ do
 
       handshake <- remote $ srvHandshake playersList
       getGamesList <- remote $ srvGetGamesList gamesList
+      joinGame <- remote $ srvPlayerJoinGame playersList gamesList
       onSessionEnd $ srvCloseConnection playersList
 
       runClient $ do
@@ -20,12 +22,29 @@ main = runStandaloneApp $ do
         onServer $ handshake <.> name
 
         gameList <- onServer getGamesList
-        mapM_ addGameToDOM gameList
+        mapM_ (addGameToDOM joinGame) gameList
 
         return ()
 
 
-addGameToDOM :: String -> Client ()
-addGameToDOM gameName = do
-   textElem <- newTextElem gameName
-   appendChild documentBody textElem
+addGameToDOM :: Remote (String -> Server ()) -> String -> Client ()
+addGameToDOM joinGame gameName = do
+  gameDiv <- newElem "div"
+  gameEntry <- newElem "button" `with`
+    [
+      prop "id" =: gameName
+    ]
+  textElem <- newTextElem gameName
+  appendChild gameEntry textElem
+  appendChild gameDiv gameEntry
+  appendChild documentBody gameDiv
+
+  _ <- ($)
+    withElems [gameName] $ \[gameButton] ->
+      onEvent gameButton Click (\(MouseData _ mb _) ->
+        case mb of
+          Just MouseLeft ->
+            onServer $ joinGame <.> gameName
+          _ -> return ())
+
+  return ()
