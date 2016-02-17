@@ -25,22 +25,26 @@ main = runStandaloneApp $ do
     name <- prompt "Hello! Please enter your name:"
     onServer $ handshake <.> name
 
-    _ <- ($)
-      withElems ["createGamebtn"] $ \[createGamebtn] ->
-        onEvent createGamebtn Click $ \(MouseData _ mb _) ->
-          case mb of
-            Just MouseLeft -> do
-              gameStrs <- onServer createGame
-              case fst gameStrs of
-                "false" -> return ()
-                _       -> do
-                  liftIO deleteLobbyDOM
-                  liftIO $ createGameDOM (fst gameStrs, [snd gameStrs])
-            _ -> return ()
+    createGameBtn createGame
 
     gameList <- onServer getGamesList
     mapM_ (addGameToDOM joinGame) gameList
 
+    return ()
+
+createGameBtn :: Remote (Server (String,String)) -> Client ()
+createGameBtn createGame = do
+    withElems ["createGamebtn"] $ \[createGamebtn] ->
+      onEvent createGamebtn Click $ \(MouseData _ mb _) ->
+        case mb of
+          Just MouseLeft -> do
+            gameStrs <- onServer createGame
+            case fst gameStrs of
+              "false" -> return ()
+              _       -> do
+                liftIO deleteLobbyDOM
+                liftIO $ createGameDOM (fst gameStrs, [snd gameStrs])
+          _ -> return ()
     return ()
 
 addGameToDOM :: Remote (String -> Server ()) -> String -> Client ()
