@@ -27,9 +27,12 @@ main = runStandaloneApp $ do
                onEvent createGamebtn Click $ \(MouseData _ mb _) ->
                   case mb of
                      Just MouseLeft -> do
-                        onServer createGame
-                        liftIO deleteLobbyDOM
-                        -- Draw new game lobby
+                        gameStrs <- onServer createGame
+                        case fst gameStrs of
+                           "false" -> return ()
+                           _       -> do
+                              liftIO deleteLobbyDOM
+                              liftIO $ createGameDOM (fst gameStrs, [snd gameStrs])
                      _ -> return ()
 
 
