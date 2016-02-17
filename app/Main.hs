@@ -3,6 +3,7 @@ module Main
 import Haste.App
 import Haste.App.Standalone
 import Lobby
+import qualified LobbyServer as Server
 import qualified Control.Concurrent as CC
 import Haste.Events
 import Haste.DOM
@@ -12,11 +13,11 @@ main = runStandaloneApp $ do
   playersList <- liftServerIO $ CC.newMVar []
   gamesList <- liftServerIO $ CC.newMVar []
 
-  handshake <- remote $ srvHandshake playersList
-  createGame <- remote $ srvCreateGame gamesList playersList
-  getGamesList <- remote $ srvGetGamesList gamesList
-  joinGame <- remote $ srvPlayerJoinGame playersList gamesList
-  onSessionEnd $ srvCloseConnection playersList
+  handshake <- remote $ Server.handshake playersList
+  createGame <- remote $ Server.createGame gamesList playersList
+  getGamesList <- remote $ Server.getGamesList gamesList
+  joinGame <- remote $ Server.playerJoinGame playersList gamesList
+  onSessionEnd $ Server.closeConnection playersList
 
   runClient $ do
     liftIO createLobbyDOM
