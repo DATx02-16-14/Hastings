@@ -91,6 +91,8 @@ createGameDOMWithGame lobbyGame = createGameDOM (fst lobbyGame, map snd $ snd lo
 deleteLobbyDOM :: IO ()
 deleteLobbyDOM = deleteDOM "lobby"
 
+deleteGameDOM :: IO ()
+deleteGameDOM = deleteDOM "lobbyGame"
 
 deleteDOM :: String -> IO ()
 deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
