@@ -1,10 +1,9 @@
 module Lobby
   where
 import Haste.App
-import qualified Control.Concurrent as CC
 import LobbyServer
-import Data.List
 import Haste.DOM
+import LobbyTypes()
 
 createLobbyDOM :: IO ()
 createLobbyDOM = do

@@ -3,15 +3,8 @@ module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJ
 import Haste.App
 import qualified Control.Concurrent as CC
 import Data.List
-import Haste.DOM
 import Data.Maybe
-
-type Name = String
-type Player = (SessionID, Name)
-type PlayerList = CC.MVar [Player]
-
-type LobbyGame = (String, [Player])
-type GamesList = CC.MVar [LobbyGame]
+import LobbyTypes
 
 handshake :: Server PlayerList -> Name -> Server ()
 handshake remotePlayers name = do

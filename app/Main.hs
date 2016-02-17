@@ -4,6 +4,7 @@ import Haste.App
 import Haste.App.Standalone
 import Lobby
 import qualified LobbyServer as Server
+import LobbyTypes
 import qualified Control.Concurrent as CC
 import Haste.Events
 import Haste.DOM
