@@ -1,16 +1,16 @@
-all: ghc jcsr embed run
+all: stack haste-cabal embed run
 
 clean:
-	rm Main Main.js Main.jsmod Main.hi Main.o
+	rm -rf dist .stack-work
 
-ghc: 
-	ghc --make Main.hs
+stack:
+	stack build
 
-jcsr: 
-	hastec Main.hs
+haste-cabal:
+	haste-cabal configure && haste-cabal build
 
-embed: 
-	./Main --embed=Main.js
+embed:
+	stack exec -- Hastings-exe --embed dist/build/Hastings-exe/Hastings-exe
 
 run:
-	./Main
+	stack exec Hastings-exe
