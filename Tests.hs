@@ -2,19 +2,16 @@ import ChineseCheckers
 import Table
 import Test.QuickCheck
 
-
 newtype Test = Test (Table, Content, (Int,Int))
         deriving (Show)
 
 newtype OnlyPiece = OnlyPiece Content
-
+        deriving (Show)
 
 instance Arbitrary OnlyPiece where
   arbitrary = do
-            con   <- arbitrary :: Gen Content
-            onlyP <- elements $ map not con 
-            return $ OnlyPiece (onlyP)
-
+            con   <- arbitrary :: Gen Color
+            return $ OnlyPiece (Piece con)
 
 instance Arbitrary Test where
   arbitrary = do
@@ -23,7 +20,6 @@ instance Arbitrary Test where
             coord <-  elements $ map getCoord' table
             return $ Test (table,con,coord)
             
-
 getCoord' :: Square -> Coord
 getCoord' (Square _ _ c) = c
 
@@ -35,7 +31,7 @@ instance Arbitrary Color where
 instance Arbitrary Content where
     arbitrary = do
             col <- arbitrary
-            elements [Empty, Piece col]
+            frequency [(1, return Empty),(4,return (Piece col))]
 
 
 instance Arbitrary Square where
@@ -47,10 +43,10 @@ instance Arbitrary Square where
             return $ (Square content color (x,y))
 
 prop_removePiece :: Test -> Bool
-prop_removePiece (Test (t, c, coord)) = squareContent (removePiece (putPiece t c coord) coord) coord == Empty 
+prop_removePiece (Test (t, c, coord)) = squareContent (removePiece (putPiece t c coord) coord) coord == Empty
 
-prop_putPiece :: Test -> Bool
-prop_putPiece (Test (t, c, coord)) = squareContent (putPiece t c coord) coord /= Empty
+prop_putPiece :: Test -> OnlyPiece -> Bool
+prop_putPiece (Test (t, _, coord)) (OnlyPiece (p)) = squareContent (putPiece t p coord) coord /= Empty
 
 --tests the start table if all squares with no pieces are white 
 testStartTable :: Table -> Bool
