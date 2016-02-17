@@ -1,11 +1,6 @@
 module Lobby
   where
 import Haste.App
-<<<<<<< HEAD
-=======
-import Haste.DOM
-
->>>>>>> 33ba148... Add delete DOM method to lobby
 import qualified Control.Concurrent as CC
 import Data.List
 import Haste.DOM
@@ -94,9 +89,8 @@ createGameDOMWithGame :: LobbyGame -> IO ()
 createGameDOMWithGame lobbyGame = createGameDOM (fst lobbyGame, map snd $ snd lobbyGame)
 
 deleteLobbyDOM :: IO ()
-deleteLobbyDOM =
-   withElems ["createGamebtn"] $ \[createGamebtn] ->
-      deleteChild documentBody createGamebtn
+deleteLobbyDOM = deleteDOM "lobby"
+
 
 deleteDOM :: String -> IO ()
 deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
