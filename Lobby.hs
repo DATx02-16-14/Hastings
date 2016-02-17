@@ -43,6 +43,10 @@ srvCreateGame remoteGames remotePlayers = do
 
 createLobbyDOM :: IO ()
 createLobbyDOM = do
+   parentDiv <- newElem "div" `with`
+      [
+         prop "id" =: "lobby"
+      ]
    createGamebtn <- newElem "button" `with`
       [
          prop "id" =: "createGamebtn"
@@ -50,7 +54,9 @@ createLobbyDOM = do
    crGamebtnText <- newTextElem "Create new game"
 
    appendChild createGamebtn crGamebtnText
-   appendChild documentBody createGamebtn
+   appendChild parentDiv createGamebtn
+   appendChild documentBody parentDiv
+
 
 deleteLobbyDOM :: IO ()
 deleteLobbyDOM =
