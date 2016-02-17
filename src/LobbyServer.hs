@@ -1,4 +1,4 @@
-module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame, LobbyGame)
+module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame)
   where
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -21,22 +21,25 @@ closeConnection remotePlayers sid = do
 
 createGame :: Server GamesList -> Server PlayerList -> Server (String,String)
 createGame remoteGames remotePlayers = do
-    players <- remotePlayers
-    games <- remoteGames
-    sid <- getSessionID
-    playerList <- liftIO $ CC.readMVar players
-    let maybePlayer = find (\p -> fst p == sid) playerList
-    liftIO $ CC.modifyMVar_ games $ \gs ->
-        case maybePlayer of
-            Just p -> return $ ("string",[p]) : gs
-            Nothing -> return gs
+  players <- remotePlayers
+  games <- remoteGames
+  sid <- getSessionID
+  playerList <- liftIO $ CC.readMVar players
+  let maybePlayer = find (\p -> fst p == sid) playerList
+  liftIO $ CC.modifyMVar_ games $ \gs ->
     case maybePlayer of
-        Just p -> return ("string", snd p)
-        Nothing -> return ("false", "")
+      Just p -> return $ ("string",[p]) : gs
+      Nothing -> return gs
+  list <- liftIO $ CC.readMVar games
+  liftIO $ putStrLn $ show list
+  case maybePlayer of
+    Just p -> return ("string", snd p)
+    Nothing -> return ("false", "")
 
 getGamesList :: Server GamesList -> Server [String]
 getGamesList remoteGames = do
   gameList <- remoteGames >>=  liftIO . CC.readMVar
+  liftIO $ putStrLn $ show $ map fst gameList
   return $ map fst gameList
 
 playerJoinGame :: Server PlayerList -> Server GamesList -> String -> Server ()

@@ -4,7 +4,6 @@ import Haste.App
 import Haste.App.Standalone
 import Lobby
 import qualified LobbyServer as Server
-import LobbyTypes
 import qualified Control.Concurrent as CC
 import Haste.Events
 import Haste.DOM
@@ -35,18 +34,18 @@ main = runStandaloneApp $ do
 
 createGameBtn :: Remote (Server (String,String)) -> Client ()
 createGameBtn createGame = do
-    withElems ["createGamebtn"] $ \[createGamebtn] ->
-      onEvent createGamebtn Click $ \(MouseData _ mb _) ->
-        case mb of
-          Just MouseLeft -> do
-            gameStrs <- onServer createGame
-            case fst gameStrs of
-              "false" -> return ()
-              _       -> do
-                liftIO deleteLobbyDOM
-                liftIO $ createGameDOM (fst gameStrs, [snd gameStrs])
-          _ -> return ()
-    return ()
+  withElems ["createGamebtn"] $ \[createGamebtn] ->
+    onEvent createGamebtn Click $ \(MouseData _ mb _) ->
+      case mb of
+        Just MouseLeft -> do
+          gameStrs <- onServer createGame
+          case fst gameStrs of
+            "false" -> return ()
+            _       -> do
+              liftIO deleteLobbyDOM
+              liftIO $ createGameDOM (fst gameStrs, [snd gameStrs])
+        _ -> return ()
+  return ()
 
 addGameToDOM :: Remote (String -> Server ()) -> String -> Client ()
 addGameToDOM joinGame gameName = do
