@@ -10,7 +10,7 @@ haste-cabal:
 	haste-cabal configure && haste-cabal build
 
 embed:
-	stack exec -- Hastings-exe --embed dist/build/Hastings-exe/Hastings-exe
+	stack exec -- Hastings-exe --embed dist/build/Hastings-exe/Hastings-exe --force
 
 run:
 	stack exec Hastings-exe
