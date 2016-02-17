@@ -25,17 +25,20 @@ srvCloseConnection remotePlayers sid = do
   liftIO $ CC.modifyMVar_ players $ \ps ->
     return $ filter ((sid /=) . fst) ps
 
-srvCreateGame :: Server GamesList -> Server PlayerList -> Server ()
+srvCreateGame :: Server GamesList -> Server PlayerList -> Server (String,String)
 srvCreateGame remoteGames remotePlayers = do
-   players <- remotePlayers
-   games <- remoteGames
-   sid <- getSessionID
-   liftIO $ CC.modifyMVar_ games $ \gs -> do
-      playerList <- liftIO $ CC.readMVar players
-      let maybePlayer = find (\p -> fst p == sid) playerList
-      case maybePlayer of
-         Just p -> return $ ("string", [p]) : gs
-         Nothing -> return gs
+    players <- remotePlayers
+    games <- remoteGames
+    sid <- getSessionID
+    playerList <- liftIO $ CC.readMVar players
+    let maybePlayer = find (\p -> fst p == sid) playerList
+    liftIO $ CC.modifyMVar_ games $ \gs ->
+        case maybePlayer of
+            Just p -> return $ ("string",[p]) : gs
+            Nothing -> return gs
+    case maybePlayer of
+        Just p -> return ("string", snd p)
+        Nothing -> return ("false", "")
 
 
 createLobbyDOM :: IO ()
