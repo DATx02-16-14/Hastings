@@ -1,8 +1,14 @@
 import Haste
 import Haste.DOM
 import Haste.Graphics.Canvas
+import Haste.Events
 
-import Table
+import Table hiding (Color)
+
+data GameState = GameState { gameTable :: Table
+                           , currentPlayer :: String
+                           , players :: [(String,Color)]
+                           , fromCoord :: Maybe Coord }
 
 starOfDavid :: Double -> Double -> Shape ()
 starOfDavid space size = do
@@ -41,9 +47,16 @@ mkCanvas width height = do
     return canvas
 
 
-main :: IO ()
+--main :: IO ()
 main = do
     canvas <- mkCanvas 1900 800
     appendChild documentBody canvas
     Just can <- fromElem canvas
     render can starOfDavidInABox
+    onEvent can Click $ \mouse -> do
+       let (x,y) = mouseCoords mouse
+           (x1,y1) = mapCoords (x,y)
+       render can starOfDavidInABox
+    render can starOfDavidInABox
+
+mapCoords = undefined
