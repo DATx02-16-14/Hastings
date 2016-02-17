@@ -4,6 +4,14 @@ import Haste.Graphics.Canvas
 
 import Table
 
+-- | Colors used for checkers
+red = RGB 255 0 0
+green = RGB 0 255 0
+blue = RGB 0 0 255
+black = RGB 0 0 0
+yellow = RGB 255 255 0
+purple = RGB 153 0 153
+
 starOfDavid :: Double -> Double -> Shape ()
 starOfDavid space size = do
 
@@ -15,15 +23,19 @@ starOfDavid space size = do
     line (12.0*space+12.0*size, 16.0*size+16.0*space) (24.0*space+24.0*size, 5.0*size+5.0*space)
 
 
---drawHoles :: Double -> Double -> Shape ()
---drawHoles space size = do
---        drawHoles 
 
---fill doesnt work?
+drawSquare :: Double -> Double -> Square -> Shape ()
+drawSquare size space (Square cont col (x,y)) = do
+    circle (size*fromIntegral x + space*fromIntegral (x+2),size* fromIntegral y+space* fromIntegral (y+2)) size
+
+initTable :: Picture ()
+initTable = sequence_ $ map (fill . setFillColor drawSquare 20 20) startTable
+
+
 starOfDavidInABox :: Picture ()
 starOfDavidInABox = do
     stroke $ starOfDavid 20 20
-
+    initTable
 
 drawHolesInABox :: Picture ()
 drawHolesInABox = undefined
@@ -39,7 +51,6 @@ mkCanvas width height = do
         , prop "height" =: show height
         ]
     return canvas
-
 
 main :: IO ()
 main = do
