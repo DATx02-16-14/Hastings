@@ -3,6 +3,7 @@ module Lobby
 import Haste.App
 import LobbyServer
 import Haste.DOM
+import Haste.Events
 import LobbyTypes
 
 createLobbyDOM :: IO ()
@@ -60,3 +61,40 @@ deleteGameDOM = deleteDOM "lobbyGame"
 
 deleteDOM :: String -> IO ()
 deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
+
+createGameBtn :: Remote (Server (String,String)) -> Client ()
+createGameBtn createGame = do
+  withElems ["createGamebtn"] $ \[createGamebtn] ->
+    onEvent createGamebtn Click $ \(MouseData _ mb _) ->
+      case mb of
+        Just MouseLeft -> do
+          gameStrs <- onServer createGame
+          case fst gameStrs of
+            "false" -> return ()
+            _       -> do
+              liftIO deleteLobbyDOM
+              liftIO $ createGameDOM (fst gameStrs, [snd gameStrs])
+        _ -> return ()
+  return ()
+
+addGameToDOM :: Remote (String -> Server ()) -> String -> Client ()
+addGameToDOM joinGame gameName = do
+  gameDiv <- newElem "div"
+  gameEntry <- newElem "button" `with`
+    [
+      prop "id" =: gameName
+    ]
+  textElem <- newTextElem gameName
+  appendChild gameEntry textElem
+  appendChild gameDiv gameEntry
+  appendChild documentBody gameDiv
+
+  _ <- ($)
+    withElems [gameName] $ \[gameButton] ->
+      onEvent gameButton Click (\(MouseData _ mb _) ->
+        case mb of
+          Just MouseLeft ->
+            onServer $ joinGame <.> gameName
+          _ -> return ())
+
+  return ()
