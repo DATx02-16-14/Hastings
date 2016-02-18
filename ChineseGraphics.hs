@@ -60,7 +60,7 @@ drawGame = undefined
 --main :: IO ()
 main = do
     stateOfGame <- CC.newEmptyMVar
-    CC.putMVar stateOfGame initGame
+    CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse"]
     canvas <- mkCanvas 1900 800
     appendChild documentBody canvas
     Just can <- fromElem canvas
@@ -73,14 +73,5 @@ main = do
             CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
             render can drawGame
     render can starOfDavidInABox
-
--- | For test purposes only!!!
-initGame :: GameState
-initGame = GameState {gameTable = startTable
-                     , currentPlayer = "Pelle"
-                     , players = []
-                     , fromCoord = Nothing
-                     , playerMoveAgain = False}
-
 
 mapCoords = undefined

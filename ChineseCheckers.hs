@@ -162,6 +162,25 @@ action gs c1 c2 b = case checkPlayer (color $ head (players gs)) (squareContent 
 
 
 {-|
+  Given a list of player names, initGame associates each player 
+  with a color and generates the inital game state
+-}
+initGame :: [String] -> GameState
+initGame players = case (length players) of 
+                      2         -> create $ zipWith mkPlayer players [Blue,Red]
+                      4         -> create $ zipWith mkPlayer players [Blue,Red,Pink,Green]
+                      6         -> create $ zipWith mkPlayer players [Blue,Red,Pink,Green,Black,Yellow]
+                      otherwise -> error "Not correct number of players for game to start"
+
+              where mkPlayer a b = (a,b)
+                    create p =  GameState {gameTable = startTable
+                                         , currentPlayer = "Pelle"
+                                         , players = p
+                                         , fromCoord = Nothing
+                                         , playerMoveAgain = False}
+
+
+{-|
   The following functions are only used for testing purposes
   They tests the game logic by letting the programmer play the game from stdin/stdout
 -}
