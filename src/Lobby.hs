@@ -1,10 +1,16 @@
 module Lobby
   where
-import Haste.App
-import LobbyServer
+
+import Haste
 import Haste.DOM
 import Haste.Events
+
+import Haste.App
+import Haste.App.Concurrent
+
 import Data.Maybe
+import Data.List
+
 import LobbyTypes
 
 createLobbyDOM :: IO ()
@@ -19,8 +25,14 @@ createLobbyDOM = do
     ]
   crGamebtnText <- newTextElem "Create new game"
 
+  playerList <- newElem "div" `with`
+    [
+      prop "id" =: "playerList"
+    ]
+
   appendChild createGamebtn crGamebtnText
   appendChild parentDiv createGamebtn
+  appendChild parentDiv playerList
   appendChild documentBody parentDiv
 
 createGameDOM :: (String,[String]) -> IO ()
@@ -100,3 +112,26 @@ addGame joinGame gameName =
             _ -> return ())
 
     return ()
+
+-- Updates the list of players in the lobby once every second.
+updatePlayerList :: Remote (Server [String]) -> [String] -> Client ()
+updatePlayerList getPlayerList currentPlayers =
+  withElem "playerList" $ \playerDiv -> do
+    playerList <- onServer getPlayerList
+    let listDiff = playerList \\ currentPlayers
+    case null listDiff of
+      False -> do
+        clearChildren playerDiv
+        mapM_ (addPlayerToPlayerlist playerDiv) $ currentPlayers ++ listDiff
+        setTimer (Once 1000) $ updatePlayerList getPlayerList $ currentPlayers ++ listDiff
+
+      True -> setTimer (Once 1000) $ updatePlayerList getPlayerList currentPlayers
+
+    return ()
+-- Adds the playername followed by a <br> tag to the given parent.
+addPlayerToPlayerlist :: Elem -> String -> Client ()
+addPlayerToPlayerlist parent name = do
+  textElem <- newTextElem name
+  br <- newElem "br"
+  appendChild parent textElem
+  appendChild parent br

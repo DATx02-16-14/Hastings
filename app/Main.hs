@@ -17,6 +17,7 @@ main = runStandaloneApp $ do
   createGame <- remote $ Server.createGame gamesList playersList
   getGamesList <- remote $ Server.getGamesList gamesList
   joinGame <- remote $ Server.playerJoinGame playersList gamesList
+  getPlayerList <- remote $ Server.getConnectedPlayers playersList
   onSessionEnd $ Server.closeConnection playersList
 
   runClient $ do
@@ -29,5 +30,7 @@ main = runStandaloneApp $ do
 
     gameList <- onServer getGamesList
     mapM_ (addGame joinGame) gameList
+
+    fork $ updatePlayerList getPlayerList []
 
     return ()

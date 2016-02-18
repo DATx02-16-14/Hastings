@@ -1,4 +1,4 @@
-module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame)
+module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame, getConnectedPlayers)
   where
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -63,3 +63,8 @@ addPlayerToGame plr gameID gameList =
 
     where
       n = fromJust $ elemIndex gameID (map fst gameList)
+
+getConnectedPlayers :: Server PlayerList -> Server [String]
+getConnectedPlayers remotePlayers = do
+  playerList <- remotePlayers >>= liftIO . CC.readMVar
+  return $ map snd playerList
