@@ -7,10 +7,10 @@ stack:
 	stack build
 
 haste-cabal:
-	haste-cabal configure && haste-cabal build
+	haste-cabal configure && haste-cabal build && mv app/Main.js dist/build/Main.js
 
 embed:
-	stack exec -- Hastings-exe --embed dist/build/Hastings-exe/Hastings-exe --force
+	stack exec -- Hastings-exe --embed dist/build/Main.js --force
 
 run:
 	stack exec Hastings-exe
