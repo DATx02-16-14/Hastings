@@ -19,9 +19,25 @@ createLobbyDOM = do
     ]
   crGamebtnText <- newTextElem "Create new game"
 
+  cssLink <- newElem "link" `with`
+    [
+      prop "rel"          =: "stylesheet",
+      prop "type"         =: "text/css",
+      prop "href"         =: "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css",
+    --prop "integrity"    =: "sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7",
+      prop "crossorigin"  =: "anonymous"
+    ]
+
+  containerDiv <- newElem "div" `with`
+    [
+      attr "class" =: "container"
+    ]
+
+  appendChild documentBody cssLink
+  appendChild documentBody containerDiv
   appendChild createGamebtn crGamebtnText
   appendChild parentDiv createGamebtn
-  appendChild documentBody parentDiv
+  appendChild containerDiv parentDiv
 
 createGameDOM :: (String,[String]) -> IO ()
 createGameDOM (gameId,ps) = do
