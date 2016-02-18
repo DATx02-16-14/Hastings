@@ -73,3 +73,13 @@ addPlayerToGame plr gameID gameList = do
       g <- CC.newMVar modGame
       return $ hs ++ (g:ts)
     (Nothing, _, _) -> error "addPlayerToGame: Could not add player"
+
+-- Finds the game matching the first parameter and returns it
+findGame :: String -> GamesList -> IO (Maybe LobbyGame)
+findGame gid mVarGamesList = do
+  gamesList <- CC.readMVar mVarGamesList
+  mVarGame <- findIO (\game -> do
+                 g <- CC.readMVar game
+                 return $ (fst g) == gid) gamesList
+  let (ga,_,_) = mVarGame
+  return ga
