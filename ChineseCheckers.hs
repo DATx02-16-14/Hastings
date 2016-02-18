@@ -83,6 +83,13 @@ canMove (x,y) t = filter (checkusPrimus (x,y)) $ filter isEmpty t
 moveAgain :: Coord -> Coord -> Bool
 moveAgain (x,y) (x1,y1) = (abs(x1-x) == 4 && abs(y1-y) == 0) || (abs(x1-x) == 2 && abs(y1-y) == 2)
 
+
+-- | Same as movePlayer but with Maybe type
+movePlayer' :: Coord -> Coord -> Table -> Maybe Table
+movePlayer' c1 c2 t | elem c2 $ map coordinates (canMove c1 t) = Just $ movePiece t c1 c2
+                    | otherwise = Nothing
+
+
 -- | 
 movePlayer :: Coord -> Coord -> Table -> Table
 movePlayer c1 c2 t | elem c2 $ map coordinates (canMove c1 t) = movePiece t c1 c2
@@ -117,6 +124,47 @@ isEmpty c = case c of
                 (Square Empty _ _) -> True
                 otherwise -> False
 
+
+-- | Takes the current state of the game and input coordinates, performing a player action
+playerAction :: GameState -> Coord -> GameState
+playerAction gs c1 = case fromCoord gs of 
+                        Nothing -> GameState {gameTable = gameTable gs
+                                             , currentPlayer = currentPlayer gs
+                                             , players = players gs
+                                             , fromCoord = (Just c1)
+                                             , playerMoveAgain = playerMoveAgain gs}
+
+                        Just c2 -> case action gs c1 c2 (playerMoveAgain gs) of
+                                (Nothing,_) -> gs
+                                (Just table,b) -> case b of
+                                    False ->             GameState {gameTable = table
+                                                        , currentPlayer = fst . head . tail $ players gs
+                                                        , players = (tail $ players gs) ++ [head $ players gs]
+                                                        , fromCoord = Nothing
+                                                        , playerMoveAgain = b}
+
+                                    True  ->            GameState {gameTable = table
+                                                        , currentPlayer = fst . head $ players gs
+                                                        , players = players gs
+                                                        , fromCoord = Nothing
+                                                        , playerMoveAgain = b}
+
+-- | Helper function for playerAction
+action :: GameState -> Coord -> Coord -> Bool -> (Maybe Table, Bool)
+action gs c1 c2 b = case checkPlayer (color $ head (players gs)) (squareContent (gameTable gs) c1) of
+                        False -> (Nothing,False)
+                        True | (b && moveAgain c1 c2) -> (movePlayer' c1 c2 (gameTable gs), moveAgain c1 c2)
+                             | (b && not (moveAgain c1 c2)) -> (Nothing, False)
+                             | otherwise -> (movePlayer' c1 c2 (gameTable gs), moveAgain c1 c2)
+
+--movePlayer' c1 c2 (gameTable gs)
+    where color (s,c) = c
+
+
+{-|
+  The following functions are only used for testing purposes
+  They tests the game logic by letting the programmer play the game from stdin/stdout
+-}
 
 -- | Get coordinates from stdin
 getCoord :: IO (Coord,Coord)
@@ -172,3 +220,4 @@ jumpAgain t ((s,col):xs) = do
                             case again of
                               True -> jumpAgain newTable ((s,col):xs)
                               _    -> startGame' newTable $ xs ++ [(s,col)]
+

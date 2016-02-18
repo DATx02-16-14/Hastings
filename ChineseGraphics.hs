@@ -2,13 +2,10 @@ import Haste
 import Haste.DOM
 import Haste.Graphics.Canvas
 import Haste.Events
+import ChineseCheckers
+import qualified Control.Concurrent as CC
+import Table
 
-import Table hiding (Color)
-
-data GameState = GameState { gameTable :: Table
-                           , currentPlayer :: String
-                           , players :: [(String,Color)]
-                           , fromCoord :: Maybe Coord }
 
 -- | Colors used for checkers
 red = RGB 255 0 0
@@ -34,14 +31,14 @@ drawSquare :: Double -> Double -> Square -> Shape ()
 drawSquare size space (Square cont col (x,y)) = do
     circle (size*fromIntegral x + space*fromIntegral (x+2),size* fromIntegral y+space* fromIntegral (y+2)) size
 
-initTable :: Picture ()
-initTable = sequence_ $ map (fill . setFillColor drawSquare 20 20) startTable
+--initTable :: Picture ()
+--initTable = sequence_ $ map (fill . setFillColor drawSquare 20 20) startTable
 
 
 starOfDavidInABox :: Picture ()
 starOfDavidInABox = do
     stroke $ starOfDavid 20 20
-    initTable
+--    initTable
 
 drawHolesInABox :: Picture ()
 drawHolesInABox = undefined
@@ -58,17 +55,32 @@ mkCanvas width height = do
         ]
     return canvas
 
---main :: IO ()
+drawGame = undefined
 
+--main :: IO ()
 main = do
+    stateOfGame <- CC.newEmptyMVar
+    CC.putMVar stateOfGame initGame
     canvas <- mkCanvas 1900 800
     appendChild documentBody canvas
     Just can <- fromElem canvas
     render can starOfDavidInABox
-    onEvent can Click $ \mouse -> do
+    onEvent can Click $ \mouse ->
        let (x,y) = mouseCoords mouse
-           (x1,y1) = mapCoords (x,y)
-       render can starOfDavidInABox
+           (x1,y1) = mapCoords (x,y) in 
+           do 
+            gameState <- CC.takeMVar stateOfGame
+            CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
+            render can drawGame
     render can starOfDavidInABox
+
+-- | For test purposes only!!!
+initGame :: GameState
+initGame = GameState {gameTable = startTable
+                     , currentPlayer = "Pelle"
+                     , players = []
+                     , fromCoord = Nothing
+                     , playerMoveAgain = False}
+
 
 mapCoords = undefined
