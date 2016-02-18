@@ -28,7 +28,9 @@ createGame remoteGames remotePlayers = do
     let maybePlayer = find (\p -> fst p == sid) playerList
     liftIO $ CC.modifyMVar_ games $ \gs ->
         case maybePlayer of
-            Just p -> return $ ("string",[p]) : gs
+            Just p -> do
+              game <- liftIO $ CC.newMVar ("string",[p])
+              return $ game : gs
             Nothing -> return gs
     case maybePlayer of
         Just p -> return ("string", snd p)
@@ -36,8 +38,10 @@ createGame remoteGames remotePlayers = do
 
 getGamesList :: Server GamesList -> Server [String]
 getGamesList remoteGames = do
-  gameList <- remoteGames >>=  liftIO . CC.readMVar
-  return $ map fst gameList
+  gameList <- remoteGames >>= liftIO . CC.readMVar
+  liftIO $ mapM (\g -> do
+    game <- CC.readMVar g
+    return $ fst game) gameList
 
 playerJoinGame :: Server PlayerList -> Server GamesList -> String -> Server ()
 playerJoinGame remotePlayers remoteGames gameID = do
@@ -46,17 +50,37 @@ playerJoinGame remotePlayers remoteGames gameID = do
   sid <- getSessionID
   case find (\(plrSid, _) -> plrSid == sid) players of
     Just plr -> liftIO $ CC.modifyMVar_ gameList $
-      \gList -> return $ addPlayerToGame plr gameID gList
+      \gList -> addPlayerToGame plr gameID gList
 
     _ -> return ()
 
   return ()
 
-addPlayerToGame :: Player -> String -> [LobbyGame] -> [LobbyGame]
-addPlayerToGame plr gameID gameList =
-  case find (\(ids, _) -> ids == gameID) gameList of
-    Just (sessionID, gamePlayers) -> take n gameList ++ [(sessionID, plr:gamePlayers)] ++ drop (n + 1) gameList
-    _ -> []
+-- Adds a player to a lobby game.
+-- Is perhaps overly complicated since a LobbyGame is an MVar.
+addPlayerToGame :: Player -> String -> [LobbyGame] -> IO [LobbyGame]
+addPlayerToGame plr gameID gameList = do
+  ga <- findIO (\game -> do
+                 g <- CC.readMVar game
+                 return $ (fst g) == gameID) gameList []
+  case ga of
+    (Just mVarGame, hs, ts) -> do
+      modGame <- CC.modifyMVar mVarGame $
+        \g -> do
+          let (sessionID, gamePlayers) = g
+          return $ ((sessionID, plr:gamePlayers), (sessionID, plr:gamePlayers))
+      g <- CC.newMVar modGame
+      return $ hs ++ (g:ts)
+    (Nothing, _, _) -> error "addPlayerToGame: Could not add player"
+
 
     where
-      n = fromJust $ elemIndex gameID (map fst gameList)
+      -- Method that finds with IO and then returns the value
+      -- together with the list to the right and left of the element
+      findIO :: (a -> IO Bool) -> [a] -> [a] -> IO (Maybe a, [a], [a])
+      findIO _ [] hs = return (Nothing, [], hs)
+      findIO p (a:as) hs = do
+        b <- p a
+        case b of
+          True  -> return $ (Just a, hs, as)
+          False -> findIO p as (a:hs)

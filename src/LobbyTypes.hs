@@ -6,5 +6,5 @@ type Name = String
 type Player = (SessionID, Name)
 type PlayerList = CC.MVar [Player]
 
-type LobbyGame = (String, [Player])
+type LobbyGame = CC.MVar (String, [Player])
 type GamesList = CC.MVar [LobbyGame]

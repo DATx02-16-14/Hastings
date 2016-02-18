@@ -4,6 +4,7 @@ import Haste.App
 import LobbyServer
 import Haste.DOM
 import LobbyTypes()
+import qualified Control.Concurrent as CC
 
 createLobbyDOM :: IO ()
 createLobbyDOM = do
@@ -50,7 +51,9 @@ createGameDOM (gameId,ps) = do
     appendChild documentBody parentDiv
 
 createGameDOMWithGame :: LobbyGame -> IO ()
-createGameDOMWithGame lobbyGame = createGameDOM (fst lobbyGame, map snd $ snd lobbyGame)
+createGameDOMWithGame lobbyGame = do
+  game <- CC.readMVar lobbyGame
+  createGameDOM (fst game, map snd $ snd game)
 
 deleteLobbyDOM :: IO ()
 deleteLobbyDOM = deleteDOM "lobby"
