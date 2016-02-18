@@ -6,7 +6,6 @@ import Haste.DOM
 import Haste.Events
 
 import Haste.App
-import Haste.App.Concurrent
 
 import Data.Maybe
 import Data.List

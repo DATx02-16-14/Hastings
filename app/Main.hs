@@ -2,6 +2,7 @@ module Main
     where
 import Haste.App
 import Haste.App.Standalone
+import Haste.App.Concurrent
 import Lobby
 import qualified LobbyServer as Server
 import qualified Control.Concurrent as CC
