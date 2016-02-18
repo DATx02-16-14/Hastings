@@ -28,6 +28,6 @@ main = runStandaloneApp $ do
     createGameBtn createGame
 
     gameList <- onServer getGamesList
-    mapM_ (addGameToDOM joinGame) gameList
+    mapM_ (addGame joinGame) gameList
 
     return ()

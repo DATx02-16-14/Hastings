@@ -4,6 +4,7 @@ import Haste.App
 import LobbyServer
 import Haste.DOM
 import Haste.Events
+import Data.Maybe
 import LobbyTypes
 
 createLobbyDOM :: IO ()
@@ -77,24 +78,25 @@ createGameBtn createGame = do
         _ -> return ()
   return ()
 
-addGameToDOM :: Remote (String -> Server ()) -> String -> Client ()
-addGameToDOM joinGame gameName = do
-  gameDiv <- newElem "div"
-  gameEntry <- newElem "button" `with`
-    [
-      prop "id" =: gameName
-    ]
-  textElem <- newTextElem gameName
-  appendChild gameEntry textElem
-  appendChild gameDiv gameEntry
-  appendChild documentBody gameDiv
+addGame :: Remote (String -> Server ()) -> String -> Client ()
+addGame joinGame gameName =
+  withElems ["lobby"] $ \[lobbyDiv] -> do
+    gameDiv <- newElem "div"
+    gameEntry <- newElem "button" `with`
+      [
+        prop "id" =: gameName
+      ]
+    textElem <- newTextElem gameName
+    appendChild gameEntry textElem
+    appendChild gameDiv gameEntry
+    appendChild lobbyDiv gameDiv
 
-  _ <- ($)
-    withElems [gameName] $ \[gameButton] ->
-      onEvent gameButton Click (\(MouseData _ mb _) ->
-        case mb of
-          Just MouseLeft ->
-            onServer $ joinGame <.> gameName
-          _ -> return ())
+    _ <- ($)
+      withElems [gameName] $ \[gameButton] ->
+        onEvent gameButton Click (\(MouseData _ mb _) ->
+          case mb of
+            Just MouseLeft ->
+              onServer $ joinGame <.> gameName
+            _ -> return ())
 
-  return ()
+    return ()
