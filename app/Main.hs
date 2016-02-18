@@ -8,6 +8,7 @@ import LobbyTypes
 import qualified Control.Concurrent as CC
 import Haste.Events
 import Haste.DOM
+import Hastings.Utils
 
 main :: IO ()
 main = runStandaloneApp $ do

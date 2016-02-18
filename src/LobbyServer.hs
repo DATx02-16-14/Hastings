@@ -5,6 +5,7 @@ import qualified Control.Concurrent as CC
 import Data.List
 import Data.Maybe
 import LobbyTypes
+import Hastings.Utils
 
 handshake :: Server PlayerList -> Name -> Server ()
 handshake remotePlayers name = do
@@ -62,7 +63,7 @@ addPlayerToGame :: Player -> String -> [LobbyGame] -> IO [LobbyGame]
 addPlayerToGame plr gameID gameList = do
   ga <- findIO (\game -> do
                  g <- CC.readMVar game
-                 return $ (fst g) == gameID) gameList []
+                 return $ (fst g) == gameID) gameList
   case ga of
     (Just mVarGame, hs, ts) -> do
       modGame <- CC.modifyMVar mVarGame $
@@ -72,15 +73,3 @@ addPlayerToGame plr gameID gameList = do
       g <- CC.newMVar modGame
       return $ hs ++ (g:ts)
     (Nothing, _, _) -> error "addPlayerToGame: Could not add player"
-
-
-    where
-      -- Method that finds with IO and then returns the value
-      -- together with the list to the right and left of the element
-      findIO :: (a -> IO Bool) -> [a] -> [a] -> IO (Maybe a, [a], [a])
-      findIO _ [] hs = return (Nothing, [], hs)
-      findIO p (a:as) hs = do
-        b <- p a
-        case b of
-          True  -> return $ (Just a, hs, as)
-          False -> findIO p as (a:hs)
