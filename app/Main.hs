@@ -8,7 +8,11 @@ import LobbyTypes
 import qualified Control.Concurrent as CC
 import Haste.Events
 import Haste.DOM
+<<<<<<< HEAD
 import Hastings.Utils
+=======
+import Data.Maybe
+>>>>>>> adfe8ff... Generalise updatePlayerList
 
 main :: IO ()
 main = runStandaloneApp $ do
