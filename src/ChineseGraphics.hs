@@ -1,11 +1,11 @@
 module ChineseGraphics
-	where
+  where
 
 import Haste
 import Haste.DOM
 import Haste.Graphics.Canvas
 import Haste.Events
---import ChineseCheckers
+import ChineseCheckers
 import qualified Control.Concurrent as CC
 import Table
 import qualified Data.Map.Strict as Map
@@ -43,13 +43,13 @@ initTableCoords s = map (initTableCoord 15 20) s
 initTableCoord :: Double -> Double -> Square -> ((Int,Int),(Double,Double))
 initTableCoord space size (Square _ _ (x,y)) = ((x,y), (size*fromIntegral x + space*fromIntegral (x+5),size* fromIntegral y+space* fromIntegral (y+5))) 
 
-initTable' :: Picture ()
-initTable' = sequence_ $ map (drawSquare 15 20) startTable
+initTable' :: Table -> Picture ()
+initTable' t = sequence_ $ map (drawSquare 15 20) t
 
 starOfDavidInABox :: Picture ()
 starOfDavidInABox = do
     fill $ starOfDavid 15 20
-    initTable'
+    initTable' startTable
 
 
 mkCanvas :: Int -> Int -> IO Elem
@@ -66,7 +66,7 @@ mkCanvas width height = do
 --main :: IO ()
 main = do
     stateOfGame <- CC.newEmptyMVar
---    CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse"]
+    CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse"]
     canvas <- mkCanvas 1900 800
     appendChild documentBody canvas
     canvas2 <- mkCanvas 500 500
@@ -79,10 +79,10 @@ main = do
            (x1,y1) = mapCoords' (fromIntegral x,fromIntegral y)
           in 
            do
---            render can2 $ text (50,50) ("(" ++ (show x) ++","++ (show y)++")") 
---            gameState <- CC.takeMVar stateOfGame
---            CC.putMVar stateOfGame $ skrep gameState
-            render can2 $ text (50,50) ("(" ++(show x1) ++","++ (show y1)++")")
+            gameState <- CC.takeMVar stateOfGame
+            CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
+            render can $ initTable' (gameTable gameState)
+            render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
 --            render can2 $ text (150,150) ("s speltur!!!")
 
 
