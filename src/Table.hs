@@ -6,7 +6,7 @@ type Table = [Square]
 -- deriving (Show, Eq)
 
 data Content = Empty | Piece Color
--- deriving (Show, Eq)
+   deriving (Eq)
 
 data Square = Square Content Color Coord
 -- deriving (Show, Eq)
@@ -18,6 +18,9 @@ data GameState = GameState { gameTable :: Table
                            , playerMoveAgain :: Bool }
 
 type Coord = (Int,Int)
+
+instance Eq Color where
+    (==) (RGB c1 c2 c3) (RGB c4 c5 c6) = c1 == c4 && c2 == c5 && c3 == c6 
 
 -- | Colors used for checkers and squares
 red = RGB 255 0 0

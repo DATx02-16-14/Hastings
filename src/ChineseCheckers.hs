@@ -1,6 +1,7 @@
 module ChineseCheckers where
 
 import Table
+import Haste.Graphics.Canvas
 
 squareContent :: Table -> Coord -> Content
 squareContent [] _         = error "Table does not contain coordinate"
@@ -46,16 +47,6 @@ removePlayer c = map (isPlayer)
                                                         | otherwise -> (Square content col (x,y))
 
 
-
--- | printing Color
-putColor :: Color -> IO ()
-putColor = putChar . head . show 
-
--- | Priting cell
-putSquare :: Square -> IO ()
-putSquare (Square content c _) = case content of 
-                                        Empty -> putColor c
-                                        (Piece color) -> putColor color
 
 {-
 isReachable :: Coord -> Table -> Table
@@ -167,9 +158,9 @@ action gs c1 c2 b = case checkPlayer (color $ head (players gs)) (squareContent 
 -}
 initGame :: [String] -> GameState
 initGame players = case (length players) of 
-                      2         -> create $ zipWith mkPlayer players [Blue,Red]
-                      4         -> create $ zipWith mkPlayer players [Blue,Red,Pink,Green]
-                      6         -> create $ zipWith mkPlayer players [Blue,Red,Pink,Green,Black,Yellow]
+                      2         -> create $ zipWith mkPlayer players [blue,red]
+                      4         -> create $ zipWith mkPlayer players [blue,red,purple,green]
+                      6         -> create $ zipWith mkPlayer players [blue,red,purple,green,black,yellow]
                       otherwise -> error "Not correct number of players for game to start"
 
               where mkPlayer a b = (a,b)
@@ -180,10 +171,29 @@ initGame players = case (length players) of
                                          , playerMoveAgain = False}
 
 
+
+-- | Checks if the piece belogns to the the player, meaning they are of the same color
+checkPlayer :: Color -> Content -> Bool
+checkPlayer c Empty = False
+checkPlayer c (Piece c1) = c == c1
+
+
 {-|
   The following functions are only used for testing purposes
   They tests the game logic by letting the programmer play the game from stdin/stdout
 -}
+{-
+
+-- | printing Color
+putColor :: Color -> IO ()
+putColor = putChar . head . show 
+
+-- | Priting cell
+putSquare :: Square -> IO ()
+putSquare (Square content c _) = case content of 
+                                        Empty -> putColor c
+                                        (Piece color) -> putColor color
+
 
 -- | Get coordinates from stdin
 getCoord :: IO (Coord,Coord)
@@ -193,12 +203,6 @@ getCoord = do
             putStrLn "To which coordinate do you want to move?"
             coord2 <- getLine
             return (read coord :: (Int,Int), read coord2 :: (Int,Int))
-
--- | Checks if the piece belogns to the the player, meaning they are of the same color
-checkPlayer :: Color -> Content -> Bool
-checkPlayer c Empty = False
-checkPlayer c (Piece c1) = c == c1
-
 
 -- | Get coordinates and moves a piece belonging to the current player
 playerMove :: Color -> Table -> Bool -> IO (Table,Bool)
@@ -240,3 +244,4 @@ jumpAgain t ((s,col):xs) = do
                               True -> jumpAgain newTable ((s,col):xs)
                               _    -> startGame' newTable $ xs ++ [(s,col)]
 
+-}

@@ -1,5 +1,5 @@
 module ChineaseGraphics
-	where
+    where
 import Haste
 import Haste.DOM
 import Haste.Graphics.Canvas
@@ -33,13 +33,13 @@ drawSquare space size (Square Empty col (x,y)) = do
     fill $ circle (size*fromIntegral x + space*fromIntegral (x+5),size* fromIntegral y+space* fromIntegral (y+5)) size
 
 
-initTable' :: Picture ()
-initTable' = sequence_ $ map (drawSquare 15 25) startTable
+drawTable :: Table -> Picture ()
+drawTable t = sequence_ $ map (drawSquare 15 25) t
 
 starOfDavidInABox :: Picture ()
 starOfDavidInABox = do
     fill $ starOfDavid 15 25
-    initTable'
+    drawTable startTable
 
 
 mkCanvas :: Int -> Int -> IO Elem
@@ -52,9 +52,6 @@ mkCanvas width height = do
         , prop "height" =: show height
         ]
     return canvas
-
-drawGame :: GameState -> Shape ()
-drawGame = undefined
 
 --main :: IO ()
 main = do
@@ -72,6 +69,7 @@ main = do
            (x1,y1) = mapCoords (x,y) in 
            do 
             gameState <- CC.takeMVar stateOfGame
+            render can $ drawTable $ gameTable gameState
             CC.putMVar stateOfGame $ skrep gameState
             render can2 $ text (50,50) ((currentPlayer gameState) ++ "s speltur!!!")
 
