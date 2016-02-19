@@ -12,7 +12,13 @@ Benjamin Block, Joel Gustafsson, Michael Milakovic, Mattias Nilsen, André Samue
 ### Setup
 The project uses stack and haste-cabal to compile the server and the client respectivly.
 
-Run `stack setup` to install the GHC used to compile the project.
+#### Stack install
+See https://github.com/commercialhaskell/stack/blob/master/doc/install_and_upgrade.md<br>
+#### haste-cabal
+See https://github.com/valderman/haste-compiler
+
+#### Build project
+Run `stack setup` in the project root.
 
 Then compile the server and run it by using `make all`, this will execute the following commands:
 ```bash
