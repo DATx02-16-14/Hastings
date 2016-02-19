@@ -11,6 +11,12 @@ data Content = Empty | Piece Color
 data Square = Square Content Color Coord
 -- deriving (Show, Eq)
 
+data GameState = GameState { gameTable :: Table
+                           , currentPlayer :: String
+                           , players :: [(String,Color)]
+                           , fromCoord :: Maybe Coord
+                           , playerMoveAgain :: Bool }
+
 type Coord = (Int,Int)
 
 -- | Colors used for checkers and squares

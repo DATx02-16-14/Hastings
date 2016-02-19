@@ -1,7 +1,9 @@
 import Haste
 import Haste.DOM
 import Haste.Graphics.Canvas
-
+import Haste.Events
+import ChineseCheckers
+import qualified Control.Concurrent as CC
 import Table
 
 starOfDavid :: Double -> Double -> Shape ()
@@ -28,17 +30,14 @@ drawSquare space size (Square Empty col (x,y)) = do
     setFillColor white
     fill $ circle (size*fromIntegral x + space*fromIntegral (x+5),size* fromIntegral y+space* fromIntegral (y+5)) size
 
-initTable :: Picture ()
-initTable = sequence_ $ map (drawSquare 15 20) startTable
+initTable' :: Picture ()
+initTable' = sequence_ $ map (drawSquare 15 20) startTable
 
- 
 
 starOfDavidInABox :: Picture ()
 starOfDavidInABox = do
     fill $ starOfDavid 15 20
-    initTable
-
-
+    initTable'
 
 mkCanvas :: Int -> Int -> IO Elem
 mkCanvas width height = do
@@ -51,9 +50,23 @@ mkCanvas width height = do
         ]
     return canvas
 
-main :: IO ()
+drawGame = undefined
+
+--main :: IO ()
 main = do
+    stateOfGame <- CC.newEmptyMVar
+    CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse"]
     canvas <- mkCanvas 1900 800
     appendChild documentBody canvas
     Just can <- fromElem canvas
     render can starOfDavidInABox
+    onEvent can Click $ \mouse ->
+       let (x,y) = mouseCoords mouse
+           (x1,y1) = mapCoords (x,y) in 
+           do 
+            gameState <- CC.takeMVar stateOfGame
+            CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
+            render can drawGame
+    render can starOfDavidInABox
+
+mapCoords = undefined
