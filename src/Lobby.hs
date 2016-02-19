@@ -112,21 +112,24 @@ addGame joinGame gameName =
 
     return ()
 
--- Updates the list of players in the lobby once every second.
-updatePlayerList :: Remote (Server [String]) -> [String] -> Client ()
-updatePlayerList getPlayerList currentPlayers =
-  withElem "playerList" $ \playerDiv -> do
-    playerList <- onServer getPlayerList
-    let listDiff = playerList \\ currentPlayers
-    case null listDiff of
-      False -> do
-        clearChildren playerDiv
-        mapM_ (addPlayerToPlayerlist playerDiv) $ currentPlayers ++ listDiff
-        setTimer (Once 1000) $ updatePlayerList getPlayerList $ currentPlayers ++ listDiff
+--Queries the server for a list in an interval, applies a function for every item in the list .
+listenForChanges :: Remote (Server [String]) -> (Elem -> String -> Client ()) -> Int -> Elem -> Client ()
+listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForChanges' []
+  where
+    listenForChanges' :: [String] -> Client ()
+    listenForChanges' currentData = do
+      remoteData <- onServer remoteCall
+      case currentData == remoteData of
+        False -> do
+          clearChildren parent
+          mapM_ (addChildrenToParent parent) remoteData
+          setTimer (Once updateDelay) $ listenForChanges' remoteData
 
-      True -> setTimer (Once 1000) $ updatePlayerList getPlayerList currentPlayers
+        True -> setTimer (Once updateDelay) $ listenForChanges' currentData
 
-    return ()
+      return ()
+
+
 -- Adds the playername followed by a <br> tag to the given parent.
 addPlayerToPlayerlist :: Elem -> String -> Client ()
 addPlayerToPlayerlist parent name = do

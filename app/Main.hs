@@ -8,6 +8,7 @@ import qualified LobbyServer as Server
 import qualified Control.Concurrent as CC
 import Haste.Events
 import Haste.DOM
+import Data.Maybe
 
 main :: IO ()
 main = runStandaloneApp $ do
@@ -32,6 +33,7 @@ main = runStandaloneApp $ do
     gameList <- onServer getGamesList
     mapM_ (addGame joinGame) gameList
 
-    fork $ updatePlayerList getPlayerList []
+    playerDiv <- elemById "playerList"
+    fork $ listenForChanges getPlayerList addPlayerToPlayerlist 1000 $ fromJust playerDiv
 
     return ()
