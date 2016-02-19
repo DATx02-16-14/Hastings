@@ -4,41 +4,40 @@ import Haste.Graphics.Canvas
 
 import Table
 
--- | Colors used for checkers
-red = RGB 255 0 0
-green = RGB 0 255 0
-blue = RGB 0 0 255
-black = RGB 0 0 0
-yellow = RGB 255 255 0
-purple = RGB 153 0 153
-
 starOfDavid :: Double -> Double -> Shape ()
 starOfDavid space size = do
 
-    line (12.0*space+12.0*size, space) (space, 12.0*space+12.0*size)
-    line (space, 12.0*space+12.0*size) (24.0*space+24.0*size, 12.0*space+12.0*size)
-    line (24.0*space+24.0*size, 12.0*space+12.0*size) (12.0*space+12.0*size, space)
-    line (space, 5.0*size+5.0*space) (24.0*space+24.0*size, 5.0*size+5.0*space)
-    line (space, 5.0*size+5.0*space) (12.0*space+12.0*size, 16.0*size+16.0*space)
-    line (12.0*space+12.0*size, 16.0*size+16.0*space) (24.0*space+24.0*size, 5.0*size+5.0*space)
+
+      path [((12+5-1)*space+12*size, space*(5-2)), ((12+5+1)*space+12*size, space*(5-2)),
+            ((16+5+1)*space+16*size, size*4+space*(4+5-2)), ((24+5+1)*space+24*size, size*4+space*(4+5-2)),
+            ((24.5+1+5)*space+25*size, size*5+space*(5+5-2)), ((21+1+5)*space+21*size, size*9+space*(9+5-2)),
+            ((24.5+1+5)*space+25*size, size*13+space*(13+5-2)), ((24+5+1)*space+24*size, size*14+space*(14+5-2)),
+            ((16+5+1)*space+16*size, size*14+space*(14+5-2)), ((12+5+1)*space+12*size, size*18+space*(18+5-2)),
+            ((12+5-1)*space+12*size, size*18+space*(18+5-2)), ((8+5-1)*space+8*size, size*13.5+space*(13.5+5-2)),
+            ((8+5-1)*space+8*size, size*13.5+space*(13.5+5-2)), ((5-1)*space+0*size, size*13.5+space*(13.5+5-2)), 
+            ((3.5-1)*space+0*size, size*13+space*(13+5-2)), ((3+5-1)*space+3*size, size*9+space*(9+5-2)),
+            ((3.5-1)*space+0*size, size*5+space*(5+5-2)), ((5-1)*space+0*size, size*4+space*(4+5-2)),
+            ((8+5-1)*space+8*size, size*4+space*(4+5-2)), ((12+5-1)*space+12*size, space*(5-2))] 
 
 
-
-drawSquare :: Double -> Double -> Square -> Shape ()
-drawSquare size space (Square cont col (x,y)) = do
-    circle (size*fromIntegral x + space*fromIntegral (x+2),size* fromIntegral y+space* fromIntegral (y+2)) size
+drawSquare :: Double -> Double -> Square -> Picture ()
+drawSquare space size (Square (Piece color) col (x,y)) = do
+    setFillColor color    
+    fill $ circle (size*fromIntegral x + space*fromIntegral (x+5),size* fromIntegral y+space* fromIntegral (y+5)) size
+drawSquare space size (Square Empty col (x,y)) = do
+    setFillColor white
+    fill $ circle (size*fromIntegral x + space*fromIntegral (x+5),size* fromIntegral y+space* fromIntegral (y+5)) size
 
 initTable :: Picture ()
-initTable = sequence_ $ map (fill . setFillColor drawSquare 20 20) startTable
+initTable = sequence_ $ map (drawSquare 15 20) startTable
 
+ 
 
 starOfDavidInABox :: Picture ()
 starOfDavidInABox = do
-    stroke $ starOfDavid 20 20
+    fill $ starOfDavid 15 20
     initTable
 
-drawHolesInABox :: Picture ()
-drawHolesInABox = undefined
 
 
 mkCanvas :: Int -> Int -> IO Elem
