@@ -48,6 +48,10 @@ removePlayer c = map (isPlayer)
 
 
 
+removePlayers :: [Color] -> Table -> Table
+removePlayers [] t = t
+removePlayers (c:cs) t = removePlayers cs (removePlayer c t)
+
 {-
 isReachable :: Coord -> Table -> Table
 isReachable c t = filter (isReachable' c) t
@@ -66,6 +70,8 @@ canMove (x,y) t = filter (checkusPrimus (x,y)) $ filter isEmpty t
                                                    | (x+2) == x1 && (y+2) == y1 && (content (x+1,y+1) == Empty) = False
                                                    | (x+2) == x1 && (y-2) == y1 && (content (x+1,y-1) == Empty) = False
                                                    | (x-2) == x1 && (y-2) == y1 && (content (x-1,y-1) == Empty) = False
+                                                   | x == x1 && abs(y-y1) == 2 = False
+                                                   | x == x1 && abs(y-y1) == 4 = False
                                                    | otherwise = True
           content = squareContent t
 
@@ -125,8 +131,12 @@ playerAction gs c1 = case fromCoord gs of
                                              , fromCoord = (Just c1)
                                              , playerMoveAgain = playerMoveAgain gs}
 
-                        Just c2 -> case action gs c1 c2 (playerMoveAgain gs) of
-                                (Nothing,_) -> gs
+                        Just c2 -> case action gs c2 c1 (playerMoveAgain gs) of
+                                (Nothing,_) -> GameState {gameTable = gameTable gs
+                                                        , currentPlayer = currentPlayer gs
+                                                        , players = players gs
+                                                        , fromCoord = Nothing
+                                                        , playerMoveAgain = playerMoveAgain gs}
                                 (Just table,b) -> case b of
                                     False ->             GameState {gameTable = table
                                                         , currentPlayer = fst . head . tail $ players gs
@@ -151,6 +161,8 @@ action gs c1 c2 b = case checkPlayer (color $ head (players gs)) (squareContent 
 --movePlayer' c1 c2 (gameTable gs)
     where color (s,c) = c
 
+allPlayer :: [Color]
+allPlayer = [blue,orange,purple,green,red,yellow]
 
 {-|
   Given a list of player names, initGame associates each player 
@@ -158,17 +170,33 @@ action gs c1 c2 b = case checkPlayer (color $ head (players gs)) (squareContent 
 -}
 initGame :: [String] -> GameState
 initGame players = case (length players) of 
-                      2         -> create $ zipWith mkPlayer players [blue,red]
-                      4         -> create $ zipWith mkPlayer players [blue,red,purple,green]
-                      6         -> create $ zipWith mkPlayer players [blue,red,purple,green,black,yellow]
+                      2         -> create (zipWith mkPlayer players [blue,orange]) 2
+                      4         -> create (zipWith mkPlayer players [blue,red,purple,orange]) 4
+                      6         -> create (zipWith mkPlayer players [blue,red,purple,green,orange,yellow]) 6
                       otherwise -> error "Not correct number of players for game to start"
 
               where mkPlayer a b = (a,b)
-                    create p =  GameState {gameTable = startTable
-                                         , currentPlayer = "Pelle"
+                    create p i = createProperGame p i
+
+createProperGame :: [(String,Color)] -> Int -> GameState
+createProperGame p i =  case i of
+                                2 ->     GameState {gameTable =  removePlayers [red,purple,green,yellow] startTable
+                                         , currentPlayer = fst . head $ p
                                          , players = p
                                          , fromCoord = Nothing
                                          , playerMoveAgain = False}
+                                
+                                4 ->     GameState {gameTable = removePlayers [green,yellow] startTable
+                                                        , currentPlayer = fst . head $ p
+                                                        , players = p
+                                                        , fromCoord = Nothing
+                                                        , playerMoveAgain = False}
+
+                                6 ->    GameState {gameTable = startTable
+                                                        , currentPlayer = fst . head $ p
+                                                        , players = p
+                                                        , fromCoord = Nothing
+                                                        , playerMoveAgain = False}
 
 
 
