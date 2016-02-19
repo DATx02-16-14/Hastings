@@ -113,10 +113,9 @@ addGame joinGame gameName =
     return ()
 
 --Queries the server for a list in an interval, applies a function for every item in the list .
-listenForChanges :: Remote (Server [String]) -> (Elem -> String -> Client ()) -> Int -> Elem -> Client ()
+listenForChanges :: (Eq a, Binary a) => Remote (Server [a]) -> (Elem -> a -> Client ()) -> Int -> Elem -> Client ()
 listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForChanges' []
   where
-    listenForChanges' :: [String] -> Client ()
     listenForChanges' currentData = do
       remoteData <- onServer remoteCall
       case currentData == remoteData of
