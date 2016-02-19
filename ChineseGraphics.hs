@@ -31,14 +31,13 @@ drawSquare :: Double -> Double -> Square -> Shape ()
 drawSquare size space (Square cont col (x,y)) = do
     circle (size*fromIntegral x + space*fromIntegral (x+2),size* fromIntegral y+space* fromIntegral (y+2)) size
 
---initTable :: Picture ()
---initTable = sequence_ $ map (fill . setFillColor drawSquare 20 20) startTable
+initTable :: Picture ()
+initTable = sequence_ $ map (fill . (drawSquare 20 20)) startTable
 
 
 starOfDavidInABox :: Picture ()
 starOfDavidInABox = do
     stroke $ starOfDavid 20 20
---    initTable
 
 drawHolesInABox :: Picture ()
 drawHolesInABox = undefined
@@ -55,6 +54,7 @@ mkCanvas width height = do
         ]
     return canvas
 
+drawGame :: GameState -> Shape ()
 drawGame = undefined
 
 --main :: IO ()
@@ -63,15 +63,21 @@ main = do
     CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse"]
     canvas <- mkCanvas 1900 800
     appendChild documentBody canvas
+    canvas2 <- mkCanvas 500 500
+    appendChild documentBody canvas2
     Just can <- fromElem canvas
+    Just can2 <- fromElem canvas2
     render can starOfDavidInABox
     onEvent can Click $ \mouse ->
        let (x,y) = mouseCoords mouse
            (x1,y1) = mapCoords (x,y) in 
            do 
             gameState <- CC.takeMVar stateOfGame
-            CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
-            render can drawGame
-    render can starOfDavidInABox
+            CC.putMVar stateOfGame $ skrep gameState
+            render can2 $ text (50,50) ((currentPlayer gameState) ++ "s speltur!!!")
+
+skrep :: GameState -> GameState
+skrep gs = GameState {gameTable = startTable, currentPlayer = mao $ tail (players gs), players = (tail (players gs)) ++ [head (players gs)], fromCoord = fromCoord gs, playerMoveAgain = False}
+   where mao [(x,y)] = x
 
 mapCoords = undefined
