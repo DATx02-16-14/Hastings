@@ -1,10 +1,11 @@
-module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame)
+module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame, playerNamesInGame)
   where
 import Haste.App
 import qualified Control.Concurrent as CC
 import Data.List
 import Data.Maybe
 import LobbyTypes
+import Hastings.Utils
 
 handshake :: Server PlayerList -> Name -> Server ()
 handshake remotePlayers name = do
@@ -28,19 +29,20 @@ createGame remoteGames remotePlayers = do
   let maybePlayer = find (\p -> fst p == sid) playerList
   liftIO $ CC.modifyMVar_ games $ \gs ->
     case maybePlayer of
-      Just p -> return $ ("string",[p]) : gs
-      Nothing -> return gs
-  list <- liftIO $ CC.readMVar games
-  liftIO $ putStrLn $ show list
+        Just p -> do
+          game <- liftIO $ CC.newMVar ("string",[p])
+          return $ game : gs
+        Nothing -> return gs
   case maybePlayer of
     Just p -> return ("string", snd p)
     Nothing -> return ("false", "")
 
 getGamesList :: Server GamesList -> Server [String]
 getGamesList remoteGames = do
-  gameList <- remoteGames >>=  liftIO . CC.readMVar
-  liftIO $ putStrLn $ show $ map fst gameList
-  return $ map fst gameList
+  gameList <- remoteGames >>= liftIO . CC.readMVar
+  liftIO $ mapM (\g -> do
+    game <- CC.readMVar g
+    return $ fst game) gameList
 
 playerJoinGame :: Server PlayerList -> Server GamesList -> String -> Server ()
 playerJoinGame remotePlayers remoteGames gameID = do
@@ -49,17 +51,59 @@ playerJoinGame remotePlayers remoteGames gameID = do
   sid <- getSessionID
   case find (\(plrSid, _) -> plrSid == sid) players of
     Just plr -> liftIO $ CC.modifyMVar_ gameList $
-      \gList -> return $ addPlayerToGame plr gameID gList
+      \gList -> addPlayerToGame plr gameID gList
 
     _ -> return ()
 
   return ()
 
-addPlayerToGame :: Player -> String -> [LobbyGame] -> [LobbyGame]
-addPlayerToGame plr gameID gameList =
-  case find (\(ids, _) -> ids == gameID) gameList of
-    Just (sessionID, gamePlayers) -> take n gameList ++ [(sessionID, plr:gamePlayers)] ++ drop (n + 1) gameList
-    _ -> []
+-- Adds a player to a lobby game.
+-- Is perhaps overly complicated since a LobbyGame is an MVar.
+addPlayerToGame :: Player -> String -> [LobbyGame] -> IO [LobbyGame]
+addPlayerToGame plr gameID gameList = do
+  ga <- findIO (\game -> do
+                 g <- CC.readMVar game
+                 return $ (fst g) == gameID) gameList
+  case ga of
+    (Just mVarGame, hs, ts) -> do
+      modGame <- CC.modifyMVar mVarGame $
+        \g -> do
+          let (sessionID, gamePlayers) = g
+          return $ ((sessionID, plr:gamePlayers), (sessionID, plr:gamePlayers))
+      g <- CC.newMVar modGame
+      return $ hs ++ (g:ts)
+    (Nothing, _, _) -> error "addPlayerToGame: Could not add player"
 
-    where
-      n = fromJust $ elemIndex gameID (map fst gameList)
+-- Finds the name of a game given it's identifier
+-- (seems useless since the name is the identifier atm.)
+findGameName :: Server GamesList -> String -> Server String
+findGameName remoteGames gid = do
+  mVarGamesList <- remoteGames
+  game <- liftIO $ findGame gid mVarGamesList
+  case game of
+    Just mVarG -> do
+      gam <- liftIO $ CC.readMVar mVarG
+      return $ fst gam
+    Nothing    -> return ""
+
+-- Finds the name of the players of a game given it's identifier
+playerNamesInGame :: Server GamesList -> String -> Server [String]
+playerNamesInGame remoteGames gid = do
+  mVarGamesList <- remoteGames
+  game <- liftIO $ findGame gid mVarGamesList
+  case game of
+    Just mVarG -> do
+      gam <- liftIO $ CC.readMVar mVarG
+      return $ map snd $ snd gam
+    Nothing    -> return []
+
+
+-- Finds the game matching the first parameter and returns it
+findGame :: String -> GamesList -> IO (Maybe LobbyGame)
+findGame gid mVarGamesList = do
+  gamesList <- CC.readMVar mVarGamesList
+  mVarGame <- findIO (\game -> do
+                 g <- CC.readMVar game
+                 return $ (fst g) == gid) gamesList
+  let (ga,_,_) = mVarGame
+  return ga
