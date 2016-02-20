@@ -8,11 +8,8 @@ import LobbyTypes
 import qualified Control.Concurrent as CC
 import Haste.Events
 import Haste.DOM
-<<<<<<< HEAD
 import Hastings.Utils
-=======
 import Data.Maybe
->>>>>>> adfe8ff... Generalise updatePlayerList
 
 main :: IO ()
 main = runStandaloneApp $ do
@@ -23,6 +20,7 @@ main = runStandaloneApp $ do
   createGame <- remote $ Server.createGame gamesList playersList
   getGamesList <- remote $ Server.getGamesList gamesList
   joinGame <- remote $ Server.playerJoinGame playersList gamesList
+  findPlayersInGame <- remote $ Server.playerNamesInGame gamesList
   onSessionEnd $ Server.closeConnection playersList
 
   runClient $ do
@@ -31,26 +29,11 @@ main = runStandaloneApp $ do
     name <- prompt "Hello! Please enter your name:"
     onServer $ handshake <.> name
 
-    createGameBtn createGame
+    createGameBtn (createGame) (findPlayersInGame)
 
     gameList <- onServer getGamesList
     mapM_ (addGameToDOM joinGame) gameList
 
-    return ()
-
-createGameBtn :: Remote (Server (String,String)) -> Client ()
-createGameBtn createGame = do
-    withElems ["createGamebtn"] $ \[createGamebtn] ->
-      onEvent createGamebtn Click $ \(MouseData _ mb _) ->
-        case mb of
-          Just MouseLeft -> do
-            gameStrs <- onServer createGame
-            case fst gameStrs of
-              "false" -> return ()
-              _       -> do
-                liftIO deleteLobbyDOM
-                liftIO $ createGameDOM (fst gameStrs, [snd gameStrs])
-          _ -> return ()
     return ()
 
 addGameToDOM :: Remote (String -> Server ()) -> String -> Client ()
