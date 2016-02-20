@@ -1,4 +1,4 @@
-module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame, LobbyGame)
+module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame, LobbyGame, playerNamesInGame)
   where
 import Haste.App
 import qualified Control.Concurrent as CC
