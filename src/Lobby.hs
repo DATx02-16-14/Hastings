@@ -1,9 +1,13 @@
 module Lobby
   where
+import Haste
 import Haste.App
 import LobbyServer
 import Haste.DOM
 import LobbyTypes()
+import Haste.Events
+import Haste.App.Concurrent
+import Data.Maybe
 import qualified Control.Concurrent as CC
 
 createLobbyDOM :: IO ()
@@ -64,8 +68,8 @@ deleteGameDOM = deleteDOM "lobbyGame"
 deleteDOM :: String -> IO ()
 deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
 
-createGameBtn :: Remote (Server (String,String)) -> Client ()
-createGameBtn createGame = do
+createGameBtn :: Remote (Server (String,String)) -> Remote (String -> Server [String]) -> Client ()
+createGameBtn createGame fpInG = do
   withElems ["createGamebtn"] $ \[createGamebtn] ->
     onEvent createGamebtn Click $ \(MouseData _ mb _) ->
       case mb of
@@ -76,8 +80,11 @@ createGameBtn createGame = do
             _       -> do
               liftIO deleteLobbyDOM
               liftIO $ createGameDOM (fst gameStrs, [snd gameStrs])
+              withElem "playerList" $ \pdiv ->
+                  fork $ listenForChanges (fpInG <.> (fst gameStrs)) addPlayerToPlayerlist 1000 pdiv
         _ -> return ()
   return ()
+
 
 addGame :: Remote (String -> Server ()) -> String -> Client ()
 addGame joinGame gameName =
