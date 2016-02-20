@@ -46,7 +46,7 @@ createGameDOM (gameId,ps) = do
             prop "id" =: "playerList"
         ]
     listhead <- newTextElem "Players: "
-    appendChild list listhead
+    appendChild parentDiv listhead
     mapM_ (\p -> do
                 name <- newTextElem $ p ++ " "
                 appendChild list name
