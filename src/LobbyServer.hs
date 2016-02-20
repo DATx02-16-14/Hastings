@@ -74,6 +74,18 @@ addPlayerToGame plr gameID gameList = do
       return $ hs ++ (g:ts)
     (Nothing, _, _) -> error "addPlayerToGame: Could not add player"
 
+-- Finds the name of a game given it's identifier
+-- (seems useless since the name is the identifier atm.)
+findGameName :: Server GamesList -> String -> Server String
+findGameName remoteGames gid = do
+  mVarGamesList <- remoteGames
+  game <- liftIO $ findGame gid mVarGamesList
+  case game of
+    Just mVarG -> do
+      gam <- liftIO $ CC.readMVar mVarG
+      return $ fst gam
+    Nothing    -> return ""
+
 -- Finds the name of the players of a game given it's identifier
 playerNamesInGame :: Server GamesList -> String -> Server [String]
 playerNamesInGame remoteGames gid = do
