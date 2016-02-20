@@ -9,7 +9,7 @@ import LobbyTypes
 
 createLobbyDOM :: IO ()
 createLobbyDOM = do
-  parentDiv <- newElem "div" `with`
+  lobbyDiv <- newElem "div" `with`
     [
       prop "id" =: "lobby"
     ]
@@ -30,14 +30,48 @@ createLobbyDOM = do
 
   containerDiv <- newElem "div" `with`
     [
-      attr "class" =: "container"
+      attr "class" =: "container-fluid"
     ]
+
+  rowDiv <- newElem "div" `with`
+    [
+      attr "class" =: "row"
+    ]
+
+  leftPaddingColDiv <- newElem "div" `with`
+    [
+      attr "class" =: "col-md-3"
+    ]
+  rightPaddingColDiv <- newElem "div" `with`
+    [
+      attr "class" =: "col-md-3"
+    ]
+
+  centerColDiv <- newElem "div" `with`
+    [
+      attr "class" =: "col-md-6"
+    ]
+
+  header <- newElem "h1" `with`
+    [
+      attr "class" =: "text-center"
+    ]
+
+  headerText <- newTextElem "Hastings Lobby"
+  appendChild header headerText
 
   appendChild documentBody cssLink
   appendChild documentBody containerDiv
+  appendChild containerDiv rowDiv
+  appendChild rowDiv lobbyDiv
+  appendChild lobbyDiv header
+  appendChild lobbyDiv leftPaddingColDiv
+  appendChild lobbyDiv centerColDiv
+  appendChild lobbyDiv rightPaddingColDiv
+
+
   appendChild createGamebtn crGamebtnText
-  appendChild parentDiv createGamebtn
-  appendChild containerDiv parentDiv
+  appendChild centerColDiv createGamebtn
 
 createGameDOM :: (String,[String]) -> IO ()
 createGameDOM (gameId,ps) = do
