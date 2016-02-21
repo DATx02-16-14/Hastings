@@ -141,7 +141,7 @@ createGameBtn createGame = do
 
 addGame :: Remote (String -> Server ()) -> String -> Client ()
 addGame joinGame gameName =
-  withElems ["lobby"] $ \[lobbyDiv] -> do
+  withElems ["centerContent", "createGamebtn"] $ \[centerContent, createGamebtn] -> do
     gameDiv <- newElem "div"
     gameEntry <- newElem "button" `with`
       [
@@ -150,7 +150,7 @@ addGame joinGame gameName =
     textElem <- newTextElem gameName
     appendChild gameEntry textElem
     appendChild gameDiv gameEntry
-    appendChild lobbyDiv gameDiv
+    insertChildBefore centerContent createGamebtn gameDiv
 
     _ <- ($)
       withElems [gameName] $ \[gameButton] ->
