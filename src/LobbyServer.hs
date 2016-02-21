@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame, playerNamesInGame)
   where
 import Haste.App
@@ -6,6 +7,11 @@ import Data.List
 import Data.Maybe
 import LobbyTypes
 import Hastings.Utils
+#ifdef __HASTE__
+#else
+import Data.UUID
+import System.Random
+#endif
 
 handshake :: Server PlayerList -> Name -> Server ()
 handshake remotePlayers name = do
@@ -27,14 +33,17 @@ createGame remoteGames remotePlayers = do
   sid <- getSessionID
   playerList <- liftIO $ CC.readMVar players
   let maybePlayer = find (\p -> fst p == sid) playerList
+  gen <- liftIO newStdGen
+  let (uuid, g) = random gen
+  let uuidStr = Data.UUID.toString uuid
   liftIO $ CC.modifyMVar_ games $ \gs ->
     case maybePlayer of
         Just p -> do
-          game <- liftIO $ CC.newMVar ("string",[p])
+          game <- liftIO $ CC.newMVar (uuidStr,[p])
           return $ game : gs
         Nothing -> return gs
   case maybePlayer of
-    Just p -> return ("string", snd p)
+    Just p -> return (uuidStr, snd p)
     Nothing -> return ("false", "")
 
 getGamesList :: Server GamesList -> Server [String]
