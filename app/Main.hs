@@ -22,12 +22,12 @@ main = runStandaloneApp $ do
   runClient $ do
     liftIO createLobbyDOM
 
-    name <- prompt "Hello! Please enter your name:"
-    onServer $ handshake <.> name
+    gameList <- onServer getGamesList
+    mapM_ (addGame joinGame) gameList
 
     createGameBtn createGame
 
-    gameList <- onServer getGamesList
-    mapM_ (addGame joinGame) gameList
+    name <- prompt "Hello! Please enter your name:"
+    onServer $ handshake <.> name
 
     return ()
