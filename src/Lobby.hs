@@ -7,18 +7,8 @@ import Haste.Events
 import Data.Maybe
 import LobbyTypes
 
-createLobbyDOM :: IO ()
-createLobbyDOM = do
-  lobbyDiv <- newElem "div" `with`
-    [
-      prop "id" =: "lobby"
-    ]
-  createGamebtn <- newElem "button" `with`
-    [
-      prop "id" =: "createGamebtn"
-    ]
-  crGamebtnText <- newTextElem "Create new game"
-
+createBootstrapTemplate :: String -> IO Elem
+createBootstrapTemplate parentName = do
   cssLink <- newElem "link" `with`
     [
       prop "rel"          =: "stylesheet",
@@ -35,7 +25,8 @@ createLobbyDOM = do
 
   rowDiv <- newElem "div" `with`
     [
-      attr "class" =: "row"
+      attr "class" =: "row",
+      attr "id"    =: "row"
     ]
 
   leftPaddingColDiv <- newElem "div" `with`
@@ -49,8 +40,35 @@ createLobbyDOM = do
 
   centerColDiv <- newElem "div" `with`
     [
-      attr "class" =: "col-md-6"
+      attr "class" =: "col-md-6",
+      attr "id"    =: "centerContent"
     ]
+
+  parentDiv <- newElem "div" `with`
+    [
+      prop "id" =: parentName
+    ]
+
+  appendChild documentBody cssLink
+  appendChild documentBody containerDiv
+  appendChild containerDiv rowDiv
+  appendChild rowDiv parentDiv
+  appendChild parentDiv leftPaddingColDiv
+  appendChild parentDiv centerColDiv
+  appendChild parentDiv rightPaddingColDiv
+
+  return parentDiv
+
+createLobbyDOM :: IO ()
+createLobbyDOM = do
+
+  lobbyDiv <- createBootstrapTemplate "lobby"
+
+  createGamebtn <- newElem "button" `with`
+    [
+      prop "id" =: "createGamebtn"
+    ]
+  crGamebtnText <- newTextElem "Create new game"
 
   header <- newElem "h1" `with`
     [
@@ -60,18 +78,11 @@ createLobbyDOM = do
   headerText <- newTextElem "Hastings Lobby"
   appendChild header headerText
 
-  appendChild documentBody cssLink
-  appendChild documentBody containerDiv
-  appendChild containerDiv rowDiv
-  appendChild rowDiv lobbyDiv
-  appendChild lobbyDiv header
-  appendChild lobbyDiv leftPaddingColDiv
-  appendChild lobbyDiv centerColDiv
-  appendChild lobbyDiv rightPaddingColDiv
-
-
   appendChild createGamebtn crGamebtnText
-  appendChild centerColDiv createGamebtn
+
+  withElems ["centerContent"] $ \[contentDiv] -> do
+    appendChild contentDiv header
+    appendChild contentDiv createGamebtn
 
 createGameDOM :: (String,[String]) -> IO ()
 createGameDOM (gameId,ps) = do
@@ -111,7 +122,7 @@ deleteGameDOM :: IO ()
 deleteGameDOM = deleteDOM "lobbyGame"
 
 deleteDOM :: String -> IO ()
-deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
+deleteDOM s = withElems [s, "row"] $ \[element, row] -> deleteChild row element
 
 createGameBtn :: Remote (Server (String,String)) -> Client ()
 createGameBtn createGame = do
