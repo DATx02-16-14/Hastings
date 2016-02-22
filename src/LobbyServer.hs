@@ -1,7 +1,15 @@
 
 {-# LANGUAGE CPP #-}
-module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame, playerNamesInGame, getConnectedPlayers)
-  where
+module LobbyServer(
+  handshake,
+  createGame,
+  getGamesList,
+  playerJoinGame,
+  playerNamesInGame,
+  getConnectedPlayers,
+  disconnectPlayerFromLobby,
+  disconnectPlayerFromGame) where
+
 import Haste.App
 import qualified Control.Concurrent as CC
 import Data.List
@@ -19,12 +27,6 @@ handshake remotePlayers name = do
   sid <- getSessionID
   liftIO $ CC.modifyMVar_ players  $ \ps ->
     return $ (sid,name) : ps
-
-closeConnection :: Server PlayerList -> SessionID -> Server ()
-closeConnection remotePlayers sid = do
-  players <- remotePlayers
-  liftIO $ CC.modifyMVar_ players $ \ps ->
-    return $ filter ((sid /=) . fst) ps
 
 -- Removes a player that has disconnected from player list
 disconnectPlayerFromLobby :: Server PlayerList -> SessionID -> Server ()

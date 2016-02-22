@@ -13,7 +13,8 @@ import Hastings.Utils
 import Data.Maybe
 import LobbyAPI
 #ifdef __HASTE__
-#define closeConnection(x) (\_ -> return ())
+#define disconnectPlayerFromLobby(x) (\_ -> return ())
+#define disconnectPlayerFromGame(x) (\_ -> return())
 import LobbyClient
 #else
 import LobbyServer
@@ -25,6 +26,7 @@ main = runStandaloneApp $ do
   playersList <- liftServerIO $ CC.newMVar []
   gamesList <- liftServerIO $ CC.newMVar []
 
-  onSessionEnd $ closeConnection(playersList)
+  onSessionEnd $ disconnectPlayerFromLobby(playersList)
+  onSessionEnd $ disconnectPlayerFromGame(gamesList)
   api <- newLobbyAPI playersList gamesList
   runClient $ clientMain api
