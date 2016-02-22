@@ -26,6 +26,26 @@ closeConnection remotePlayers sid = do
   liftIO $ CC.modifyMVar_ players $ \ps ->
     return $ filter ((sid /=) . fst) ps
 
+-- Removes a player that has disconnected from player list
+disconnectPlayerFromLobby :: Server PlayerList -> SessionID -> Server ()
+disconnectPlayerFromLobby remotePlayers sid = do
+  players <- remotePlayers
+  liftIO $ CC.modifyMVar_ players $ \ps ->
+    return $ filter ((sid /=) . fst) ps
+
+-- Removes a player that has disconnected from all games
+disconnectPlayerFromGame :: Server GamesList -> SessionID -> Server ()
+disconnectPlayerFromGame remoteGames sid = do
+  games <- remoteGames
+  liftIO $ CC.modifyMVar_ games $ \game -> do
+    mapM removePlayer game
+  where
+    removePlayer game = do
+      CC.modifyMVar_ game $ \g -> do
+        let (str, players) = g
+        return $ (str, filter ((sid /=) . fst) players)
+      return game
+
 createGame :: Server GamesList -> Server PlayerList -> Server (String,String)
 createGame remoteGames remotePlayers = do
   players <- remotePlayers
