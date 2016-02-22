@@ -7,8 +7,7 @@ import Data.List
 import Data.Maybe
 import LobbyTypes
 import Hastings.Utils
-#ifdef __HASTE__
-#else
+#ifndef __HASTE__
 import Data.UUID
 import System.Random
 #endif
