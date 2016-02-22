@@ -1,9 +1,6 @@
-<<<<<<< HEAD
-module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame, playerNamesInGame, getConnectedPlayers)
-=======
+
 {-# LANGUAGE CPP #-}
-module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame, playerNamesInGame)
->>>>>>> 8e05825... Add uuid to creation of a game
+module LobbyServer(handshake, closeConnection, createGame, getGamesList, playerJoinGame, playerNamesInGame, getConnectedPlayers)
   where
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -11,8 +8,7 @@ import Data.List
 import Data.Maybe
 import LobbyTypes
 import Hastings.Utils
-#ifdef __HASTE__
-#else
+#ifndef __HASTE__
 import Data.UUID
 import System.Random
 #endif

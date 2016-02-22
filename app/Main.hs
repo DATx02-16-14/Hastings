@@ -1,64 +1,30 @@
+{-# LANGUAGE CPP #-}
 module Main
     where
 import Haste.App
 import Haste.App.Standalone
 import Haste.App.Concurrent
 import Lobby
-import qualified LobbyServer as Server
 import qualified Control.Concurrent as CC
 import Haste.Events
 import Haste.DOM
 import Hastings.Utils
 
 import Data.Maybe
+import LobbyAPI
+#ifdef __HASTE__
+#define closeConnection(x) (\_ -> return ())
+import LobbyClient
+#else
+import LobbyServer
+#define clientMain (\_ -> return ())
+#endif
 
 main :: IO ()
 main = runStandaloneApp $ do
   playersList <- liftServerIO $ CC.newMVar []
   gamesList <- liftServerIO $ CC.newMVar []
 
-  handshake <- remote $ Server.handshake playersList
-  createGame <- remote $ Server.createGame gamesList playersList
-  getGamesList <- remote $ Server.getGamesList gamesList
-  joinGame <- remote $ Server.playerJoinGame playersList gamesList
-  findPlayersInGame <- remote $ Server.playerNamesInGame gamesList
-  getPlayerList <- remote $ Server.getConnectedPlayers playersList
-  onSessionEnd $ Server.closeConnection playersList
-
-  runClient $ do
-    liftIO createLobbyDOM
-
-    name <- prompt "Hello! Please enter your name:"
-    onServer $ handshake <.> name
-
-    createGameBtn (createGame) (findPlayersInGame)
-
-    gameList <- onServer getGamesList
-    mapM_ (addGame joinGame) gameList
-
-    playerDiv <- elemById "playerList"
-    fork $ listenForChanges getPlayerList addPlayerToPlayerlist 1000 $ fromJust playerDiv
-
-    return ()
-
-addGameToDOM :: Remote (String -> Server ()) -> String -> Client ()
-addGameToDOM joinGame gameName = do
-  gameDiv <- newElem "div"
-  gameEntry <- newElem "button" `with`
-    [
-      prop "id" =: gameName
-    ]
-  textElem <- newTextElem gameName
-  appendChild gameEntry textElem
-  appendChild gameDiv gameEntry
-  appendChild documentBody gameDiv
-
-  _ <- ($)
-    withElems [gameName] $ \[gameButton] ->
-      onEvent gameButton Click (\(MouseData _ mb _) ->
-        case mb of
-          Just MouseLeft ->
-            onServer $ joinGame <.> gameName
-          _ -> return ())
-
-  return ()
+  onSessionEnd $ closeConnection(playersList)
+  api <- newLobbyAPI playersList gamesList
+  runClient $ clientMain api
