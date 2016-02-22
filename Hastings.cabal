@@ -15,12 +15,13 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib, Lobby, LobbyServer, LobbyTypes, Hastings.Utils
   build-depends:
     base >= 4.7 && < 5
   if impl(haste)
+    exposed-modules:     Lib, Lobby, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI
     build-depends: haste-lib >= 0.5 && < 0.6
   else
+    exposed-modules:     Lib, Lobby, LobbyServer, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI
     build-depends:
       haste-compiler >= 0.5 && < 0.6,
       uuid,
