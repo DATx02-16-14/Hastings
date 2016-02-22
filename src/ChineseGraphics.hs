@@ -89,6 +89,12 @@ main = do
             render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
 --            render can2 $ text (150,150) ("s speltur!!!")
 
+    onEvent can2 Click $ \_ -> 
+     do
+      gameState <- CC.takeMVar stateOfGame
+      CC.putMVar stateOfGame $ rotatePlayer gameState
+      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
+
 
 skrep :: GameState -> GameState
 skrep gs = GameState {gameTable = startTable, currentPlayer = mao $ tail (players gs), players = (tail (players gs)) ++ [head (players gs)], fromCoord = fromCoord gs, playerMoveAgain = False}

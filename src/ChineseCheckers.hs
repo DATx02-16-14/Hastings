@@ -178,6 +178,15 @@ initGame players = case (length players) of
               where mkPlayer a b = (a,b)
                     create p i = createProperGame p i
 
+
+rotatePlayer :: GameState -> GameState
+rotatePlayer gs = GameState {gameTable = gameTable gs
+                            , currentPlayer = fst . head $ players gs
+                            , players = tail (players gs) ++ [head $ players gs]
+                            , fromCoord = Nothing
+                            , playerMoveAgain = playerMoveAgain gs} 
+
+
 createProperGame :: [(String,Color)] -> Int -> GameState
 createProperGame p i =  case i of
                                 2 ->     GameState {gameTable =  removePlayers [red,purple,green,yellow] startTable

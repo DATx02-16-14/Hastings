@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib, Lobby, LobbyServer, LobbyTypes, Table, ChineaseGraphics, ChineaseCheckers
+  exposed-modules:     Lib, Lobby, LobbyServer, LobbyTypes, Table, ChineseGraphics, ChineseCheckers
   build-depends:
     base >= 4.7 && < 5
   if impl(haste)
