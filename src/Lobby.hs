@@ -7,15 +7,11 @@ import Haste.App
 import Haste.DOM
 import Haste.Events
 
-import Haste.App
-
 import Data.Maybe
 import Data.List
 
 import LobbyTypes
-import Haste.Events
 import Haste.App.Concurrent
-import Data.Maybe
 import qualified Control.Concurrent as CC
 
 -- |Creates the initial DOM upon entering the lobby
@@ -103,7 +99,7 @@ createGameBtn createGame fpInG = do
               liftIO deleteLobbyDOM
               liftIO $ createGameDOM (fst gameStrs, [snd gameStrs])
               withElem "playerList" $ \pdiv ->
-                  fork $ listenForChanges (fpInG <.> (fst gameStrs)) addPlayerToPlayerlist 1000 pdiv
+                  fork $ listenForChanges (fpInG <.> fst gameStrs) addPlayerToPlayerlist 1000 pdiv
         _ -> return ()
   return ()
 
@@ -137,14 +133,14 @@ listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForCh
   where
     listenForChanges' currentData = do
       remoteData <- onServer remoteCall
-      case currentData == remoteData of
-        False -> do
-          clearChildren parent
-          mapM_ (addChildrenToParent parent) remoteData
-          setTimer (Once updateDelay) $ listenForChanges' remoteData
-
-        True -> setTimer (Once updateDelay) $ listenForChanges' currentData
-
+      if currentData == remoteData
+        then
+          setTimer (Once updateDelay) $ listenForChanges' currentData
+        else
+          (do
+            clearChildren parent
+            mapM_ (addChildrenToParent parent) remoteData
+            setTimer (Once updateDelay) $ listenForChanges' remoteData)
       return ()
 
 

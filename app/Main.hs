@@ -10,13 +10,13 @@ import qualified Control.Concurrent as CC
 import Haste.Events
 import Haste.DOM
 import Hastings.Utils
-
 import Data.Maybe
 import LobbyAPI
+
 #ifdef __HASTE__
+import LobbyClient
 #define disconnectPlayerFromLobby(x) (\_ -> return ())
 #define disconnectPlayerFromGame(x) (\_ -> return())
-import LobbyClient
 #else
 import LobbyServer
 #define clientMain (\_ -> return ())
