@@ -1,11 +1,18 @@
 module Lobby
   where
+
 import Haste
 import Haste.App
 import LobbyServer
+
 import Haste.DOM
 import Haste.Events
+
+import Haste.App
+
 import Data.Maybe
+import Data.List
+
 import LobbyTypes
 import Haste.Events
 import Haste.App.Concurrent
@@ -24,8 +31,14 @@ createLobbyDOM = do
     ]
   crGamebtnText <- newTextElem "Create new game"
 
+  playerList <- newElem "div" `with`
+    [
+      prop "id" =: "playerList"
+    ]
+
   appendChild createGamebtn crGamebtnText
   appendChild parentDiv createGamebtn
+  appendChild parentDiv playerList
   appendChild documentBody parentDiv
 
 createGameDOM :: (String,[String]) -> IO ()
@@ -111,12 +124,10 @@ addGame joinGame gameName =
 
     return ()
 
-
 --Queries the server for a list in an interval, applies a function for every item in the list .
-listenForChanges :: Remote (Server [String]) -> (Elem -> String -> Client ()) -> Int -> Elem -> Client ()
+listenForChanges :: (Eq a, Binary a) => Remote (Server [a]) -> (Elem -> a -> Client ()) -> Int -> Elem -> Client ()
 listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForChanges' []
   where
-    listenForChanges' :: [String] -> Client ()
     listenForChanges' currentData = do
       remoteData <- onServer remoteCall
       case currentData == remoteData of
@@ -137,4 +148,3 @@ addPlayerToPlayerlist parent name = do
   br <- newElem "br"
   appendChild parent textElem
   appendChild parent br
-
