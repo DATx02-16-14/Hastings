@@ -2,6 +2,7 @@ module ChineseCheckers where
 
 import Table
 import Haste.Graphics.Canvas
+	
 
 squareContent :: Table -> Coord -> Content
 squareContent [] _         = error "Table does not contain coordinate"
@@ -147,7 +148,7 @@ playerAction gs c1 = case fromCoord gs of
                                     True  ->            GameState {gameTable = table
                                                         , currentPlayer = fst . head $ players gs
                                                         , players = players gs
-                                                        , fromCoord = Nothing
+                                                        , fromCoord = Just c1
                                                         , playerMoveAgain = b}
 
 -- | Helper function for playerAction
@@ -158,7 +159,7 @@ action gs c1 c2 b = case checkPlayer (color $ head (players gs)) (squareContent 
                              | (b && not (moveAgain c1 c2)) -> (Nothing, False)
                              | otherwise -> (movePlayer' c1 c2 (gameTable gs), moveAgain c1 c2)
 
---movePlayer' c1 c2 (gameTable gs)
+--movePlayer' c1 c2 (gameTable gs) 
     where color (s,c) = c
 
 allPlayer :: [Color]
@@ -182,9 +183,9 @@ initGame players = case (length players) of
 rotatePlayer :: GameState -> GameState
 rotatePlayer gs = GameState {gameTable = gameTable gs
                             , currentPlayer = fst . head $ players gs
-                            , players = tail (players gs) ++ [head $ players gs]
+                            , players = (tail (players gs)) ++ [(head $ players gs)]
                             , fromCoord = Nothing
-                            , playerMoveAgain = playerMoveAgain gs} 
+                            , playerMoveAgain = False} 
 
 
 createProperGame :: [(String,Color)] -> Int -> GameState

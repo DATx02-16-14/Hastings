@@ -1,13 +1,12 @@
-module ChineseGraphics
-  where
+module ChineseCheckers where
 
 import Haste
 import Haste.DOM
 import Haste.Graphics.Canvas
 import Haste.Events
 import ChineseCheckers
-import qualified Control.Concurrent as CC
 import Table
+import qualified Control.Concurrent as CC
 import qualified Data.Map.Strict as Map
 
 starOfDavid :: Double -> Double -> Shape ()
@@ -79,15 +78,18 @@ main = do
     render can (initTable' $ gameTable ((initGame ["Pelle","Lasse","Ingvar","Skrep"])))
     onEvent can Click $ \mouse ->
        let (x,y) = mouseCoords mouse
-           (x1,y1) = mapCoords' (fromIntegral x,fromIntegral y)
           in 
-           do
-            gameState <- CC.takeMVar stateOfGame
-            --render can $ fill $ starOfDavid 15 20
-            render can $ initTable' (gameTable $ playerAction gameState (x1,y1))
-            CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
-            render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
---            render can2 $ text (150,150) ("s speltur!!!")
+            case mapCoords (fromIntegral x,fromIntegral y) of 
+              Nothing            -> return ()
+              Just (x1,y1)       -> 
+                         do
+                          gameState <- CC.takeMVar stateOfGame
+                          --render can $ fill $ starOfDavid 15 20
+                          render can $ initTable' (gameTable $ playerAction gameState (x1,y1))
+                          render can2 $ text (150,150) ((currentPlayer gameState) ++ "s speltur!")
+                          CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
+              --            render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
+              --            render can2 $ text ( (currentPlayer gameState) ++ "s speltur!!!")
 
     onEvent can2 Click $ \_ -> 
      do
@@ -101,10 +103,13 @@ skrep gs = GameState {gameTable = startTable, currentPlayer = mao $ tail (player
    where mao [(x,y)] = x
 
 
+mapCoords :: (Double,Double) -> Maybe (Int,Int)
+mapCoords c1 = case mapCoords' c1 of 
+                [] -> Nothing
+                _  -> Just . fst . head $ mapCoords' c1
 
-
-mapCoords' :: (Double,Double) -> (Int,Int)
-mapCoords' c1 = fst . head . filter wasDas $ initTableCoords startTable
+mapCoords' :: (Double,Double) -> [((Int,Int),(Double,Double))]
+mapCoords' c1 = filter wasDas $ initTableCoords startTable
         where wasDas (c2,c3) = distance c1 c3 <= radius
 
 distance :: (Double,Double) -> (Double,Double) -> Double
