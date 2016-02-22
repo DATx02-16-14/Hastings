@@ -1,5 +1,6 @@
 
 {-# LANGUAGE CPP #-}
+-- |Contains all functions that are meant to be run server side only. As such this only needs to be compiled with GHC and never with Haste.
 module LobbyServer(
   handshake,
   createGame,
@@ -21,6 +22,8 @@ import Data.UUID
 import System.Random
 #endif
 
+-- |Initial handshake with the server
+-- Creates a 'Player' for that user given a name.
 handshake :: Server PlayerList -> Name -> Server ()
 handshake remotePlayers name = do
   players <- remotePlayers
@@ -28,14 +31,14 @@ handshake remotePlayers name = do
   liftIO $ CC.modifyMVar_ players  $ \ps ->
     return $ (sid,name) : ps
 
--- Removes a player that has disconnected from player list
+-- |Removes a player that has disconnected from player list
 disconnectPlayerFromLobby :: Server PlayerList -> SessionID -> Server ()
 disconnectPlayerFromLobby remotePlayers sid = do
   players <- remotePlayers
   liftIO $ CC.modifyMVar_ players $ \ps ->
     return $ filter ((sid /=) . fst) ps
 
--- Removes a player that has disconnected from all games
+-- |Removes a player that has disconnected from all games
 disconnectPlayerFromGame :: Server GamesList -> SessionID -> Server ()
 disconnectPlayerFromGame remoteGames sid = do
   games <- remoteGames
@@ -48,6 +51,7 @@ disconnectPlayerFromGame remoteGames sid = do
         return $ (str, filter ((sid /=) . fst) players)
       return game
 
+-- |Creates a new game on the server
 createGame :: Server GamesList -> Server PlayerList -> Server (String,String)
 createGame remoteGames remotePlayers = do
   players <- remotePlayers
@@ -68,6 +72,7 @@ createGame remoteGames remotePlayers = do
     Just p -> return (uuidStr, snd p)
     Nothing -> return ("false", "")
 
+-- |Reteurns a list of the each game's name
 getGamesList :: Server GamesList -> Server [String]
 getGamesList remoteGames = do
   gameList <- remoteGames >>= liftIO . CC.readMVar
@@ -75,6 +80,7 @@ getGamesList remoteGames = do
     game <- CC.readMVar g
     return $ fst game) gameList
 
+-- |Lets a player join a 'LobbyGame'
 playerJoinGame :: Server PlayerList -> Server GamesList -> String -> Server ()
 playerJoinGame remotePlayers remoteGames gameID = do
   players <- remotePlayers >>= liftIO . CC.readMVar
@@ -88,7 +94,7 @@ playerJoinGame remotePlayers remoteGames gameID = do
 
   return ()
 
--- Adds a player to a lobby game.
+-- |Adds a player to a lobby game.
 -- Is perhaps overly complicated since a LobbyGame is an MVar.
 addPlayerToGame :: Player -> String -> [LobbyGame] -> IO [LobbyGame]
 addPlayerToGame plr gameID gameList = do
@@ -105,7 +111,7 @@ addPlayerToGame plr gameID gameList = do
       return $ hs ++ (g:ts)
     (Nothing, _, _) -> error "addPlayerToGame: Could not add player"
 
--- Finds the name of a game given it's identifier
+-- |Finds the name of a game given it's identifier
 -- (seems useless since the name is the identifier atm.)
 findGameName :: Server GamesList -> String -> Server String
 findGameName remoteGames gid = do
@@ -117,7 +123,7 @@ findGameName remoteGames gid = do
       return $ fst gam
     Nothing    -> return ""
 
--- Finds the name of the players of a game given it's identifier
+-- |Finds the name of the players of a game given it's identifier
 playerNamesInGame :: Server GamesList -> String -> Server [String]
 playerNamesInGame remoteGames gid = do
   mVarGamesList <- remoteGames
@@ -128,8 +134,7 @@ playerNamesInGame remoteGames gid = do
       return $ map snd $ snd gam
     Nothing    -> return []
 
-
--- Finds the game matching the first parameter and returns it
+-- |Finds the 'LobbyGame' matching the first parameter and returns it
 findGame :: String -> GamesList -> IO (Maybe LobbyGame)
 findGame gid mVarGamesList = do
   gamesList <- CC.readMVar mVarGamesList
@@ -139,6 +144,7 @@ findGame gid mVarGamesList = do
   let (ga,_,_) = mVarGame
   return ga
 
+-- |Gets a list with all connected players
 getConnectedPlayers :: Server PlayerList -> Server [String]
 getConnectedPlayers remotePlayers = do
   playerList <- remotePlayers >>= liftIO . CC.readMVar

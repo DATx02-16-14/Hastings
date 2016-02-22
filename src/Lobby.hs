@@ -1,3 +1,4 @@
+-- |Contains all functions related to DOM manipulation
 module Lobby
   where
 
@@ -17,6 +18,7 @@ import Haste.App.Concurrent
 import Data.Maybe
 import qualified Control.Concurrent as CC
 
+-- |Creates the initial DOM upon entering the lobby
 createLobbyDOM :: IO ()
 createLobbyDOM = do
   parentDiv <- newElem "div" `with`
@@ -39,6 +41,8 @@ createLobbyDOM = do
   appendChild parentDiv playerList
   appendChild documentBody parentDiv
 
+-- |Creates the DOM for a 'LobbyGame' inside the lobby
+-- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
 createGameDOM :: (String,[String]) -> IO ()
 createGameDOM (gameId,ps) = do
     parentDiv <- newElem "div" `with`
@@ -67,20 +71,25 @@ createGameDOM (gameId,ps) = do
     appendChild parentDiv list
     appendChild documentBody parentDiv
 
+-- |Creates the DOM for a 'LobbyGame' inside the lobby given that 'LobbyGame'
 createGameDOMWithGame :: LobbyGame -> IO ()
 createGameDOMWithGame lobbyGame = do
   game <- CC.readMVar lobbyGame
   createGameDOM (fst game, map snd $ snd game)
 
+-- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: IO ()
 deleteLobbyDOM = deleteDOM "lobby"
 
+-- |Deletes the DOM created for a game in the lobby
 deleteGameDOM :: IO ()
 deleteGameDOM = deleteDOM "lobbyGame"
 
+-- |Helper function that deletes DOM given an identifier from documentBody
 deleteDOM :: String -> IO ()
 deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
 
+-- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: Remote (Server (String,String)) -> Remote (String -> Server [String]) -> Client ()
 createGameBtn createGame fpInG = do
   withElems ["createGamebtn"] $ \[createGamebtn] ->
@@ -98,7 +107,7 @@ createGameBtn createGame fpInG = do
         _ -> return ()
   return ()
 
-
+-- |Adds DOM for a game
 addGame :: Remote (String -> Server ()) -> String -> Client ()
 addGame joinGame gameName =
   withElems ["lobby"] $ \[lobbyDiv] -> do
@@ -122,7 +131,7 @@ addGame joinGame gameName =
 
     return ()
 
---Queries the server for a list in an interval, applies a function for every item in the list .
+-- |Queries the server for a list in an interval, applies a function for every item in the list .
 listenForChanges :: (Eq a, Binary a) => Remote (Server [a]) -> (Elem -> a -> Client ()) -> Int -> Elem -> Client ()
 listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForChanges' []
   where
@@ -139,7 +148,7 @@ listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForCh
       return ()
 
 
--- Adds the playername followed by a <br> tag to the given parent.
+-- |Adds the playername followed by a <br> tag to the given parent.
 addPlayerToPlayerlist :: Elem -> String -> Client ()
 addPlayerToPlayerlist parent name = do
   textElem <- newTextElem name
@@ -147,6 +156,7 @@ addPlayerToPlayerlist parent name = do
   appendChild parent textElem
   appendChild parent br
 
+-- |Adds the DOM for a list of games
 addGameToDOM :: Remote (String -> Server ()) -> String -> Client ()
 addGameToDOM joinGame gameName = do
   gameDiv <- newElem "div"

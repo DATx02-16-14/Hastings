@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+-- |A module for defining the api the server provides towards the client
 module LobbyAPI where
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -9,7 +10,7 @@ import LobbyTypes
 import qualified LobbyServer as Server
 #define REMOTE(x) (remote x)
 #endif
-
+-- |The api provided by the server.
 data LobbyAPI = LobbyAPI
   { handshake :: Remote (String -> Server ())
   , createGame :: Remote (Server (String,String))
@@ -19,6 +20,7 @@ data LobbyAPI = LobbyAPI
   , getPlayerList :: Remote(Server [String])
   }
 
+-- |Creates an instance of the api used by the client to communicate with the server.
 newLobbyAPI :: Server PlayerList -> Server GamesList -> App LobbyAPI
 newLobbyAPI playersList gamesList = do
    LobbyAPI <$> REMOTE((Server.handshake playersList))

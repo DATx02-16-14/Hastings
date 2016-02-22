@@ -1,3 +1,4 @@
+-- |Module for all of the client only code
 module LobbyClient where
 import Lobby
 import Haste.App
@@ -5,6 +6,8 @@ import LobbyAPI
 import Haste.DOM
 import Haste.Concurrent
 import Data.Maybe
+
+-- |Main mehtod for the client.
 clientMain :: LobbyAPI -> Client ()
 clientMain api = do
   liftIO createLobbyDOM

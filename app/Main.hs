@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+-- |Main module of the Lobby
 module Main
     where
 import Haste.App
@@ -21,6 +22,7 @@ import LobbyServer
 #define clientMain (\_ -> return ())
 #endif
 
+-- |Main method and entry point for the program
 main :: IO ()
 main = runStandaloneApp $ do
   playersList <- liftServerIO $ CC.newMVar []
