@@ -11,6 +11,7 @@ import Data.Maybe
 import Data.List
 
 import LobbyTypes
+import LobbyAPI
 import Haste.App.Concurrent
 import qualified Control.Concurrent as CC
 
@@ -86,8 +87,8 @@ deleteDOM :: String -> IO ()
 deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
 
 -- |Creates a button for creating a 'LobbyGame'
-createGameBtn :: Remote (Server (String,String)) -> Remote (String -> Server [String]) -> Client ()
-createGameBtn createGame findPlayersInGame = do
+createGameBtn :: LobbyAPI -> Client ()
+createGameBtn api = do
   withElem "createGamebtn" $ \createGamebtn ->
     onEvent createGamebtn Click $ \(MouseData _ mb _) ->
       case mb of
@@ -96,13 +97,13 @@ createGameBtn createGame findPlayersInGame = do
   return ()
     where
       onMouseClick = do
-        gameStrings <- onServer createGame
+        gameStrings <- onServer (createGame api)
         case fst gameStrings of
           "false" -> return ()
           _       -> do
             switchToGameDOM gameStrings
             withElem "playerList" $ \pdiv ->
-                fork $ listenForChanges (findPlayersInGame <.> fst gameStrings) addPlayerToPlayerlist 1000 pdiv
+                fork $ listenForChanges ((findPlayersInGame api) <.> fst gameStrings) addPlayerToPlayerlist 1000 pdiv
 
       switchToGameDOM (guid, player) = do
         liftIO deleteLobbyDOM
@@ -110,8 +111,8 @@ createGameBtn createGame findPlayersInGame = do
 
 
 -- |Adds DOM for a game
-addGame :: Remote (String -> Server ()) -> Remote (String -> Server ([String])) -> String -> Client ()
-addGame joinGame findPlayers gameName =
+addGame :: LobbyAPI -> String -> Client ()
+addGame api gameName =
   withElem "lobby" $ \lobbyDiv -> do
     gameDiv <- newElem "div"
     gameEntry <- newElem "button" `with`
@@ -128,12 +129,12 @@ addGame joinGame findPlayers gameName =
         onEvent gameButton Click (\(MouseData _ mb _) ->
           case mb of
             Just MouseLeft -> do
-              onServer $ joinGame <.> gameName
-              players <- onServer $ findPlayers <.> gameName
+              onServer $ (joinGame api) <.> gameName
+              players <- onServer $ (findPlayersInGame api) <.> gameName
               liftIO deleteLobbyDOM
               liftIO $ createGameDOM (gameName, players)
               withElem "playerList" $ \pdiv ->
-                  fork $ listenForChanges (findPlayers <.> gameName) addPlayerToPlayerlist 1000 pdiv
+                  fork $ listenForChanges ((findPlayersInGame api) <.> gameName) addPlayerToPlayerlist 1000 pdiv
             _ -> return ())
 
     return ()
@@ -164,8 +165,8 @@ addPlayerToPlayerlist parent name = do
   appendChild parent br
 
 -- |Adds the DOM for a list of games
-addGameToDOM :: Remote (String -> Server ()) -> String -> Client ()
-addGameToDOM joinGame gameName = do
+addGameToDOM :: LobbyAPI -> String -> Client ()
+addGameToDOM api gameName = do
   gameDiv <- newElem "div"
   gameEntry <- newElem "button" `with`
     [
@@ -181,7 +182,7 @@ addGameToDOM joinGame gameName = do
       onEvent gameButton Click (\(MouseData _ mb _) ->
         case mb of
           Just MouseLeft ->
-            onServer $ joinGame <.> gameName
+            onServer $ (joinGame api) <.> gameName
           _ -> return ())
 
   return ()

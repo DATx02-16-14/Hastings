@@ -32,25 +32,3 @@ main = runStandaloneApp $ do
   onSessionEnd $ disconnectPlayerFromGame(gamesList)
   api <- newLobbyAPI playersList gamesList
   runClient $ clientMain api
-
-addGameToDOM :: Remote (String -> Server ()) -> String -> Client ()
-addGameToDOM joinGame gameName = do
-  gameDiv <- newElem "div"
-  gameEntry <- newElem "button" `with`
-    [
-      prop "id" =: gameName
-    ]
-  textElem <- newTextElem gameName
-  appendChild gameEntry textElem
-  appendChild gameDiv gameEntry
-  appendChild documentBody gameDiv
-
-  _ <- ($)
-    withElems [gameName] $ \[gameButton] ->
-      onEvent gameButton Click (\(MouseData _ mb _) ->
-        case mb of
-          Just MouseLeft ->
-            onServer $ joinGame <.> gameName
-          _ -> return ())
-
-  return ()

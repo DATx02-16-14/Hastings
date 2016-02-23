@@ -15,10 +15,10 @@ clientMain api = do
   name <- prompt "Hello! Please enter your name:"
   onServer $ handshake api <.> name
 
-  createGameBtn (createGame api) (findPlayersInGame api)
+  createGameBtn api
 
   gameList <- onServer $ getGamesList api
-  mapM_ (addGame (joinGame api) (findPlayersInGame api)) gameList
+  mapM_ (addGame api) gameList
 
   playerDiv <- elemById "playerList"
   fork $ listenForChanges (getPlayerList api) addPlayerToPlayerlist 1000 $ fromJust playerDiv
