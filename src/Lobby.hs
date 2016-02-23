@@ -124,18 +124,17 @@ addGame api gameName =
     appendChild gameDiv gameEntry
     appendChild lobbyDiv gameDiv
 
-    _ <- ($)
-      withElems [gameName] $ \[gameButton] ->
-        onEvent gameButton Click (\(MouseData _ mb _) ->
-          case mb of
-            Just MouseLeft -> do
-              onServer $ (joinGame api) <.> gameName
-              players <- onServer $ (findPlayersInGame api) <.> gameName
-              liftIO deleteLobbyDOM
-              liftIO $ createGameDOM (gameName, players)
-              withElem "playerList" $ \pdiv ->
-                  fork $ listenForChanges ((findPlayersInGame api) <.> gameName) addPlayerToPlayerlist 1000 pdiv
-            _ -> return ())
+    withElems [gameName] $ \[gameButton] ->
+      onEvent gameButton Click (\(MouseData _ mb _) ->
+        case mb of
+          Just MouseLeft -> do
+            onServer $ (joinGame api) <.> gameName
+            players <- onServer $ (findPlayersInGame api) <.> gameName
+            liftIO deleteLobbyDOM
+            liftIO $ createGameDOM (gameName, players)
+            withElem "playerList" $ \pdiv ->
+                fork $ listenForChanges ((findPlayersInGame api) <.> gameName) addPlayerToPlayerlist 1000 pdiv
+          _ -> return ())
 
     return ()
 
@@ -177,12 +176,11 @@ addGameToDOM api gameName = do
   appendChild gameDiv gameEntry
   appendChild documentBody gameDiv
 
-  _ <- ($)
-    withElems [gameName] $ \[gameButton] ->
-      onEvent gameButton Click (\(MouseData _ mb _) ->
-        case mb of
-          Just MouseLeft ->
-            onServer $ (joinGame api) <.> gameName
-          _ -> return ())
+  withElems [gameName] $ \[gameButton] ->
+    onEvent gameButton Click (\(MouseData _ mb _) ->
+      case mb of
+        Just MouseLeft ->
+          onServer $ (joinGame api) <.> gameName
+        _ -> return ())
 
   return ()
