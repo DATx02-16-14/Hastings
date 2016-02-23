@@ -18,7 +18,7 @@ clientMain api = do
   createGameBtn (createGame api) (findPlayersInGame api)
 
   gameList <- onServer $ getGamesList api
-  mapM_ (addGame (joinGame api)) gameList
+  mapM_ (addGame (joinGame api) (findPlayersInGame api)) gameList
 
   playerDiv <- elemById "playerList"
   fork $ listenForChanges (getPlayerList api) addPlayerToPlayerlist 1000 $ fromJust playerDiv

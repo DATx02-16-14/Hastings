@@ -108,8 +108,8 @@ createGameBtn createGame fpInG = do
   return ()
 
 -- |Adds DOM for a game
-addGame :: Remote (String -> Server ()) -> String -> Client ()
-addGame joinGame gameName =
+addGame :: Remote (String -> Server ()) -> Remote (String -> Server ([String])) -> String -> Client ()
+addGame joinGame findPlayers gameName =
   withElems ["lobby"] $ \[lobbyDiv] -> do
     gameDiv <- newElem "div"
     gameEntry <- newElem "button" `with`
@@ -125,8 +125,13 @@ addGame joinGame gameName =
       withElems [gameName] $ \[gameButton] ->
         onEvent gameButton Click (\(MouseData _ mb _) ->
           case mb of
-            Just MouseLeft ->
+            Just MouseLeft -> do
               onServer $ joinGame <.> gameName
+              players <- onServer $ findPlayers <.> gameName
+              liftIO deleteLobbyDOM
+              liftIO $ createGameDOM (gameName, players)
+              withElem "playerList" $ \pdiv ->
+                  fork $ listenForChanges (findPlayers <.> gameName) addPlayerToPlayerlist 1000 pdiv
             _ -> return ())
 
     return ()
