@@ -34,7 +34,7 @@ main = runStandaloneApp $ do
     createGameBtn (createGame) (findPlayersInGame)
 
     gameList <- onServer getGamesList
-    mapM_ (addGame joinGame) gameList
+    mapM_ (addGame joinGame findPlayersInGame) gameList
 
     playerDiv <- elemById "playerList"
     fork $ listenForChanges getPlayerList addPlayerToPlayerlist 1000 $ fromJust playerDiv
