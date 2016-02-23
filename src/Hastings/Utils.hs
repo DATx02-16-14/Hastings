@@ -9,6 +9,8 @@ findIO p as = findIO' p as []
     findIO' _ [] hs = return (Nothing, [], hs)
     findIO' p (a:as) hs = do
       b <- p a
-      case b of
-        True  -> return $ (Just a, hs, as)
-        False -> findIO' p as (a:hs)
+      if b
+        then
+          return (Just a, hs, as)
+        else
+          findIO' p as (a:hs)

@@ -42,13 +42,11 @@ disconnectPlayerFromLobby remotePlayers sid = do
 disconnectPlayerFromGame :: Server GamesList -> SessionID -> Server ()
 disconnectPlayerFromGame remoteGames sid = do
   games <- remoteGames
-  liftIO $ CC.modifyMVar_ games $ \game -> do
-    mapM removePlayer game
+  liftIO $ CC.modifyMVar_ games $ \game -> mapM removePlayer game
   where
     removePlayer game = do
-      CC.modifyMVar_ game $ \g -> do
-        let (str, players) = g
-        return $ (str, filter ((sid /=) . fst) players)
+      CC.modifyMVar_ game $ \(str, players) ->
+        return (str, filter ((sid /=) . fst) players)
       return game
 
 -- |Creates a new game on the server
@@ -100,13 +98,13 @@ addPlayerToGame :: Player -> String -> [LobbyGame] -> IO [LobbyGame]
 addPlayerToGame plr gameID gameList = do
   ga <- findIO (\game -> do
                  g <- CC.readMVar game
-                 return $ (fst g) == gameID) gameList
+                 return $ fst g == gameID) gameList
   case ga of
     (Just mVarGame, hs, ts) -> do
       modGame <- CC.modifyMVar mVarGame $
         \g -> do
           let (sessionID, gamePlayers) = g
-          return $ ((sessionID, plr:gamePlayers), (sessionID, plr:gamePlayers))
+          return ((sessionID, plr:gamePlayers), (sessionID, plr:gamePlayers))
       g <- CC.newMVar modGame
       return $ hs ++ (g:ts)
     (Nothing, _, _) -> error "addPlayerToGame: Could not add player"
@@ -140,7 +138,7 @@ findGame gid mVarGamesList = do
   gamesList <- CC.readMVar mVarGamesList
   mVarGame <- findIO (\game -> do
                  g <- CC.readMVar game
-                 return $ (fst g) == gid) gamesList
+                 return $ fst g == gid) gamesList
   let (ga,_,_) = mVarGame
   return ga
 

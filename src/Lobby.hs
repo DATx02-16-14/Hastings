@@ -7,15 +7,11 @@ import Haste.App
 import Haste.DOM
 import Haste.Events
 
-import Haste.App
-
 import Data.Maybe
 import Data.List
 
 import LobbyTypes
-import Haste.Events
 import Haste.App.Concurrent
-import Data.Maybe
 import qualified Control.Concurrent as CC
 
 -- |Creates the initial DOM upon entering the lobby
@@ -91,26 +87,32 @@ deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
 
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: Remote (Server (String,String)) -> Remote (String -> Server [String]) -> Client ()
-createGameBtn createGame fpInG = do
-  withElems ["createGamebtn"] $ \[createGamebtn] ->
+createGameBtn createGame findPlayersInGame = do
+  withElem "createGamebtn" $ \createGamebtn ->
     onEvent createGamebtn Click $ \(MouseData _ mb _) ->
       case mb of
-        Just MouseLeft -> do
-          gameStrs <- onServer createGame
-          case fst gameStrs of
-            "false" -> return ()
-            _       -> do
-              liftIO deleteLobbyDOM
-              liftIO $ createGameDOM (fst gameStrs, [snd gameStrs])
-              withElem "playerList" $ \pdiv ->
-                  fork $ listenForChanges (fpInG <.> (fst gameStrs)) addPlayerToPlayerlist 1000 pdiv
+        Just MouseLeft -> onMouseClick
         _ -> return ()
   return ()
+    where
+      onMouseClick = do
+        gameStrings <- onServer createGame
+        case fst gameStrings of
+          "false" -> return ()
+          _       -> do
+            switchToGameDOM gameStrings
+            withElem "playerList" $ \pdiv ->
+                fork $ listenForChanges (findPlayersInGame <.> fst gameStrings) addPlayerToPlayerlist 1000 pdiv
+
+      switchToGameDOM (guid, player) = do
+        liftIO deleteLobbyDOM
+        liftIO $ createGameDOM (guid, [player])
+
 
 -- |Adds DOM for a game
 addGame :: Remote (String -> Server ()) -> Remote (String -> Server ([String])) -> String -> Client ()
 addGame joinGame findPlayers gameName =
-  withElems ["lobby"] $ \[lobbyDiv] -> do
+  withElem "lobby" $ \lobbyDiv -> do
     gameDiv <- newElem "div"
     gameEntry <- newElem "button" `with`
       [
@@ -142,14 +144,14 @@ listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForCh
   where
     listenForChanges' currentData = do
       remoteData <- onServer remoteCall
-      case currentData == remoteData of
-        False -> do
-          clearChildren parent
-          mapM_ (addChildrenToParent parent) remoteData
-          setTimer (Once updateDelay) $ listenForChanges' remoteData
-
-        True -> setTimer (Once updateDelay) $ listenForChanges' currentData
-
+      if currentData == remoteData
+        then
+          setTimer (Once updateDelay) $ listenForChanges' currentData
+        else
+          (do
+            clearChildren parent
+            mapM_ (addChildrenToParent parent) remoteData
+            setTimer (Once updateDelay) $ listenForChanges' remoteData)
       return ()
 
 
