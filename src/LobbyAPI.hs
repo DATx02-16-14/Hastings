@@ -12,7 +12,7 @@ import qualified LobbyServer as Server
 #endif
 -- |The api provided by the server.
 data LobbyAPI = LobbyAPI
-  { handshake :: Remote (String -> Server ())
+  { connect :: Remote (String -> Server ())
   , createGame :: Remote (Server (String,String))
   , getGamesList :: Remote (Server [String])
   , joinGame ::Remote (String -> Server ())
@@ -23,7 +23,7 @@ data LobbyAPI = LobbyAPI
 -- |Creates an instance of the api used by the client to communicate with the server.
 newLobbyAPI :: Server PlayerList -> Server GamesList -> App LobbyAPI
 newLobbyAPI playersList gamesList =
-   LobbyAPI <$> REMOTE((Server.handshake playersList))
+   LobbyAPI <$> REMOTE((Server.connect playersList))
             <*> REMOTE((Server.createGame gamesList playersList))
             <*> REMOTE((Server.getGamesList gamesList))
             <*> REMOTE((Server.playerJoinGame playersList gamesList))

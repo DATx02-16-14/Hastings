@@ -13,7 +13,7 @@ clientMain api = do
   liftIO createLobbyDOM
 
   name <- prompt "Hello! Please enter your name:"
-  onServer $ handshake api <.> name
+  onServer $ connect api <.> name
 
   createGameBtn api
 

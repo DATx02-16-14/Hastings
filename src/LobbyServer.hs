@@ -2,7 +2,7 @@
 {-# LANGUAGE CPP #-}
 -- |Contains all functions that are meant to be run server side only. As such this only needs to be compiled with GHC and never with Haste.
 module LobbyServer(
-  handshake,
+  connect,
   createGame,
   getGamesList,
   playerJoinGame,
@@ -22,10 +22,10 @@ import Data.UUID
 import System.Random
 #endif
 
--- |Initial handshake with the server
+-- |Initial connection with the server
 -- Creates a 'Player' for that user given a name.
-handshake :: Server PlayerList -> Name -> Server ()
-handshake remotePlayers name = do
+connect :: Server PlayerList -> Name -> Server ()
+connect remotePlayers name = do
   players <- remotePlayers
   sid <- getSessionID
   liftIO $ CC.modifyMVar_ players  $ \ps ->
