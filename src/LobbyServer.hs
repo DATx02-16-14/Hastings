@@ -3,13 +3,12 @@
 -- |Contains all functions that are meant to be run server side only. As such this only needs to be compiled with GHC and never with Haste.
 module LobbyServer(
   connect,
+  disconnect,
   createGame,
   getGamesList,
   playerJoinGame,
   playerNamesInGame,
   getConnectedPlayers,
-  disconnectPlayerFromLobby,
-  disconnectPlayerFromGame,
   createNewChatRoom) where
 
 import Haste.App
@@ -44,6 +43,11 @@ addPlayerToMainChat sid = map (addIfMatches "main")
     addIfMatches :: Name -> Chat -> Chat
     addIfMatches name' c@(name, sids) | name == name' = (name, sid : sids)
                                       | otherwise = c
+disconnect :: LobbyState -> SessionID -> Server()
+disconnect (playerList, gameList, _) sid = do
+  disconnectPlayerFromLobby playerList sid
+  disconnectPlayerFromGame gameList sid
+
 
 -- |Removes a player that has disconnected from player list
 disconnectPlayerFromLobby :: Server PlayerList -> SessionID -> Server ()

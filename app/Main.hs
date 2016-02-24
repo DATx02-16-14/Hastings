@@ -16,8 +16,7 @@ import LobbyTypes
 
 #ifdef __HASTE__
 import LobbyClient
-#define disconnectPlayerFromLobby(x) (\_ -> return ())
-#define disconnectPlayerFromGame(x) (\_ -> return())
+#define disconnect(x) (\_ -> return ())
 #else
 import LobbyServer
 #define clientMain (\_ -> return ())
@@ -30,7 +29,8 @@ main = runStandaloneApp $ do
   gamesList <- liftServerIO $ CC.newMVar []
   chatList <- liftServerIO $ CC.newMVar $ (createNewChatRoom "main") : []
 
-  onSessionEnd $ disconnectPlayerFromLobby(playersList)
-  onSessionEnd $ disconnectPlayerFromGame(gamesList)
+  let serverState = (playersList, gamesList, chatList)
+
+  onSessionEnd $ disconnect(serverState)
   api <- newLobbyAPI (playersList, gamesList, chatList)
   runClient $ clientMain api
