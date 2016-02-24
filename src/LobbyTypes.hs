@@ -13,7 +13,12 @@ type PlayerList = CC.MVar [Player]
 type LobbyGame = CC.MVar (String, [Player])
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
 type GamesList = CC.MVar [LobbyGame]
+-- |A chat
+type Chat = (Name,[SessionID])
 -- |A list of all the chats in the lobby
-type ChatList = CC.MVar [(Name, [Player])]
+type ConcurrentChatList = CC.MVar [Chat]
 
-type LobbyState = (Server PlayerList, Server GamesList, Server ChatList)
+type LobbyState = (Server PlayerList, Server GamesList, Server ConcurrentChatList)
+
+createNewChatRoom :: String -> (Name, [Player])
+createNewChatRoom name = (name, [])

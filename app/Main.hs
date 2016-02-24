@@ -12,6 +12,7 @@ import Haste.DOM
 import Hastings.Utils
 import Data.Maybe
 import LobbyAPI
+import LobbyTypes
 
 #ifdef __HASTE__
 import LobbyClient
@@ -27,7 +28,7 @@ main :: IO ()
 main = runStandaloneApp $ do
   playersList <- liftServerIO $ CC.newMVar []
   gamesList <- liftServerIO $ CC.newMVar []
-  chatList <- liftServerIO $ CC.newMVar []
+  chatList <- liftServerIO $ CC.newMVar $ (createNewChatRoom "main") : []
 
   onSessionEnd $ disconnectPlayerFromLobby(playersList)
   onSessionEnd $ disconnectPlayerFromGame(gamesList)

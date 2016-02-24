@@ -9,7 +9,8 @@ module LobbyServer(
   playerNamesInGame,
   getConnectedPlayers,
   disconnectPlayerFromLobby,
-  disconnectPlayerFromGame) where
+  disconnectPlayerFromGame,
+  createNewChatRoom) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -24,19 +25,24 @@ import System.Random
 
 -- |Initial connection with the server
 -- Creates a 'Player' for that user given a name.
-connect :: Server PlayerList -> Server ChatList -> Name -> Server ()
-connect remotePlayers chatList name = do
+connect :: Server PlayerList -> Server ConcurrentChatList -> Name -> Server ()
+connect remotePlayers remoteChatList name = do
+  chatList <- remoteChatList
   players <- remotePlayers
   sid <- getSessionID
   liftIO $ CC.modifyMVar_ players  $ \ps ->
     return $ (sid,name) : ps
 
--- |Removes a player that has disconnected from player list
-disconnectPlayerFromLobby :: Server PlayerList -> SessionID -> Server ()
-disconnectPlayerFromLobby remotePlayers sid = do
-  players <- remotePlayers
-  liftIO $ CC.modifyMVar_ players $ \ps ->
-    return $ filter ((sid /=) . fst) ps
+  liftIO $ CC.modifyMVar_ chatList $ \cs ->
+    return $ addPlayerToMainChat sid cs
+
+-- |Adds a player to the main chat room if it exists
+addPlayerToMainChat :: SessionID -> [Chat] -> [Chat]
+addPlayerToMainChat sid cs = map (addIfMatches "main") cs
+  where
+    addIfMatches :: Name -> Chat -> Chat
+    addIfMatches c@(name, sids) name' | name == name' = (name, sid : sids)
+                                      | otherwise = c
 
 -- |Removes a player that has disconnected from all games
 disconnectPlayerFromGame :: Server GamesList -> SessionID -> Server ()
