@@ -1,4 +1,3 @@
-module ChineseCheckers where
 
 import Haste
 import Haste.DOM
@@ -64,18 +63,28 @@ mkCanvas width height = do
         ]
     return canvas
 
+mkButton :: String -> IO Elem
+mkButton text = do
+    button <- newElem "button"
+    set button [prop "innerHTML" =: text]
+    return button
+
 --main :: IO ()
 main = do
     stateOfGame <- CC.newEmptyMVar
     CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse","Ingvar","Skrep"]
-    canvas <- mkCanvas 1900 800
+    canvas <- mkCanvas 1400 800
     appendChild documentBody canvas
-    canvas2 <- mkCanvas 500 500
+    canvas2 <- mkCanvas 500 800
     appendChild documentBody canvas2
     Just can <- fromElem canvas
-    Just can2 <- fromElem canvas2
+--    Just can2 <- fromElem canvas2
+    button <- mkButton "Rotate player"
+    appendChild documentBody button
     render can starOfDavidInABox
     render can (initTable' $ gameTable ((initGame ["Pelle","Lasse","Ingvar","Skrep"])))
+    bitmap <-  loadBitmap "http://www-ece.rice.edu/~wakin/images/lena512.bmp"
+    render can $ draw bitmap (50,50)
     onEvent can Click $ \mouse ->
        let (x,y) = mouseCoords mouse
           in 
@@ -86,16 +95,16 @@ main = do
                           gameState <- CC.takeMVar stateOfGame
                           --render can $ fill $ starOfDavid 15 20
                           render can $ initTable' (gameTable $ playerAction gameState (x1,y1))
-                          render can2 $ text (150,150) ((currentPlayer gameState) ++ "s speltur!")
+--                          render can2 $ text (150,150) ((currentPlayer gameState) ++ "s speltur!")
                           CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
               --            render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
               --            render can2 $ text ( (currentPlayer gameState) ++ "s speltur!!!")
 
-    onEvent can2 Click $ \_ -> 
+    onEvent button Click $ \_ -> 
      do
       gameState <- CC.takeMVar stateOfGame
       CC.putMVar stateOfGame $ rotatePlayer gameState
-      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
+--      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
 
 
 skrep :: GameState -> GameState

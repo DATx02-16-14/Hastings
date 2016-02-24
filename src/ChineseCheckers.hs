@@ -2,7 +2,7 @@ module ChineseCheckers where
 
 import Table
 import Haste.Graphics.Canvas
-	
+
 
 squareContent :: Table -> Coord -> Content
 squareContent [] _         = error "Table does not contain coordinate"
@@ -65,15 +65,16 @@ isReachable' (x,y) (Square _ _ (x1,y1)) = (abs(x-x1) == 2 && abs(y-y1) == 0) || 
 canMove :: Coord -> Table -> Table
 canMove (x,y) t = filter (checkusPrimus (x,y)) $ filter isEmpty t
 
-    where checkusPrimus (x,y) (Square c _ (x1,y1)) | (x+4) == x1 && y1 == y && (content (x+2,y) == Empty) = False
-                                                   | (x-4) == x1 && y1 == y && (content (x-2,y) == Empty) = False
-                                                   | (x-2) == x1 && (y+2) == y1 && (content (x-1,y+1)== Empty) = False
-                                                   | (x+2) == x1 && (y+2) == y1 && (content (x+1,y+1) == Empty) = False
-                                                   | (x+2) == x1 && (y-2) == y1 && (content (x+1,y-1) == Empty) = False
-                                                   | (x-2) == x1 && (y-2) == y1 && (content (x-1,y-1) == Empty) = False
-                                                   | x == x1 && abs(y-y1) == 2 = False
-                                                   | x == x1 && abs(y-y1) == 4 = False
-                                                   | otherwise = True
+    where checkusPrimus (x,y) (Square c _ (x1,y1)) | (x+4) == x1 && y1 == y && not (content (x+2,y) == Empty) = True
+                                                   | (x-4) == x1 && y1 == y && not (content (x-2,y) == Empty) = True
+                                                   | (x-2) == x1 && (y+2) == y1 && not (content (x-1,y+1)== Empty) = True
+                                                   | (x+2) == x1 && (y+2) == y1 && not (content (x+1,y+1) == Empty) = True
+                                                   | (x+2) == x1 && (y-2) == y1 && not (content (x+1,y-1) == Empty) = True
+                                                   | (x-2) == x1 && (y-2) == y1 && not (content (x-1,y-1) == Empty) = True
+                                                   | abs(x-x1) == 2 && y == y1 = True
+                                                   | abs(x-x1) == 1 && abs(y-y1) == 1 = True
+--                                                   | x == x1 && abs(y-y1) == 4 = False
+                                                   | otherwise = False
           content = squareContent t
 
 
@@ -129,14 +130,14 @@ playerAction gs c1 = case fromCoord gs of
                         Nothing -> GameState {gameTable = gameTable gs
                                              , currentPlayer = currentPlayer gs
                                              , players = players gs
-                                             , fromCoord = (Just c1)
+                                             , fromCoord = checkValid c1
                                              , playerMoveAgain = playerMoveAgain gs}
 
                         Just c2 -> case action gs c2 c1 (playerMoveAgain gs) of
                                 (Nothing,_) -> GameState {gameTable = gameTable gs
                                                         , currentPlayer = currentPlayer gs
                                                         , players = players gs
-                                                        , fromCoord = Nothing
+                                                        , fromCoord = fromCoord gs
                                                         , playerMoveAgain = playerMoveAgain gs}
                                 (Just table,b) -> case b of
                                     False ->             GameState {gameTable = table
@@ -150,6 +151,12 @@ playerAction gs c1 = case fromCoord gs of
                                                         , players = players gs
                                                         , fromCoord = Just c1
                                                         , playerMoveAgain = b}
+
+            where
+                checkValid c  | checkPlayer (color $ head (players gs)) (squareContent (gameTable gs) c) = Just c
+                              | otherwise = Nothing
+
+                color (s,c) = c
 
 -- | Helper function for playerAction
 action :: GameState -> Coord -> Coord -> Bool -> (Maybe Table, Bool)
