@@ -20,5 +20,5 @@ type ConcurrentChatList = CC.MVar [Chat]
 
 type LobbyState = (Server PlayerList, Server GamesList, Server ConcurrentChatList)
 
-createNewChatRoom :: String -> (Name, [Player])
+createNewChatRoom :: String -> (Name, [SessionID])
 createNewChatRoom name = (name, [])
