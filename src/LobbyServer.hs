@@ -50,7 +50,7 @@ disconnectPlayerFromGame remoteGames sid = do
       return game
 
 -- |Creates a new game on the server
-createGame :: Server GamesList -> Server PlayerList -> Server (String,String)
+createGame :: Server GamesList -> Server PlayerList -> Server (Maybe (String,String))
 createGame remoteGames remotePlayers = do
   players <- remotePlayers
   games <- remoteGames
@@ -62,13 +62,13 @@ createGame remoteGames remotePlayers = do
   let uuidStr = Data.UUID.toString uuid
   liftIO $ CC.modifyMVar_ games $ \gs ->
     case maybePlayer of
-        Just p -> do
+        Just p  -> do
           game <- liftIO $ CC.newMVar (uuidStr,[p])
           return $ game : gs
         Nothing -> return gs
   case maybePlayer of
-    Just p -> return (uuidStr, snd p)
-    Nothing -> return ("false", "")
+    Just p  -> return $ Just (uuidStr, snd p)
+    Nothing -> return Nothing
 
 -- |Reteurns a list of the each game's name
 getGamesList :: Server GamesList -> Server [String]

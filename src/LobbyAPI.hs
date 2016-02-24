@@ -13,7 +13,7 @@ import qualified LobbyServer as Server
 -- |The api provided by the server.
 data LobbyAPI = LobbyAPI
   { handshake :: Remote (String -> Server ())
-  , createGame :: Remote (Server (String,String))
+  , createGame :: Remote (Server (Maybe (String,String)))
   , getGamesList :: Remote (Server [String])
   , joinGame ::Remote (String -> Server ())
   , findPlayersInGame :: Remote (String -> Server [String])

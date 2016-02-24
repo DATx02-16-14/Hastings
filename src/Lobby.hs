@@ -97,11 +97,11 @@ createGameBtn api = do
   return ()
     where
       onMouseClick = do
-        gameStrings <- onServer (createGame api)
-        case fst gameStrings of
-          "false" -> return ()
-          _       -> do
-            switchToGameDOM gameStrings
+        maybeStrings <- onServer (createGame api)
+        case maybeStrings of
+          Nothing          -> return ()
+          Just gameStrings -> do
+            switchToGameDOM $ gameStrings
             withElem "playerList" $ \pdiv ->
                 fork $ listenForChanges ((findPlayersInGame api) <.> fst gameStrings) addPlayerToPlayerlist 1000 pdiv
 
