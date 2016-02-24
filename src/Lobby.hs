@@ -87,8 +87,8 @@ deleteDOM :: String -> IO ()
 deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
 
 -- |Creates a button for creating a 'LobbyGame'
-createGameBtn :: LobbyAPI -> Client ()
-createGameBtn api = do
+createGameBtn :: LobbyAPI -> GameAPI-> Client ()
+createGameBtn lapi gapi = do
   withElem "createGamebtn" $ \createGamebtn ->
     onEvent createGamebtn Click $ \(MouseData _ mb _) ->
       case mb of
@@ -109,6 +109,15 @@ createGameBtn api = do
         liftIO deleteLobbyDOM
         liftIO $ createGameDOM (guid, [player])
 
+
+clickEvent :: String -> Client () -> Client ()
+clickEvent identifier fun =
+  withElem identifier $ \e -> do
+    onEvent e Click $ \(MouseData _ mb _) ->
+      case mb of
+        Just MouseLeft -> fun
+        Nothing        -> return ()
+    return ()
 
 -- |Adds DOM for a game
 addGame :: LobbyAPI -> String -> Client ()
