@@ -36,9 +36,10 @@ connect remotePlayers remoteChatList name = do
   liftIO $ CC.modifyMVar_ chatList $ \cs ->
     return $ addPlayerToMainChat sid cs
 
+
 -- |Adds a player to the main chat room if it exists
 addPlayerToMainChat :: SessionID -> [Chat] -> [Chat]
-addPlayerToMainChat sid cs = map (addIfMatches "main") cs
+addPlayerToMainChat sid = map (addIfMatches "main")
   where
     addIfMatches :: Name -> Chat -> Chat
     addIfMatches name' c@(name, sids) | name == name' = (name, sid : sids)
