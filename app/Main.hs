@@ -27,8 +27,9 @@ main :: IO ()
 main = runStandaloneApp $ do
   playersList <- liftServerIO $ CC.newMVar []
   gamesList <- liftServerIO $ CC.newMVar []
+  chatList <- liftServerIO $ CC.newMVar []
 
   onSessionEnd $ disconnectPlayerFromLobby(playersList)
   onSessionEnd $ disconnectPlayerFromGame(gamesList)
-  api <- newLobbyAPI playersList gamesList
+  api <- newLobbyAPI (playersList, gamesList, chatList)
   runClient $ clientMain api

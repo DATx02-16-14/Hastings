@@ -13,3 +13,7 @@ type PlayerList = CC.MVar [Player]
 type LobbyGame = CC.MVar (String, [Player])
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
 type GamesList = CC.MVar [LobbyGame]
+-- |A list of all the chats in the lobby
+type ChatList = CC.MVar [(Name, [Player])]
+
+type LobbyState = (Server PlayerList, Server GamesList, Server ChatList)

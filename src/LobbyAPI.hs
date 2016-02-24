@@ -21,9 +21,9 @@ data LobbyAPI = LobbyAPI
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
-newLobbyAPI :: Server PlayerList -> Server GamesList -> App LobbyAPI
-newLobbyAPI playersList gamesList =
-   LobbyAPI <$> REMOTE((Server.connect playersList))
+newLobbyAPI :: LobbyState -> App LobbyAPI
+newLobbyAPI (playersList, gamesList, chatList) =
+   LobbyAPI <$> REMOTE((Server.connect playersList chatList))
             <*> REMOTE((Server.createGame gamesList playersList))
             <*> REMOTE((Server.getGamesList gamesList))
             <*> REMOTE((Server.playerJoinGame playersList gamesList))

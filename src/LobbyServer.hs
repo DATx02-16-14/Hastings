@@ -24,8 +24,8 @@ import System.Random
 
 -- |Initial connection with the server
 -- Creates a 'Player' for that user given a name.
-connect :: Server PlayerList -> Name -> Server ()
-connect remotePlayers name = do
+connect :: Server PlayerList -> Server ChatList -> Name -> Server ()
+connect remotePlayers chatList name = do
   players <- remotePlayers
   sid <- getSessionID
   liftIO $ CC.modifyMVar_ players  $ \ps ->
