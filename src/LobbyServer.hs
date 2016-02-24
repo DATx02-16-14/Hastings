@@ -41,7 +41,7 @@ addPlayerToMainChat :: SessionID -> [Chat] -> [Chat]
 addPlayerToMainChat sid cs = map (addIfMatches "main") cs
   where
     addIfMatches :: Name -> Chat -> Chat
-    addIfMatches c@(name, sids) name' | name == name' = (name, sid : sids)
+    addIfMatches name' c@(name, sids) | name == name' = (name, sid : sids)
                                       | otherwise = c
 
 -- |Removes a player that has disconnected from player list
