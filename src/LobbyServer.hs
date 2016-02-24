@@ -44,6 +44,13 @@ addPlayerToMainChat sid cs = map (addIfMatches "main") cs
     addIfMatches c@(name, sids) name' | name == name' = (name, sid : sids)
                                       | otherwise = c
 
+-- |Removes a player that has disconnected from player list
+disconnectPlayerFromLobby :: Server PlayerList -> SessionID -> Server ()
+disconnectPlayerFromLobby remotePlayers sid = do
+  players <- remotePlayers
+  liftIO $ CC.modifyMVar_ players $ \ps ->
+    return $ filter ((sid /=) . fst) ps
+
 -- |Removes a player that has disconnected from all games
 disconnectPlayerFromGame :: Server GamesList -> SessionID -> Server ()
 disconnectPlayerFromGame remoteGames sid = do
