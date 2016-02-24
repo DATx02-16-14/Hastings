@@ -6,6 +6,7 @@ import LobbyAPI
 import Haste.DOM
 import Haste.Concurrent
 import Data.Maybe
+import GameAPI
 
 -- |Main mehtod for the client.
 clientMain :: LobbyAPI -> Client ()
@@ -15,7 +16,7 @@ clientMain api = do
   name <- prompt "Hello! Please enter your name:"
   onServer $ handshake api <.> name
 
-  createGameBtn api
+  createGameBtn api newGameAPI
 
   gameList <- onServer $ getGamesList api
   mapM_ (addGame api) gameList

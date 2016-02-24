@@ -16,4 +16,7 @@ data GameAPI = GameAPI
   , startGame :: [String] -> Elem -> Client ()
   }
 
+newGameAPI :: GameAPI
+newGameAPI = undefined
+
 
