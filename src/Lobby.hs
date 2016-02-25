@@ -97,13 +97,8 @@ deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
 
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: LobbyAPI -> GameAPI-> Client ()
-createGameBtn lapi gapi = do
-  withElem "createGamebtn" $ \createGamebtn ->
-    onEvent createGamebtn Click $ \(MouseData _ mb _) ->
-      case mb of
-        Just MouseLeft -> onCreateBtnMouseClick
-        _ -> return ()
-  return ()
+createGameBtn lapi gapi =
+  clickEvent "createGamebtn" onCreateBtnMouseClick
     where
       onCreateBtnMouseClick = do
         maybeStrings <- onServer (createGame lapi)
@@ -153,17 +148,14 @@ addGame api gameName =
     appendChild gameDiv gameEntry
     appendChild lobbyDiv gameDiv
 
-    withElems [gameName] $ \[gameButton] ->
-      onEvent gameButton Click (\(MouseData _ mb _) ->
-        case mb of
-          Just MouseLeft -> do
-            onServer $ joinGame api <.> gameName
-            players <- onServer $ findPlayersInGame api <.> gameName
-            liftIO deleteLobbyDOM
-            liftIO $ createGameDOM (gameName, players)
-            withElem "playerList" $ \pdiv ->
-                fork $ listenForChanges (findPlayersInGame api <.> gameName) addPlayerToPlayerlist 1000 pdiv
-          _ -> return ())
+    clickEvent gameName
+      (do
+        onServer $ joinGame api <.> gameName
+        players <- onServer $ findPlayersInGame api <.> gameName
+        liftIO deleteLobbyDOM
+        liftIO $ createGameDOM (gameName, players)
+        withElem "playerList" $ \pdiv ->
+            fork $ listenForChanges (findPlayersInGame api <.> gameName) addPlayerToPlayerlist 1000 pdiv)
 
     return ()
 
@@ -205,11 +197,5 @@ addGameToDOM api gameName = do
   appendChild gameDiv gameEntry
   appendChild documentBody gameDiv
 
-  withElems [gameName] $ \[gameButton] ->
-    onEvent gameButton Click (\(MouseData _ mb _) ->
-      case mb of
-        Just MouseLeft ->
-          onServer $ joinGame api <.> gameName
-        _ -> return ())
-
+  clickEvent gameName $ onServer $ joinGame api <.> gameName
   return ()
