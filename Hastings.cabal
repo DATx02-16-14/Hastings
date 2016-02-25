@@ -18,10 +18,10 @@ library
   build-depends:
     base >= 4.7 && < 5
   if impl(haste)
-    exposed-modules:     Lobby, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI
+    exposed-modules:     Chat, Lobby, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI
     build-depends: haste-lib >= 0.5 && < 0.6
   else
-    exposed-modules:     Lobby, LobbyServer, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI
+    exposed-modules:     Chat, Lobby, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, LobbyServer
     build-depends:
       haste-compiler >= 0.5 && < 0.6,
       uuid,

@@ -2,6 +2,7 @@
 module LobbyTypes where
 import qualified Control.Concurrent as CC
 import Haste.App
+import Chat
 
 -- |A type synonym to clarify that some Strings are Names
 type Name = String
@@ -13,12 +14,7 @@ type PlayerList = CC.MVar [Player]
 type LobbyGame = CC.MVar (String, [Player])
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
 type GamesList = CC.MVar [LobbyGame]
--- |A chat
-type Chat = (Name,[SessionID])
 -- |A list of all the chats in the lobby
 type ConcurrentChatList = CC.MVar [Chat]
-
+-- | The state of the lobby being passed around
 type LobbyState = (Server PlayerList, Server GamesList, Server ConcurrentChatList)
-
-createNewChatRoom :: String -> (Name, [SessionID])
-createNewChatRoom name = (name, [])

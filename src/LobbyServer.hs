@@ -8,14 +8,14 @@ module LobbyServer(
   getGamesList,
   playerJoinGame,
   playerNamesInGame,
-  getConnectedPlayers,
-  createNewChatRoom) where
+  getConnectedPlayers) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
 import Data.List
 import Data.Maybe
 import LobbyTypes
+import qualified Chat as Chat
 import Hastings.Utils
 #ifndef __HASTE__
 import Data.UUID
@@ -33,21 +33,13 @@ connect remotePlayers remoteChatList name = do
     return $ (sid,name) : ps
 
   liftIO $ CC.modifyMVar_ chatList $ \cs ->
-    return $ addPlayerToMainChat sid cs
+    return $ Chat.addPlayerToMainChat sid cs
 
-
--- |Adds a player to the main chat room if it exists
-addPlayerToMainChat :: SessionID -> [Chat] -> [Chat]
-addPlayerToMainChat sid = map (addIfMatches "main")
-  where
-    addIfMatches :: Name -> Chat -> Chat
-    addIfMatches name' c@(name, sids) | name == name' = (name, sid : sids)
-                                      | otherwise = c
+-- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
 disconnect (playerList, gameList, _) sid = do
   disconnectPlayerFromLobby playerList sid
   disconnectPlayerFromGame gameList sid
-
 
 -- |Removes a player that has disconnected from player list
 disconnectPlayerFromLobby :: Server PlayerList -> SessionID -> Server ()
