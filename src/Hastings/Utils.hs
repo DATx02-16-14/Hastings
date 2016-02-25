@@ -1,6 +1,8 @@
 -- |Module for all of the util functions that does not belong elsewhere and are perhaps so generic that they could be made into a separate library
 module Hastings.Utils where
 
+import Data.Maybe
+
 -- |Method that finds with IO and then returns the value
 -- together with the list to the right and left of the element
 findIO :: (a -> IO Bool) -> [a] -> IO (Maybe a, [a], [a])
@@ -15,8 +17,8 @@ findIO p as = findIO' p as []
         else
           findIO' p as (a:hs)
 
--- | Updates the value of the first occurance of the key in the given table
--- | Takes a function which takes you the previous value and returns the new
+-- |Updates the value of the first occurance of the key in the given table
+-- Takes a function which takes the previous value and returns the new
 updateLookup :: Eq a => (b -> b) -> a -> [(a,b)] ->  [(a,b)]
 updateLookup f k t = updateLookup' [] k t f
   where
