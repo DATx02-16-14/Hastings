@@ -15,7 +15,7 @@ import qualified Control.Concurrent as CC
 import Data.List
 import Data.Maybe
 import LobbyTypes
-import qualified Chat as Chat
+import Chat
 import Hastings.Utils
 #ifndef __HASTE__
 import Data.UUID
@@ -32,8 +32,8 @@ connect remotePlayers remoteChatList name = do
   liftIO $ CC.modifyMVar_ players  $ \ps ->
     return $ (sid,name) : ps
 
-  liftIO $ CC.modifyMVar_ chatList $ \cs ->
-    return $ Chat.addPlayerToMainChat sid cs
+  liftIO $ CC.modifyMVar_ chatList $ \cs -> do
+    return $ addPlayerToChat sid "main" cs
 
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
