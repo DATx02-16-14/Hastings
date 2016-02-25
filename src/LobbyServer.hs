@@ -37,9 +37,18 @@ connect remotePlayers remoteChatList name = do
 
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
-disconnect (playerList, gameList, _) sid = do
+disconnect (playerList, gameList, chatList) sid = do
   disconnectPlayerFromLobby playerList sid
   disconnectPlayerFromGame gameList sid
+  disconnectPlayerFromChats chatList sid
+
+disconnectPlayerFromChats :: Server ConcurrentChatList -> SessionID -> Server()
+disconnectPlayerFromChats remoteChats sid = do
+  chats <- remoteChats
+  liftIO $ CC.modifyMVar_ chats $ \cs -> do
+    return $ removePlayerFromChats sid cs
+
+
 
 -- |Removes a player that has disconnected from player list
 disconnectPlayerFromLobby :: Server PlayerList -> SessionID -> Server ()
