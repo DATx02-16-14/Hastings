@@ -36,7 +36,41 @@ createLobbyDOM = do
   appendChild createGamebtn crGamebtnText
   appendChild parentDiv createGamebtn
   appendChild parentDiv playerList
+
+  createChatDOM parentDiv
+
   appendChild documentBody parentDiv
+
+createChatDOM :: Elem -> IO ()
+createChatDOM parentDiv = do
+
+  br <- newElem "br"
+
+  chatDiv <- newElem "div" `with`
+    [
+      attr "id" =: "chatDiv"
+    ]
+
+  chatBox <- newElem "textarea" `with`
+    [
+      attr "id"       =: "chatBox",
+      attr "rows"     =: "10",
+      attr "cols"     =: "60",
+      attr "readonly" =: ""
+    ]
+
+  messageBox <- newElem "input" `with`
+    [
+      attr "type" =: "text",
+      attr "id"   =: "messageBox",
+      attr "cols" =: "60"
+    ]
+
+  appendChild parentDiv chatDiv
+  appendChild chatDiv chatBox
+  appendChild chatDiv br
+  appendChild chatDiv messageBox
+
 
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
