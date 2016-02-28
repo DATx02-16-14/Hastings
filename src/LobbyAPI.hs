@@ -15,9 +15,11 @@ data LobbyAPI = LobbyAPI
   { handshake :: Remote (String -> Server ())
   , createGame :: Remote (Server (Maybe (String,String)))
   , getGamesList :: Remote (Server [String])
-  , joinGame ::Remote (String -> Server ())
+  , joinGame :: Remote (String -> Server ())
   , findPlayersInGame :: Remote (String -> Server [String])
-  , getPlayerList :: Remote(Server [String])
+  , getPlayerList :: Remote (Server [String])
+    -- |Kicks a player frrom a game.
+  , kickPlayer :: Remote (String -> Name -> Server ())
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -29,3 +31,4 @@ newLobbyAPI playersList gamesList =
             <*> REMOTE((Server.playerJoinGame playersList gamesList))
             <*> REMOTE((Server.playerNamesInGame gamesList))
             <*> REMOTE((Server.getConnectedPlayers playersList))
+            <*> REMOTE((Server.kickPlayer gamesList))
