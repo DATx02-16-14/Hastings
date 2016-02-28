@@ -9,7 +9,8 @@ module LobbyServer(
   playerNamesInGame,
   getConnectedPlayers,
   disconnectPlayerFromLobby,
-  disconnectPlayerFromGame) where
+  disconnectPlayerFromGame,
+  kickPlayer) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -147,3 +148,20 @@ getConnectedPlayers :: Server PlayerList -> Server [String]
 getConnectedPlayers remotePlayers = do
   playerList <- remotePlayers >>= liftIO . CC.readMVar
   return $ map snd playerList
+
+-- | Kicks the player with 'Name' from the game with id String
+kickPlayer :: Server GamesList -> String -> Name -> Server ()
+kickPlayer remoteGames gameID playerName = do
+  mVarGamesList <- remoteGames
+  liftIO $ CC.modifyMVar_ mVarGamesList $ \lst -> do
+    (maybeGame, gh, gt) <- findIO
+      (\game -> do
+         g <- CC.readMVar game
+         return $ fst g == gameID) lst
+    case maybeGame of
+      Just game -> do
+        liftIO $ CC.modifyMVar_ game $ \g -> do
+          let list = filter (\p -> playerName /= snd p) $ snd g
+          return (gameID, list)
+        return $ gh ++ game:gt
+      Nothing -> return $ gh ++ gt
