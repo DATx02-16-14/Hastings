@@ -41,13 +41,13 @@ createLobbyDOM = do
 
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
-createGameDOM :: (String,[String]) -> IO ()
-createGameDOM (gameId,ps) = do
+createGameDOM :: LobbyAPI -> (String,[String]) -> Client ()
+createGameDOM api (gameID,ps) = do
     parentDiv <- newElem "div" `with`
         [
             prop "id" =: "lobbyGame"
         ]
-    nameOfGame <- newTextElem gameId
+    nameOfGame <- newTextElem gameID
     header <- newElem "h1" `with`
         [
             style "text-align" =: "center",
@@ -62,11 +62,7 @@ createGameDOM (gameId,ps) = do
         ]
     listhead <- newTextElem "Players: "
     appendChild parentDiv listhead
-    mapM_ (\p -> do
-                name <- newTextElem $ p ++ " "
-                appendChild list name
-            ) ps
-
+    mapM_ (addPlayerWithKickToPlayerlist api gameID list) ps
     createStartGameBtn <- newElem "button" `with`
       [
         prop "id" =: "startGameButton"
@@ -78,10 +74,10 @@ createGameDOM (gameId,ps) = do
     appendChild documentBody parentDiv
 
 -- |Creates the DOM for a 'LobbyGame' inside the lobby given that 'LobbyGame'
-createGameDOMWithGame :: LobbyGame -> IO ()
-createGameDOMWithGame lobbyGame = do
-  game <- CC.readMVar lobbyGame
-  createGameDOM (fst game, map snd $ snd game)
+createGameDOMWithGame :: LobbyAPI -> LobbyGame -> Client ()
+createGameDOMWithGame  api lobbyGame = do
+  game <- liftIO $ CC.readMVar lobbyGame
+  createGameDOM api (fst game, map snd $ snd game)
 
 -- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: IO ()
@@ -98,7 +94,7 @@ deleteDOM s = withElems [s] $ \[element] -> deleteChild documentBody element
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: LobbyAPI -> GameAPI-> Client ()
 createGameBtn lapi gapi =
-  clickEvent "createGamebtn" onCreateBtnMouseClick
+  clickEventString "createGamebtn" onCreateBtnMouseClick
     where
       onCreateBtnMouseClick = do
         maybeStrings <- onServer (createGame lapi)
@@ -107,8 +103,8 @@ createGameBtn lapi gapi =
           Just gameStrings -> do
             switchToGameDOM gameStrings
             withElem "playerList" $ \pdiv ->
-                fork $ listenForChanges (players gameStrings) addPlayerToPlayerlist 1000 pdiv
-            clickEvent "startGameButton"
+                fork $ listenForChanges (players gameStrings) (changeWithKicks gameStrings) 1000 pdiv
+            clickEventString "startGameButton"
               (do
                 gameDiv <- newElem "div" `with`
                   [
@@ -121,18 +117,24 @@ createGameBtn lapi gapi =
 
       switchToGameDOM (guid, player) = do
         liftIO deleteLobbyDOM
-        liftIO $ createGameDOM (guid, [player])
+        createGameDOM lapi (guid, [player])
 
       players gameStrings = findPlayersInGame lapi <.> fst gameStrings
 
-clickEvent :: String -> Client () -> Client ()
-clickEvent identifier fun =
+      changeWithKicks (guid, _) = addPlayerWithKickToPlayerlist lapi guid
+
+clickEventString :: String -> Client () -> Client ()
+clickEventString identifier fun =
   withElem identifier $ \e -> do
-    onEvent e Click $ \(MouseData _ mb _) ->
+    clickEventElem e fun
+    return ()
+
+clickEventElem :: Elem -> Client () -> Client HandlerInfo
+clickEventElem e fun = do
+   onEvent e Click $ \(MouseData _ mb _) ->
       case mb of
         Just MouseLeft -> fun
         Nothing        -> return ()
-    return ()
 
 -- |Adds DOM for a game
 addGame :: LobbyAPI -> String -> Client ()
@@ -148,14 +150,14 @@ addGame api gameName =
     appendChild gameDiv gameEntry
     appendChild lobbyDiv gameDiv
 
-    clickEvent gameName
+    clickEventString gameName
       (do
         onServer $ joinGame api <.> gameName
         players <- onServer $ findPlayersInGame api <.> gameName
         liftIO deleteLobbyDOM
-        liftIO $ createGameDOM (gameName, players)
+        createGameDOM api (gameName, players)
         withElem "playerList" $ \pdiv ->
-            fork $ listenForChanges (findPlayersInGame api <.> gameName) addPlayerToPlayerlist 1000 pdiv)
+            fork $ listenForChanges (findPlayersInGame api <.> gameName) (addPlayerWithKickToPlayerlist api gameName) 1000 pdiv)
 
     return ()
 
@@ -175,6 +177,21 @@ listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForCh
             setTimer (Once updateDelay) $ listenForChanges' remoteData)
       return ()
 
+kickFunction :: String -> Name -> LobbyAPI -> Client ()
+kickFunction string name api = do
+  onServer $ kickPlayer api <.> string <.> name
+
+addPlayerWithKickToPlayerlist :: LobbyAPI -> String -> Elem -> String -> Client ()
+addPlayerWithKickToPlayerlist api gameID parent name = do
+  textElem <- newTextElem name
+  br <- newElem "br"
+  kickBtn <- newElem "button"
+  kick <- newTextElem "kick"
+  clickEventElem kickBtn $ kickFunction gameID name api
+  appendChild kickBtn kick
+  appendChild parent textElem
+  appendChild parent kickBtn
+  appendChild parent br
 
 -- |Adds the playername followed by a <br> tag to the given parent.
 addPlayerToPlayerlist :: Elem -> String -> Client ()
@@ -197,5 +214,5 @@ addGameToDOM api gameName = do
   appendChild gameDiv gameEntry
   appendChild documentBody gameDiv
 
-  clickEvent gameName $ onServer $ joinGame api <.> gameName
+  clickEventString gameName $ onServer $ joinGame api <.> gameName
   return ()
