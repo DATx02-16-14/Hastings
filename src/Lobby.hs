@@ -30,7 +30,8 @@ createBootstrapTemplate parentName = do
 
   containerDiv <- newElem "div" `with`
     [
-      attr "class" =: "container-fluid"
+      attr "class" =: "container-fluid",
+      attr "id"    =: "container-fluid"
     ]
 
   rowDiv <- newElem "div" `with`
@@ -61,7 +62,7 @@ createBootstrapTemplate parentName = do
       prop "id" =: parentName
     ]
 
-  appendChild documentBody cssLink
+ -- appendChild documentBody cssLink
   appendChild documentBody containerDiv
   appendChild containerDiv rowDiv
   appendChild rowDiv parentDiv
@@ -109,10 +110,9 @@ createLobbyDOM = do
 
 createGameDOM :: (String,[String]) -> IO ()
 createGameDOM (gameId,ps) = do
-  parentDiv <- newElem "div" `with`
-    [
-      prop "id" =: "lobbyGame"
-    ]
+
+  parentDiv <- createBootstrapTemplate "lobbyGame"
+
   nameOfGame <- newTextElem gameId
   header <- newElem "h1" `with`
     [
@@ -121,31 +121,37 @@ createGameDOM (gameId,ps) = do
       style "margin-right" =: "auto"
     ]
   appendChild header nameOfGame
-  appendChild parentDiv header
+
+  --appendChild parentDiv header
   list <- newElem "div" `with`
     [
       prop "id" =: "playerList"
     ]
   listhead <- newTextElem "Players: "
   appendChild list listhead
+
   mapM_ (\p -> do
               name <- newTextElem $ p ++ " "
               appendChild list name
         ) ps
-  appendChild parentDiv list
-  appendChild documentBody parentDiv
+
+  withElem "leftContent" $ \leftContent -> do
+    appendChild leftContent list
+
+  withElem "centerContent" $ \contentDiv -> do
+    appendChild contentDiv header
 
 createGameDOMWithGame :: LobbyGame -> IO ()
 createGameDOMWithGame lobbyGame = createGameDOM (fst lobbyGame, map snd $ snd lobbyGame)
 
 deleteLobbyDOM :: IO ()
-deleteLobbyDOM = deleteDOM "lobby"
+deleteLobbyDOM = deleteDOM "container-fluid"
 
 deleteGameDOM :: IO ()
-deleteGameDOM = deleteDOM "lobbyGame"
+deleteGameDOM = deleteDOM "container-fluid"
 
 deleteDOM :: String -> IO ()
-deleteDOM s = withElems [s, "row"] $ \[element, row] -> deleteChild row element
+deleteDOM s = withElem s $ \element -> deleteChild documentBody element
 
 createGameBtn :: Remote (Server (String,String)) -> Client ()
 createGameBtn createGame = do
