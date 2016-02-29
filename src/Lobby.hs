@@ -12,8 +12,8 @@ import Data.List
 
 import LobbyTypes
 
-createBootstrapTemplate :: String -> IO Elem
-createBootstrapTemplate parentName = do
+initDOM :: IO ()
+initDOM = do
   cssLink <- newElem "link" `with`
     [
       prop "rel"          =: "stylesheet",
@@ -22,6 +22,11 @@ createBootstrapTemplate parentName = do
     --prop "integrity"    =: "sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7",
       prop "crossorigin"  =: "anonymous"
     ]
+
+  appendChild documentBody cssLink
+
+createBootstrapTemplate :: String -> IO Elem
+createBootstrapTemplate parentName = do
 
   containerDiv <- newElem "div" `with`
     [

@@ -23,6 +23,7 @@ main = runStandaloneApp $ do
   onSessionEnd $ Server.closeConnection playersList
 
   runClient $ do
+    liftIO initDOM
     liftIO createLobbyDOM
 
     gameList <- onServer getGamesList
