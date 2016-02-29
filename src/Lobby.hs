@@ -36,11 +36,13 @@ createBootstrapTemplate parentName = do
 
   leftPaddingColDiv <- newElem "div" `with`
     [
-      attr "class" =: "col-md-3"
+      attr "class" =: "col-md-3",
+      attr "id"    =: "leftContent"
     ]
   rightPaddingColDiv <- newElem "div" `with`
     [
-      attr "class" =: "col-md-3"
+      attr "class" =: "col-md-3",
+      attr "id"    =: "rightContent"
     ]
 
   centerColDiv <- newElem "div" `with`
@@ -90,10 +92,12 @@ createLobbyDOM = do
       prop "id" =: "playerList"
     ]
 
-  withElems ["centerContent"] $ \[contentDiv] -> do
+  withElem "leftContent" $ \leftContent -> do
+    appendChild leftContent playerList
+
+  withElem "centerContent" $ \contentDiv -> do
     appendChild contentDiv header
     appendChild contentDiv createGamebtn
-    appendChild contentDiv playerList
 
 
   appendChild createGamebtn crGamebtnText
