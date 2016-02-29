@@ -1,10 +1,15 @@
 module Lobby
   where
-import Haste.App
-import LobbyServer
+
+import Haste
 import Haste.DOM
 import Haste.Events
+
+import Haste.App
+
 import Data.Maybe
+import Data.List
+
 import LobbyTypes
 
 createBootstrapTemplate :: String -> IO Elem
@@ -80,9 +85,18 @@ createLobbyDOM = do
 
   appendChild createGamebtn crGamebtnText
 
+  playerList <- newElem "div" `with`
+    [
+      prop "id" =: "playerList"
+    ]
+
   withElems ["centerContent"] $ \[contentDiv] -> do
     appendChild contentDiv header
     appendChild contentDiv createGamebtn
+    appendChild contentDiv playerList
+
+
+  appendChild createGamebtn crGamebtnText
 
 createGameDOM :: (String,[String]) -> IO ()
 createGameDOM (gameId,ps) = do
@@ -161,3 +175,28 @@ addGame joinGame gameName =
             _ -> return ())
 
     return ()
+
+--Queries the server for a list in an interval, applies a function for every item in the list .
+listenForChanges :: (Eq a, Binary a) => Remote (Server [a]) -> (Elem -> a -> Client ()) -> Int -> Elem -> Client ()
+listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForChanges' []
+  where
+    listenForChanges' currentData = do
+      remoteData <- onServer remoteCall
+      case currentData == remoteData of
+        False -> do
+          clearChildren parent
+          mapM_ (addChildrenToParent parent) remoteData
+          setTimer (Once updateDelay) $ listenForChanges' remoteData
+
+        True -> setTimer (Once updateDelay) $ listenForChanges' currentData
+
+      return ()
+
+
+-- Adds the playername followed by a <br> tag to the given parent.
+addPlayerToPlayerlist :: Elem -> String -> Client ()
+addPlayerToPlayerlist parent name = do
+  textElem <- newTextElem name
+  br <- newElem "br"
+  appendChild parent textElem
+  appendChild parent br
