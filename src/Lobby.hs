@@ -130,7 +130,7 @@ clickEventString identifier fun =
     return ()
 
 clickEventElem :: Elem -> Client () -> Client HandlerInfo
-clickEventElem e fun = do
+clickEventElem e fun =
    onEvent e Click $ \(MouseData _ mb _) ->
       case mb of
         Just MouseLeft -> fun
@@ -178,8 +178,7 @@ listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForCh
       return ()
 
 kickFunction :: String -> Name -> LobbyAPI -> Client ()
-kickFunction string name api = do
-  onServer $ kickPlayer api <.> string <.> name
+kickFunction string name api = onServer $ kickPlayer api <.> string <.> name
 
 addPlayerWithKickToPlayerlist :: LobbyAPI -> String -> Elem -> String -> Client ()
 addPlayerWithKickToPlayerlist api gameID parent name = do
