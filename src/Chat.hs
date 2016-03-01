@@ -22,7 +22,7 @@ removePlayerFromChat :: SessionID -> Name -> [Chat] -> [Chat]
 removePlayerFromChat sid = updateLookup (delete sid)
 
 removePlayerFromChats :: SessionID -> [Chat] -> [Chat]
-removePlayerFromChats sid cs = map (removeSessionFromChat sid) cs
+removePlayerFromChats sid = map (removeSessionFromChat sid)
 
 createNewChatRoom :: String -> (Name, [SessionID])
 createNewChatRoom name = (name, [])
@@ -42,7 +42,7 @@ sendMessage chatName msg@(ChatMessage sid message) cs ps = do
   case sids of
     Nothing -> return ()
     Just ss -> do
-      let players = map (flip lookup ps) ss
+      let players = map (`lookup` ps) ss
       let channels = map chatChannel $ catMaybes players
-      mapM (flip CC.writeChan msg) channels
+      mapM_ (`CC.writeChan` msg) channels
       return ()

@@ -27,8 +27,8 @@ import System.Random
 -- |Initial connection with the server
 -- Creates a 'Player' for that user given a name.
 connect :: Server ClientMap -> Server ConcurrentChatList -> Name -> Server ()
-connect remotePlayers remoteChatList name = do
-  chatList <- remoteChatList
+connect remotePlayers remoteChats name = do
+  chats <- remoteChats
   players <- remotePlayers
   sid <- getSessionID
 
@@ -37,20 +37,20 @@ connect remotePlayers remoteChatList name = do
     chatChannel <- CC.newChan
     return $ (sid, Player name chatChannel) : ps
 
-  liftIO $ CC.modifyMVar_ chatList $ \cs -> do
+  liftIO $ CC.modifyMVar_ chats $ \cs ->
     return $ addPlayerToChat sid "main" cs
 
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
-disconnect (clientMap, gameList, chatList) sid = do
-  disconnectPlayerFromChats chatList sid
-  disconnectPlayerFromGame gameList clientMap sid
+disconnect (clientMap, games, chats) sid = do
+  disconnectPlayerFromChats chats sid
+  disconnectPlayerFromGame games clientMap sid
   disconnectPlayerFromLobby clientMap sid
 
 disconnectPlayerFromChats :: Server ConcurrentChatList -> SessionID -> Server()
 disconnectPlayerFromChats remoteChats sid = do
   chats <- remoteChats
-  liftIO $ CC.modifyMVar_ chats $ \cs -> do
+  liftIO $ CC.modifyMVar_ chats $ \cs ->
     return $ removePlayerFromChats sid cs
 
 -- |Removes a player that has disconnected from player list
