@@ -11,7 +11,7 @@ import GameAPI
 -- |Main mehtod for the client.
 clientMain :: LobbyAPI -> Client ()
 clientMain api = do
-  liftIO createLobbyDOM
+  createLobbyDOM api
 
   name <- prompt "Hello! Please enter your name:"
   onServer $ handshake api <.> name

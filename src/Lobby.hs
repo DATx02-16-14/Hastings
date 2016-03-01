@@ -17,8 +17,8 @@ import Haste.App.Concurrent
 import qualified Control.Concurrent as CC
 
 -- |Creates the initial DOM upon entering the lobby
-createLobbyDOM :: IO ()
-createLobbyDOM = do
+createLobbyDOM :: LobbyAPI -> Client ()
+createLobbyDOM api = do
   parentDiv <- newElem "div" `with`
     [
       prop "id" =: "lobby"
@@ -34,10 +34,39 @@ createLobbyDOM = do
       prop "id" =: "playerList"
     ]
 
+  nickDiv <- newElem "div" `with`
+    [
+      prop "id" =: "nickNameDiv"
+    ]
+  nickNameText <- newTextElem "Change nick name"
+  nickNameField <- newElem "input" `with`
+    [
+      attr "type" =: "text",
+      attr "id" =: "nickNameField"
+    ]
+  nickNameButton <- newElem "button" `with`
+    [
+      attr "id" =: "nickNameBtn"
+    ]
+  nickNameBtnText <- newTextElem "Change"
+
+  appendChild nickNameButton nickNameBtnText
+  appendChild nickDiv nickNameText
+  appendChild nickDiv nickNameField
+  appendChild nickDiv nickNameButton
+  appendChild parentDiv nickDiv
+
   appendChild createGamebtn crGamebtnText
   appendChild parentDiv createGamebtn
   appendChild parentDiv playerList
   appendChild documentBody parentDiv
+
+  clickEventString "nickNameBtn" $
+    withElem "nickNameField" $ \field -> do
+      newName <- getValue field
+      case newName of
+        Just name -> onServer $ changeNickName api <.> name
+        Nothing -> return ()
 
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
