@@ -10,7 +10,8 @@ module LobbyServer(
   getConnectedPlayers,
   disconnectPlayerFromLobby,
   disconnectPlayerFromGame,
-  kickPlayer) where
+  kickPlayer,
+  changeNickName) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -165,3 +166,30 @@ kickPlayer remoteGames gameID playerName = do
           return (gameID, list)
         return $ gh ++ game:gt
       Nothing -> return $ gh ++ gt
+
+changeNickName :: Server PlayerList -> Server GamesList -> Name -> Server ()
+changeNickName remotePlayers remoteGames newName = do
+  mVarPlayers <- remotePlayers
+  sid <- getSessionID
+  liftIO $ CC.modifyMVar_ mVarPlayers $ \ps ->
+    return $ updateList ps sid newName
+  mVarGamesList <- remoteGames
+  liftIO $ CC.modifyMVar_ mVarGamesList $ \gs ->
+    updateListMVar gs sid newName
+  where
+    updateListMVar :: [LobbyGame] -> SessionID -> Name -> IO [LobbyGame]
+    updateListMVar gs sid newName = do
+      updateListMVar' gs
+      return gs
+        where
+          updateListMVar' :: [LobbyGame] -> IO ()
+          updateListMVar' [] = return ()
+          updateListMVar' (g:gs) = do
+            CC.modifyMVar_ g $ \(gid, ps) ->
+              return (gid, updateList ps sid newName)
+            updateListMVar' gs
+
+    updateList :: [Player] -> SessionID -> Name -> [Player]
+    updateList ps sid newName = psHead ++ (sid,newName):psTail
+      where
+        (psHead,p:psTail) = span (\p -> sid /= fst p) ps
