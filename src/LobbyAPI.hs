@@ -20,6 +20,8 @@ data LobbyAPI = LobbyAPI
   , getPlayerList :: Remote (Server [String])
     -- |Kicks a player frrom a game.
   , kickPlayer :: Remote (String -> Name -> Server ())
+    -- |Changes the nickname of the active player
+  , changeNickName :: Remote (Name -> Server ())
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -32,3 +34,4 @@ newLobbyAPI playersList gamesList =
             <*> REMOTE((Server.playerNamesInGame gamesList))
             <*> REMOTE((Server.getConnectedPlayers playersList))
             <*> REMOTE((Server.kickPlayer gamesList))
+            <*> REMOTE((Server.changeNickName playersList gamesList))

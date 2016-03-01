@@ -60,7 +60,6 @@ createBootstrapTemplate parentName = do
       attr "class" =: "col-md-6",
       attr "id"    =: "centerContent"
     ]
-
   parentDiv <- newElem "div" `with`
     [
       prop "id" =: parentName
@@ -75,8 +74,8 @@ createBootstrapTemplate parentName = do
 
   return parentDiv
 -- |Creates the initial DOM upon entering the lobby
-createLobbyDOM :: Client ()
-createLobbyDOM = do
+createLobbyDOM :: LobbyAPI -> Client ()
+createLobbyDOM api = do
 
   lobbyDiv <- createBootstrapTemplate "lobby"
 
@@ -94,6 +93,28 @@ createLobbyDOM = do
   headerText <- newTextElem "Hastings Lobby"
   appendChild header headerText
 
+  nickDiv <- newElem "div" `with`
+    [
+      prop "id" =: "nickNameDiv"
+    ]
+  nickNameText <- newTextElem "Change nick name"
+  nickNameField <- newElem "input" `with`
+    [
+      attr "type" =: "text",
+      attr "id" =: "nickNameField"
+    ]
+  nickNameButton <- newElem "button" `with`
+    [
+      attr "id" =: "nickNameBtn"
+    ]
+  nickNameBtnText <- newTextElem "Change"
+
+  appendChild nickNameButton nickNameBtnText
+  appendChild nickDiv nickNameText
+  appendChild nickDiv nickNameField
+  appendChild nickDiv nickNameButton
+  addChildrenToRightColumn [nickDiv]
+
   appendChild createGamebtn crGamebtnText
 
   playerList <- newElem "div" `with`
@@ -104,13 +125,21 @@ createLobbyDOM = do
   addChildrenToLeftColumn [playerList]
   addChildrenToCenterColumn [header, createGamebtn]
 
+  clickEventString "nickNameBtn" $
+    withElem "nickNameField" $ \field -> do
+      newName <- getValue field
+      case newName of
+        Just name -> onServer $ changeNickName api <.> name
+        Nothing -> return ()
+
 -- |Creates the DOM for a 'LobbyGame' inside the lobby given that 'LobbyGame'
 createGameDOMWithGame :: LobbyAPI -> LobbyGame -> Client ()
 createGameDOMWithGame  api lobbyGame = do
   game <- liftIO $ CC.readMVar lobbyGame
   createGameDOM api (fst game, map snd $ snd game)
 
--- |Deletes the DOM created for the intial lobby view
+-- |Creates the DOM for a 'LobbyGame' inside the lobby
+-- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
 createGameDOM :: LobbyAPI -> (String,[String]) -> Client ()
 createGameDOM api (gameID,ps) = do
 
@@ -148,6 +177,7 @@ createGameDOM api (gameID,ps) = do
   addChildrenToLeftColumn [createStartGameBtn, list]
   addChildrenToCenterColumn [header]
 
+-- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: IO ()
 deleteLobbyDOM = deleteDOM "container-fluid"
 
