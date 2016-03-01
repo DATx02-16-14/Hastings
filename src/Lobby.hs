@@ -202,16 +202,13 @@ createGameBtn lapi gapi =
             switchToGameDOM gameStrings
             withElem "playerList" $ \pdiv ->
                 fork $ listenForChanges (players gameStrings) (changeWithKicks gameStrings) 1000 pdiv
-            clickEventString "startGameButton"
-              (do
+            clickEventString "startGameButton" $ do
                 gameDiv <- newElem "div" `with`
                   [
                     prop "id" =: "gameDiv"
                   ]
                 names <- onServer (players gameStrings)
                 startGame gapi names gameDiv
-              )
-
 
       switchToGameDOM (guid, player) = do
         liftIO deleteLobbyDOM
@@ -250,14 +247,13 @@ addGame api gameName =
     appendChild gameDiv gameEntry
     insertChildBefore centerContent createGamebtn gameDiv
 
-    clickEventString gameName
-      (do
+    clickEventString gameName $ do
         onServer $ joinGame api <.> gameName
         players <- onServer $ findPlayersInGame api <.> gameName
         liftIO deleteLobbyDOM
         createGameDOM api (gameName, players)
         withElem "playerList" $ \pdiv ->
-            fork $ listenForChanges (findPlayersInGame api <.> gameName) (addPlayerWithKickToPlayerlist api gameName) 1000 pdiv)
+            fork $ listenForChanges (findPlayersInGame api <.> gameName) (addPlayerWithKickToPlayerlist api gameName) 1000 pdiv
 
     return ()
 
