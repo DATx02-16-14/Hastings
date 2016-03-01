@@ -159,6 +159,7 @@ createGameDOM api (gameID,ps) = do
       prop "id" =: "startGameButton"
     ]
   createStartGameBtnText <- newTextElem "Start game"
+  appendChild createStartGameBtn createStartGameBtnText
 
   list <- newElem "div" `with`
     [
