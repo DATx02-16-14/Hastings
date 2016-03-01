@@ -221,12 +221,14 @@ createGameBtn lapi gapi =
 
       changeWithKicks (guid, _) = addPlayerWithKickToPlayerlist lapi guid
 
+-- |Creates a listener for a click event with the Elem with the given String and a function.
 clickEventString :: String -> Client () -> Client ()
 clickEventString identifier fun =
   withElem identifier $ \e -> do
     clickEventElem e fun
     return ()
 
+-- |Creates a listener for a click event with the given 'Elem' and a function.
 clickEventElem :: Elem -> Client () -> Client HandlerInfo
 clickEventElem e fun =
    onEvent e Click $ \(MouseData _ mb _) ->
@@ -275,9 +277,11 @@ listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForCh
             setTimer (Once updateDelay) $ listenForChanges' remoteData)
       return ()
 
+-- |Convenience function for calling on the kick function.
 kickFunction :: String -> Name -> LobbyAPI -> Client ()
 kickFunction string name api = onServer $ kickPlayer api <.> string <.> name
 
+-- |Adds the playername and a button to kick them followed by a <br> tag to the given parent.
 addPlayerWithKickToPlayerlist :: LobbyAPI -> String -> Elem -> String -> Client ()
 addPlayerWithKickToPlayerlist api gameID parent name = do
   textElem <- newTextElem name
