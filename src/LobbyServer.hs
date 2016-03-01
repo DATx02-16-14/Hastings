@@ -167,6 +167,7 @@ kickPlayer remoteGames gameID playerName = do
         return $ gh ++ game:gt
       Nothing -> return $ gh ++ gt
 
+-- |Change the nick name of the current player to that given.
 changeNickName :: Server PlayerList -> Server GamesList -> Name -> Server ()
 changeNickName remotePlayers remoteGames newName = do
   mVarPlayers <- remotePlayers
@@ -177,6 +178,7 @@ changeNickName remotePlayers remoteGames newName = do
   liftIO $ CC.modifyMVar_ mVarGamesList $ \gs ->
     updateListMVar gs sid newName
   where
+    -- Helper method to update a list with MVars
     updateListMVar :: [LobbyGame] -> SessionID -> Name -> IO [LobbyGame]
     updateListMVar gs sid newName = do
       updateListMVar' gs
@@ -188,7 +190,7 @@ changeNickName remotePlayers remoteGames newName = do
             CC.modifyMVar_ g $ \(gid, ps) ->
               return (gid, updateList ps sid newName)
             updateListMVar' gs
-
+    -- Helper method to update a list
     updateList :: [Player] -> SessionID -> Name -> [Player]
     updateList ps sid newName = psHead ++ (sid,newName):psTail
       where
