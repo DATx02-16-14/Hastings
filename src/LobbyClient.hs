@@ -21,7 +21,7 @@ clientMain api = do
   mapM_ (addGame api) gameList
 
   playerDiv <- elemById "playerList"
-  fork $ listenForChanges (getPlayerList api) addPlayerToPlayerlist 1000 $ fromJust playerDiv
+  fork $ listenForChanges (getPlayerNameList api) addPlayerToPlayerlist 1000 $ fromJust playerDiv
 
 
   return ()

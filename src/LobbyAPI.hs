@@ -7,7 +7,7 @@ import LobbyTypes
 #ifdef __HASTE__
 #define REMOTE(x) (remote undefined)
 #else
-import qualified LobbyServer as Server
+import LobbyServer as Server
 #define REMOTE(x) (remote x)
 #endif
 -- |The api provided by the server.
@@ -17,7 +17,7 @@ data LobbyAPI = LobbyAPI
   , getGamesList :: Remote (Server [String])
   , joinGame ::Remote (String -> Server ())
   , findPlayersInGame :: Remote (String -> Server [String])
-  , getPlayerList :: Remote(Server [String])
+  , getPlayerNameList :: Remote(Server [String])
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -28,4 +28,4 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.getGamesList gamesList))
             <*> REMOTE((Server.playerJoinGame playersList gamesList))
             <*> REMOTE((Server.playerNamesInGame gamesList))
-            <*> REMOTE((Server.getConnectedPlayers playersList))
+            <*> REMOTE((Server.getConnectedPlayerNames playersList))

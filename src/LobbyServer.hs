@@ -8,7 +8,9 @@ module LobbyServer(
   getGamesList,
   playerJoinGame,
   playerNamesInGame,
-  getConnectedPlayers) where
+  getConnectedPlayers,
+  getConnectedPlayerNames,
+  LobbyState) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -24,23 +26,26 @@ import System.Random
 
 -- |Initial connection with the server
 -- Creates a 'Player' for that user given a name.
-connect :: Server PlayerList -> Server ConcurrentChatList -> Name -> Server ()
+connect :: Server ClientMap -> Server ConcurrentChatList -> Name -> Server ()
 connect remotePlayers remoteChatList name = do
   chatList <- remoteChatList
   players <- remotePlayers
   sid <- getSessionID
-  liftIO $ CC.modifyMVar_ players  $ \ps ->
-    return $ (sid,name) : ps
+
+  liftIO $ CC.modifyMVar_ players  $ \ps -> do
+    --return $ (sid,name) : ps
+    chatChannel <- CC.newChan
+    return $ (sid, Player name chatChannel) : ps
 
   liftIO $ CC.modifyMVar_ chatList $ \cs -> do
     return $ addPlayerToChat sid "main" cs
 
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
-disconnect (playerList, gameList, chatList) sid = do
-  disconnectPlayerFromLobby playerList sid
-  disconnectPlayerFromGame gameList sid
+disconnect (clientMap, gameList, chatList) sid = do
   disconnectPlayerFromChats chatList sid
+  disconnectPlayerFromGame gameList clientMap sid
+  disconnectPlayerFromLobby clientMap sid
 
 disconnectPlayerFromChats :: Server ConcurrentChatList -> SessionID -> Server()
 disconnectPlayerFromChats remoteChats sid = do
@@ -48,34 +53,37 @@ disconnectPlayerFromChats remoteChats sid = do
   liftIO $ CC.modifyMVar_ chats $ \cs -> do
     return $ removePlayerFromChats sid cs
 
-
-
 -- |Removes a player that has disconnected from player list
-disconnectPlayerFromLobby :: Server PlayerList -> SessionID -> Server ()
+disconnectPlayerFromLobby :: Server ClientMap -> SessionID -> Server ()
 disconnectPlayerFromLobby remotePlayers sid = do
   players <- remotePlayers
   liftIO $ CC.modifyMVar_ players $ \ps ->
     return $ filter ((sid /=) . fst) ps
 
 -- |Removes a player that has disconnected from all games
-disconnectPlayerFromGame :: Server GamesList -> SessionID -> Server ()
-disconnectPlayerFromGame remoteGames sid = do
+disconnectPlayerFromGame :: Server GamesList -> Server ClientMap -> SessionID -> Server ()
+disconnectPlayerFromGame remoteGames remoteClientMap sid = do
   games <- remoteGames
-  liftIO $ CC.modifyMVar_ games $ \game -> mapM removePlayer game
-  where
-    removePlayer game = do
-      CC.modifyMVar_ game $ \(str, players) ->
-        return (str, filter ((sid /=) . fst) players)
-      return game
+  concurrentClientMap <- remoteClientMap
+  clientMap <- liftIO $ CC.readMVar concurrentClientMap
+  case lookup sid clientMap of
+    Nothing -> return ()
+    Just player -> do
+      liftIO $ CC.modifyMVar_ games $ \games -> mapM removePlayer games
+      where
+        removePlayer game = do
+          CC.modifyMVar_ game $ \(gName, players) ->
+            return ( gName, filter (((name player) /=) . name) players )
+          return game
 
 -- |Creates a new game on the server
-createGame :: Server GamesList -> Server PlayerList -> Server (String,String)
+createGame :: Server GamesList -> Server ClientMap -> Server (String,String)
 createGame remoteGames remotePlayers = do
   players <- remotePlayers
   games <- remoteGames
   sid <- getSessionID
   playerList <- liftIO $ CC.readMVar players
-  let maybePlayer = find (\p -> fst p == sid) playerList
+  let maybePlayer = lookup sid playerList
   gen <- liftIO newStdGen
   let (uuid, g) = random gen
   let uuidStr = Data.UUID.toString uuid
@@ -86,7 +94,7 @@ createGame remoteGames remotePlayers = do
           return $ game : gs
         Nothing -> return gs
   case maybePlayer of
-    Just p -> return (uuidStr, snd p)
+    Just p -> return (uuidStr, name p)
     Nothing -> return ("false", "")
 
 -- |Reteurns a list of the each game's name
@@ -98,14 +106,14 @@ getGamesList remoteGames = do
     return $ fst game) gameList
 
 -- |Lets a player join a 'LobbyGame'
-playerJoinGame :: Server PlayerList -> Server GamesList -> String -> Server ()
-playerJoinGame remotePlayers remoteGames gameID = do
-  players <- remotePlayers >>= liftIO . CC.readMVar
-  gameList <- remoteGames
+playerJoinGame :: Server ClientMap -> Server GamesList -> String -> Server ()
+playerJoinGame remoteClientMap remoteGameList gameID = do
+  clientMap <- remoteClientMap >>= liftIO . CC.readMVar
+  gameList <- remoteGameList
   sid <- getSessionID
-  case find (\(plrSid, _) -> plrSid == sid) players of
-    Just plr -> liftIO $ CC.modifyMVar_ gameList $
-      \gList -> addPlayerToGame plr gameID gList
+  case lookup sid clientMap of
+    Just player -> liftIO $ CC.modifyMVar_ gameList $
+      \gList -> addPlayerToGame player gameID gList
 
     _ -> return ()
 
@@ -142,14 +150,14 @@ findGameName remoteGames gid = do
 
 -- |Finds the name of the players of a game given it's identifier
 playerNamesInGame :: Server GamesList -> String -> Server [String]
-playerNamesInGame remoteGames gid = do
-  mVarGamesList <- remoteGames
-  game <- liftIO $ findGame gid mVarGamesList
+playerNamesInGame remoteGameList gid = do
+  concurrentGameList <- remoteGameList
+  game <- liftIO $ findGame gid concurrentGameList
   case game of
-    Just mVarG -> do
-      gam <- liftIO $ CC.readMVar mVarG
-      return $ map snd $ snd gam
     Nothing    -> return []
+    Just mVarG -> do
+      game <- liftIO $ CC.readMVar mVarG
+      return $ map name $ snd game
 
 -- |Finds the 'LobbyGame' matching the first parameter and returns it
 findGame :: String -> GamesList -> IO (Maybe LobbyGame)
@@ -162,7 +170,13 @@ findGame gid mVarGamesList = do
   return ga
 
 -- |Gets a list with all connected players
-getConnectedPlayers :: Server PlayerList -> Server [String]
-getConnectedPlayers remotePlayers = do
-  playerList <- remotePlayers >>= liftIO . CC.readMVar
-  return $ map snd playerList
+getConnectedPlayers :: Server ClientMap -> Server [Player]
+getConnectedPlayers remoteClientMap = do
+  clientMap <- remoteClientMap >>= liftIO . CC.readMVar
+  return $ map snd clientMap
+
+-- |Get
+getConnectedPlayerNames :: Server ClientMap -> Server [String]
+getConnectedPlayerNames remoteClientMap = do
+  players <- getConnectedPlayers remoteClientMap
+  return $ map name players

@@ -106,7 +106,7 @@ createGameDOM (gameId,ps) = do
 createGameDOMWithGame :: LobbyGame -> IO ()
 createGameDOMWithGame lobbyGame = do
   game <- CC.readMVar lobbyGame
-  createGameDOM (fst game, map snd $ snd game)
+  createGameDOM (fst game, map name $ snd game)
 
 -- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: IO ()

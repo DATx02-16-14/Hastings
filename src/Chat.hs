@@ -3,18 +3,16 @@ module Chat
     addPlayerToChat,
     createNewChatRoom,
     removePlayerFromChats,
-    Chat
+    Chat,
+    ConcurrentChatList
     ) where
 
 import Haste.App
 import Data.List
 import Hastings.Utils
-
-
-type Name = String
--- |A chat
-type Chat = (Name,[SessionID])
-
+import LobbyTypes
+import Data.Maybe
+import qualified Control.Concurrent as CC
 
 -- |Adds a player to the main chat room. If it doesn't exists, do nothing.
 addPlayerToChat :: SessionID -> Name -> [Chat] -> [Chat]
