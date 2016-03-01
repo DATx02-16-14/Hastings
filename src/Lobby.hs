@@ -98,15 +98,8 @@ createLobbyDOM = do
       prop "id" =: "playerList"
     ]
 
-  withElem "leftContent" $ \leftContent -> do
-    appendChild leftContent playerList
-
-  withElem "centerContent" $ \contentDiv -> do
-    appendChild contentDiv header
-    appendChild contentDiv createGamebtn
-
-
-  appendChild createGamebtn crGamebtnText
+  addChildrenToLeftColumn [playerList]
+  addChildrenToCenterColumn [header, createGamebtn]
 
 createGameDOM :: (String,[String]) -> IO ()
 createGameDOM (gameId,ps) = do
@@ -135,11 +128,8 @@ createGameDOM (gameId,ps) = do
               appendChild list name
         ) ps
 
-  withElem "leftContent" $ \leftContent -> do
-    appendChild leftContent list
-
-  withElem "centerContent" $ \contentDiv -> do
-    appendChild contentDiv header
+  addChildrenToLeftColumn [list]
+  addChildrenToCenterColumn [header]
 
 createGameDOMWithGame :: LobbyGame -> IO ()
 createGameDOMWithGame lobbyGame = createGameDOM (fst lobbyGame, map snd $ snd lobbyGame)
@@ -215,3 +205,17 @@ addPlayerToPlayerlist parent name = do
   br <- newElem "br"
   appendChild parent textElem
   appendChild parent br
+
+addChildrenToCenterColumn :: [Elem] -> IO ()
+addChildrenToCenterColumn = addChildrenToParent  "centerContent"
+
+addChildrenToLeftColumn :: [Elem] -> IO ()
+addChildrenToLeftColumn = addChildrenToParent "leftContent"
+
+addChildrenToRightColumn :: [Elem] -> IO ()
+addChildrenToRightColumn = addChildrenToParent "rightContent"
+
+addChildrenToParent :: String -> [Elem] -> IO ()
+addChildrenToParent parent children = do
+  parentElem <- elemById parent
+  mapM_ (appendChild $ fromJust parentElem) children
