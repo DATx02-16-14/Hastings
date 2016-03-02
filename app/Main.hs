@@ -35,3 +35,4 @@ main = runStandaloneApp $ do
   onSessionEnd $ disconnect(serverState)
   api <- newLobbyAPI (playersList, gamesList, chatList)
   runClient $ clientMain api
+
