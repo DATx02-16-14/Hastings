@@ -38,8 +38,7 @@ removeSessionFromChat sid (n,ss) = (n, delete sid ss)
 
 sendMessage :: Name -> ChatMessage -> [Chat] -> [ClientEntry] -> IO ()
 sendMessage chatName msg@(ChatMessage sid message) cs ps = do
-  let sids = lookup chatName cs
-  case sids of
+  case lookup chatName cs of
     Nothing -> return ()
     Just ss -> do
       let players = map (`lookup` ps) ss
