@@ -10,6 +10,6 @@ type Player = (SessionID, Name)
 -- |A list with all the players connected to the game
 type PlayerList = CC.MVar [Player]
 -- |A game inside of the lobby.
-type LobbyGame = CC.MVar (String, [Player])
+type LobbyGame = (String, [Player])
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
 type GamesList = CC.MVar [LobbyGame]

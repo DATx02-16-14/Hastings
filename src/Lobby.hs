@@ -132,12 +132,6 @@ createLobbyDOM api = do
         Just name -> onServer $ changeNickName api <.> name
         Nothing -> return ()
 
--- |Creates the DOM for a 'LobbyGame' inside the lobby given that 'LobbyGame'
-createGameDOMWithGame :: LobbyAPI -> LobbyGame -> Client ()
-createGameDOMWithGame  api lobbyGame = do
-  game <- liftIO $ CC.readMVar lobbyGame
-  createGameDOM api (fst game, map snd $ snd game)
-
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
 createGameDOM :: LobbyAPI -> (String,[String]) -> Client ()
