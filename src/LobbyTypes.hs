@@ -2,24 +2,24 @@
 module LobbyTypes where
 import qualified Control.Concurrent as CC
 import Haste.App
+import Data.List
 
 -- |A type synonym to clarify that some Strings are Names.
 type Name = String
--- |A player is name and it's chat channel.
-data Player = Player {name :: Name
-                     ,chatChannel :: CC.Chan ChatMessage}
 -- |A client entry is a player with a SessionID as key.
-type ClientEntry = (SessionID, Player)
+data ClientEntry = ClientEntry {sessionID   :: SessionID
+                               ,name        :: Name
+                               ,chatChannel :: CC.Chan ChatMessage}
 -- |A list with all the players connected to the game.
-type ClientMap = CC.MVar [ClientEntry]
+type ConcurrentClientList = CC.MVar [ClientEntry]
 -- |A game inside of the lobby.
 
-type LobbyGame = CC.MVar (String, [Player])
+type LobbyGame = CC.MVar (String, [ClientEntry])
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
 type GamesList = CC.MVar [LobbyGame]
 -- | The state of the lobby being passed around.
 
-type LobbyState = (Server ClientMap, Server GamesList, Server ConcurrentChatList)
+type LobbyState = (Server ConcurrentClientList, Server GamesList, Server ConcurrentChatList)
 
 -- |A chat message sent on a channel.
 data ChatMessage = ChatMessage {from    :: SessionID
@@ -28,3 +28,6 @@ data ChatMessage = ChatMessage {from    :: SessionID
 type Chat = (Name,[SessionID])
 -- |A list of all the chats in the lobby.
 type ConcurrentChatList = CC.MVar [Chat]
+
+lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry
+lookupClientEntry sid cs = find ((sid ==) . sessionID) cs
