@@ -26,3 +26,11 @@ updateLookup f k t = updateLookup' [] k t f
     updateLookup' checkedEs k (e@(k',v):es) f
             | k == k'   = reverse checkedEs ++ [(k, f v)] ++ es
             | otherwise = updateLookup' (e:checkedEs) k es f
+
+-- |Helper method to update a list
+-- Takes a function used to update first element matching the predicate
+updateListElem :: (a -> a) -> (a -> Bool) -> [a] -> [a]
+updateListElem f p xs | null t = xs
+                      | otherwise = h ++ [f $ head t] ++ tail t
+  where
+    (h,t) = break p xs
