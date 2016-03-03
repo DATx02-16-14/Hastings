@@ -61,8 +61,7 @@ createGame remoteGames remotePlayers = do
   let uuidStr = Data.UUID.toString uuid
   liftIO $ CC.modifyMVar_ games $ \gs ->
     case maybePlayer of
-        Just p  -> do
-          return $ (uuidStr,[p]) : gs
+        Just p  -> return $ (uuidStr,[p]) : gs
         Nothing -> return gs
   case maybePlayer of
     Just p  -> return $ Just (uuidStr, snd p)
@@ -72,7 +71,7 @@ createGame remoteGames remotePlayers = do
 getGamesList :: Server GamesList -> Server [String]
 getGamesList remoteGames = do
   gameList <- remoteGames >>= liftIO . CC.readMVar
-  return $ map (fst) gameList
+  return $ map fst gameList
 
 -- |Lets a player join a 'LobbyGame'
 playerJoinGame :: Server PlayerList -> Server GamesList -> String -> Server ()
