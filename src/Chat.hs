@@ -40,8 +40,8 @@ sendMessage :: Name -> ChatMessage -> [Chat] -> [ClientEntry] -> IO ()
 sendMessage chatName msg@(ChatMessage sid message) cs ps = do
   case lookup chatName cs of
     Nothing -> return ()
-    Just ss -> do
-      let players = map (`lookup` ps) ss
-      let channels = map chatChannel $ catMaybes players
+    Just sids -> do
+      let clientEntries = map (`lookupClientEntry` ps) sids
+      let channels = map chatChannel $ catMaybes clientEntries
       mapM_ (`CC.writeChan` msg) channels
       return ()
