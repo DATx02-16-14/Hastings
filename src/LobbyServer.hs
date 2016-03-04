@@ -117,32 +117,9 @@ playerJoinGame remoteClientList remoteGameList gameID = do
   return ()
 
 -- |Adds a player to a lobby game.
--- Is perhaps overly complicated since a LobbyGame is an MVar.
--- <<<<<<< HEAD
---addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> IO [LobbyGame]
---addPlayerToGame plr gameID gameList = do
---  ga <- findIO (\game -> do
---                 g <- CC.readMVar game
---                 return $ fst g == gameID) gameList
---  case ga of
---    (Just mVarGame, hs, ts) -> do
---      modGame <- CC.modifyMVar mVarGame $
---        \g -> do
---          let (sessionID, gamePlayers) = g
---          return ((sessionID, plr:gamePlayers), (sessionID, plr:gamePlayers))
---      g <- CC.newMVar modGame
---      return $ hs ++ (g:ts)
---    (Nothing, _, _) -> error "addPlayerToGame: Could not add player"
--- =======
 addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]
 addPlayerToGame client gameID gameList =
   updateListElem (\(gID, cs) -> (gID, nub $ client:cs)) (\g -> gameID == fst g) gameList
-  --case tg of
-  --  (g:t) -> hg ++ (fst g, client:snd g):tg
-  --  _     -> error "No such game"
-  --where
-  --  (hg,tg) = span (\g -> gameID /= fst g) gamesList
--- >>>>>>> development
 
 -- |Finds the name of a game given it's identifier
 -- (seems useless since the name is the identifier atm.)
