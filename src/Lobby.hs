@@ -151,7 +151,7 @@ createChatDOM parentDiv = do
     [
       attr "id"       =: "chatBox",
       attr "rows"     =: "10",
-      attr "cols"     =: "60",
+      attr "cols"     =: "18",
       attr "readonly" =: ""
     ]
 
