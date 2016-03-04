@@ -62,7 +62,6 @@ disconnectPlayerFromLobby remoteClientList sid = do
     return $ filter ((sid /=) . sessionID) cs
 
 -- |Removes a player that has disconnected from all games
--- <<<<<<< HEAD
 disconnectPlayerFromGame :: Server GamesList -> Server ConcurrentClientList -> SessionID -> Server ()
 disconnectPlayerFromGame remoteGames remoteClientList sid = do
   mVarGames <- remoteGames
@@ -76,14 +75,6 @@ disconnectPlayerFromGame remoteGames remoteClientList sid = do
         removePlayer (gName, clients) =
           let newClientList = filter (((name clientEntry) /=) . name) clients in
           return (gName, newClientList)
--- =======
---disconnectPlayerFromGame :: Server GamesList -> SessionID -> Server ()
---disconnectPlayerFromGame remoteGames sid = do
---  mVarGames <- remoteGames
---  liftIO $ CC.modifyMVar_ mVarGames $ \games -> return $ map removePlayer games
---  where
---    removePlayer (str, players) = (str, filter ((sid /=) . fst) players)
--- >>>>>>> development
 
 -- |Creates a new game on the server
 createGame :: Server GamesList -> Server ConcurrentClientList -> Server (Maybe (String,String))
