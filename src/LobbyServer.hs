@@ -95,7 +95,7 @@ createGame remoteGames remoteClientList = do
         Just c  -> return $ (uuidStr,GameData [c] "GameName") : gs
         Nothing -> return gs
   case maybeClientEntry of
-    Just p  -> return $ Just (uuidStr, name p)
+    Just p  -> return $ Just ("GameName", name p)
     Nothing -> return Nothing
 
 -- |Reteurns a list of the each game's name
