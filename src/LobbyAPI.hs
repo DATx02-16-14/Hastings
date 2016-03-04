@@ -17,11 +17,15 @@ data LobbyAPI = LobbyAPI
   , getGamesList :: Remote (Server [String])
   , joinGame :: Remote (String -> Server ())
   , findPlayersInGame :: Remote (String -> Server [String])
-  , getPlayerNameList :: Remote(Server [String])
+    -- |Finds the name of the game with String as identifier
+  , findGameName :: Remote (String -> Server String)
+  , getPlayerNameList :: Remote (Server [String])
     -- |Kicks a player frrom a game.
   , kickPlayer :: Remote (String -> Name -> Server ())
     -- |Changes the nickname of the active player
   , changeNickName :: Remote (Name -> Server ())
+    -- |Change the name of the game with the String to the new name
+  , changeGameName :: Remote (String -> Name -> Server())
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -32,6 +36,8 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.getGamesList gamesList))
             <*> REMOTE((Server.playerJoinGame playersList gamesList))
             <*> REMOTE((Server.playerNamesInGame gamesList))
+            <*> REMOTE((Server.findGameName gamesList))
             <*> REMOTE((Server.getConnectedPlayerNames playersList))
             <*> REMOTE((Server.kickPlayer gamesList))
             <*> REMOTE((Server.changeNickName playersList gamesList))
+            <*> REMOTE((Server.changeGameName gamesList))
