@@ -10,11 +10,14 @@ type Name = String
 data ClientEntry = ClientEntry {sessionID   :: SessionID
                                ,name        :: Name
                                ,chatChannel :: CC.Chan ChatMessage}
+instance Eq ClientEntry where
+  c1 == c2 = sessionID c1 == sessionID c2
+  c1 /= c2 = sessionID c1 == sessionID c2
+
 -- |A list with all the players connected to the game.
 type ConcurrentClientList = CC.MVar [ClientEntry]
 -- |A game inside of the lobby.
-
-type LobbyGame = CC.MVar (String, [ClientEntry])
+type LobbyGame = (String, [ClientEntry])
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
 type GamesList = CC.MVar [LobbyGame]
 -- | The state of the lobby being passed around.

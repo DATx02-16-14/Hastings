@@ -122,15 +122,11 @@ createLobbyDOM api = do
       prop "id" =: "playerList"
     ]
 
--- <<<<<<< HEAD
-  --appendChild createGamebtn crGamebtnText
-  --appendChild parentDiv createGamebtn
-  --appendChild parentDiv playerList
+  leftContent <- elemById "leftContent"
+  liftIO $ createChatDOM $ fromJust leftContent
 
-  --createChatDOM parentDiv
+  appendChild documentBody lobbyDiv
 
-  --appendChild documentBody parentDiv
--- =======
   addChildrenToLeftColumn [playerList]
   addChildrenToCenterColumn [header, createGamebtn]
 
@@ -140,13 +136,6 @@ createLobbyDOM api = do
       case newName of
         Just name -> onServer $ changeNickName api <.> name
         Nothing -> return ()
-
--- |Creates the DOM for a 'LobbyGame' inside the lobby given that 'LobbyGame'
-createGameDOMWithGame :: LobbyAPI -> LobbyGame -> Client ()
-createGameDOMWithGame  api lobbyGame = do
-  game <- liftIO $ CC.readMVar lobbyGame
-  createGameDOM api (fst game, map name $ snd game)
--- >>>>>>> development
 
 createChatDOM :: Elem -> IO ()
 createChatDOM parentDiv = do
@@ -178,13 +167,6 @@ createChatDOM parentDiv = do
   appendChild chatDiv br
   appendChild chatDiv messageBox
 
-
--- |Creates the DOM for a 'LobbyGame' inside the lobby given that 'LobbyGame'
---createGameDOMWithGame :: LobbyGame -> IO ()
---createGameDOMWithGame lobbyGame = do
-  --game <- CC.readMVar lobbyGame
-  --createGameDOM (fst game, map name $ snd game)
-
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
 createGameDOM :: LobbyAPI -> (String,[String]) -> Client ()
@@ -205,6 +187,7 @@ createGameDOM api (gameID,ps) = do
       prop "id" =: "startGameButton"
     ]
   createStartGameBtnText <- newTextElem "Start game"
+  appendChild createStartGameBtn createStartGameBtnText
 
   list <- newElem "div" `with`
     [
