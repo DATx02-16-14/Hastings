@@ -12,7 +12,8 @@ module LobbyServer(
   disconnectPlayerFromLobby,
   disconnectPlayerFromGame,
   kickPlayer,
-  changeNickName) where
+  changeNickName,
+  findGameName) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -128,7 +129,7 @@ findGameName remoteGames gid = do
   mVarGamesList <- remoteGames
   maybeGame <- liftIO $ findGame gid mVarGamesList
   case maybeGame of
-    Just game -> return $ fst game
+    Just (_, GameData _ name) -> return $ name
     Nothing   -> return ""
 
 -- |Finds the name of the players of a game given it's identifier
