@@ -17,7 +17,11 @@ instance Eq ClientEntry where
 -- |A list with all the players connected to the game.
 type ConcurrentClientList = CC.MVar [ClientEntry]
 -- |A game inside of the lobby.
-type LobbyGame = (String, [ClientEntry])
+type LobbyGame = (String, GameData)
+
+data GameData = GameData {players     :: [ClientEntry],
+                          gameName    :: Name}
+
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
 type GamesList = CC.MVar [LobbyGame]
 -- | The state of the lobby being passed around.
