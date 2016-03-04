@@ -7,11 +7,13 @@ import Table
 import qualified Control.Concurrent as CC
 import qualified Data.Map.Strict as Map
 
+
 filepath :: String
 filepath = "file:////home/michael/"
 
 starOfDavid :: Double -> Double -> Shape ()
 starOfDavid space size = do
+
 
         path [((12+5-1)*space+12*size, space*(5-2)), ((12+5+1)*space+12*size, space*(5-2)),
               ((16+5+1)*space+16*size, size*4+space*(4+5-2)), ((24+5+1)*space+24*size, size*4+space*(4+5-2)),
@@ -26,9 +28,13 @@ starOfDavid space size = do
 
 initTable2' can t = sequence_ $ map (renderSquare can 15 20) t
 
+--renderTable can  = do
+--        bitmap <- loadBitmap "file:////home/benjamin/Documents/0305509001456402835_chinese_checkers_start_posit.png"
+--        renderOnTop can $ scale (1.4,0.90) $ draw bitmap (20,20)
 renderTable can  = do
-        bitmap <- loadBitmap "http://s22.postimg.org/cgxonielt/0305509001456402835_chinese_checkers_start_posit.png"
-        renderOnTop can $ scale (0.25,0.25) $ draw bitmap (220,50)
+        bitmap <- loadBitmap "file:////home/benjamin/Documents/0305509001456402835_chinese_checkers_start_posit.png"
+        renderOnTop can $ scale (1.5,0.90) $ draw bitmap (0,20)
+
 
 renderSquare can space size (Square Empty _ (x,y)) = do
         bitmap <- loadBitmap $ filepath ++ "empty.bmp"
@@ -72,23 +78,22 @@ initTableCoords s = map (initTableCoord2 15 20) s
 initTableCoord :: Double -> Double -> Square -> ((Int,Int),(Double,Double))
 initTableCoord space size (Square _ _ (x,y)) = ((x,y), (size*fromIntegral x + space*fromIntegral (x+5),size* fromIntegral y+space* fromIntegral (y+5))) 
 
---if initTableCoords inte funkar
 initTableCoord2 :: Double -> Double -> Square -> ((Int,Int),(Double,Double))
 initTableCoord2 space size (Square _ _ (x,y)) = ((x,y), (size/2 + size*fromIntegral x + space*fromIntegral (x+5), size/2 + size* fromIntegral y+space* fromIntegral (y+5))) 
 
 initTable' :: Table -> Picture ()
 initTable' t = do
-         fill $ starOfDavid 15 20
+         fill $ starOfDavid' 15 20
          sequence_ $ map (drawSquare 15 20) t
 
-starOfDavidInABox :: Picture ()
-starOfDavidInABox = do
-    fill $ starOfDavid 15 20
+starOfDavid :: Picture ()
+starOfDavid = do
+    fill $ starOfDavid' 15 20
     initTable' startTable
 
 
-mkCanvas :: Int -> Int -> IO Elem
-mkCanvas width height = do
+makeCanvas :: Int -> Int -> IO Elem
+makeCanvas width height = do
     canvas <- newElem "canvas"
     setStyle canvas "border" "1px solid black"
     setStyle canvas "backgroundColor" "white"
@@ -108,9 +113,9 @@ mkButton text = do
 main = do
     stateOfGame <- CC.newEmptyMVar
     CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse","Ingvar","Skrep", "sven", "kalle"]
-    canvas <- mkCanvas 1400 800
+    canvas <- makeCanvas 1400 800
     appendChild documentBody canvas
-    canvas2 <- mkCanvas 500 800
+    canvas2 <- makeCanvas 500 800
     appendChild documentBody canvas2
     Just can <- fromElem canvas :: IO (Maybe Canvas)
     Just can2 <- fromElem canvas2 :: IO (Maybe Canvas)
@@ -118,7 +123,7 @@ main = do
     appendChild documentBody button
     --render can starOfDavidInABox
     --render can (initTable' $ gameTable ((initGame ["Pelle","Lasse","Ingvar","Skrep"])))
-    --renderTable can
+    renderTable can
     initTable2' can $ gameTable $ initGame ["Pelle", "Lasse","Ingvar","Skrep", "sven", "kalle"]
     bitmap <-  loadBitmap "http://www-ece.rice.edu/~wakin/images/lena512.bmp"
     --render can $ draw bitmap (50,50)
