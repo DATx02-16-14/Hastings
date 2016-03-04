@@ -7,6 +7,9 @@ import Table
 import qualified Control.Concurrent as CC
 import qualified Data.Map.Strict as Map
 
+filepath :: String
+filepath = "file:////home/michael/"
+
 starOfDavid :: Double -> Double -> Shape ()
 starOfDavid space size = do
 
@@ -28,26 +31,26 @@ renderTable can  = do
         renderOnTop can $ scale (0.25,0.25) $ draw bitmap (220,50)
 
 renderSquare can space size (Square Empty _ (x,y)) = do
-        bitmap <- loadBitmap "file:////home/benjamin/Documents/empty.bmp"
+        bitmap <- loadBitmap $ filepath ++ "empty.bmp"
         renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
 renderSquare can space size (Square (Piece col) _ (x,y))
         |col == blue = do
-                bitmap <- loadBitmap "file:////home/benjamin/Documents/blue.bmp"
+                bitmap <- loadBitmap $ filepath ++ "blue.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == green = do
-                bitmap <- loadBitmap "file:////home/benjamin/Documents/green.bmp"
+                bitmap <- loadBitmap $ filepath ++ "green.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == orange = do
-                bitmap <- loadBitmap "file:////home/benjamin/Documents/orange.bmp"
+                bitmap <- loadBitmap $ filepath ++ "orange.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == yellow = do 
-                bitmap <- loadBitmap "file:////home/benjamin/Documents/yellow.bmp"
+                bitmap <- loadBitmap $ filepath ++ "yellow.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == purple = do
-                bitmap <- loadBitmap "file:////home/benjamin/Documents/purple.bmp"
+                bitmap <- loadBitmap $ filepath ++ "purple.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == red = do
-                bitmap <- loadBitmap "file:////home/benjamin/Documents/red.bmp"
+                bitmap <- loadBitmap $ filepath ++ "red.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
 
 
@@ -128,16 +131,19 @@ main = do
               Just (x1,y1)       -> 
                          do
                           gameState <- CC.takeMVar stateOfGame
+                          let newState = playerAction gameState (x1,y1)
+                          render can2 $ text (50,50) ( (currentPlayer $ playerAction gameState (x1,y1)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
                           --render can $ fill $ starOfDavid 15 20
                           initTable2' can (gameTable $ playerAction gameState (x1,y1))
 --                          render can2 $ text (150,150) ((currentPlayer gameState) ++ "s speltur!")
                           CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
 --                          render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
-                          render can2 $ text (50,50) ( (currentPlayer gameState) ++ "s speltur!!!")
 
     onEvent button Click $ \_ -> 
      do
       gameState <- CC.takeMVar stateOfGame
+      let newState = rotatePlayer gameState
+      render can2 $ text (50,50) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
       CC.putMVar stateOfGame $ rotatePlayer gameState
 --      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
 
@@ -158,3 +164,12 @@ mapCoords' c1 = filter wasDas $ initTableCoords startTable
 
 distance :: (Double,Double) -> (Double,Double) -> Double
 distance (x1,y1) (x2,y2) = sqrt $ (x1-x2)^2 + (y1-y2)^2
+
+
+showColor :: Color -> String
+showColor color | color == red = "Red"
+                | color == blue = "Blue"
+                | color == yellow = "Yellow"
+                | color == orange = "Orange"
+                | color == green = "Green"
+                | color == purple = "Purple"

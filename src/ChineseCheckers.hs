@@ -189,7 +189,7 @@ initGame players = case (length players) of
 
 rotatePlayer :: GameState -> GameState
 rotatePlayer gs = GameState {gameTable = gameTable gs
-                            , currentPlayer = fst . head $ players gs
+                            , currentPlayer = fst . head . tail $ players gs
                             , players = (tail (players gs)) ++ [(head $ players gs)]
                             , fromCoord = Nothing
                             , playerMoveAgain = False} 
