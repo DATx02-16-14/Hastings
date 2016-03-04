@@ -203,8 +203,34 @@ createGameDOM api (gameID,ps) = do
 
   mapM_ (addPlayerWithKickToPlayerlist api gameID list) ps
 
+  gameNameDiv <- newElem "div"
+  gameNameText <- newTextElem "Change game name"
+  gameNameField <- newElem "input" `with`
+    [
+      attr "type" =: "text",
+      attr "id" =: "gameNameField"
+    ]
+  gameNameButton <- newElem "button" `with`
+    [
+      attr "id" =: "gameNameBtn"
+    ]
+  gameNameBtnText <- newTextElem "Change"
+  appendChild gameNameButton gameNameBtnText
+
+  appendChild gameNameDiv gameNameText
+  appendChild gameNameDiv gameNameField
+  appendChild gameNameDiv gameNameButton
+
   addChildrenToLeftColumn [createStartGameBtn, list]
+  addChildrenToRightColumn [gameNameDiv]
   addChildrenToCenterColumn [header]
+
+  clickEventString "gameNameBtn" $
+    withElem "gameNameField" $ \field -> do
+      newName <- getValue field
+      case newName of
+        Just name -> onServer $ changeGameName api <.> gameID <.> name
+        Nothing -> return ()
 
 -- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: IO ()
