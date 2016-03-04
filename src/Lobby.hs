@@ -225,12 +225,19 @@ createGameDOM api (gameID,ps) = do
   addChildrenToRightColumn [gameNameDiv]
   addChildrenToCenterColumn [header]
 
-  clickEventString "gameNameBtn" $
-    withElem "gameNameField" $ \field -> do
-      newName <- getValue field
-      case newName of
-        Just name -> onServer $ changeGameName api <.> gameID <.> name
-        Nothing -> return ()
+  onEvent gameNameField KeyPress $ \13 -> gameUpdateFunction
+
+  clickEventString "gameNameBtn" $ gameUpdateFunction
+
+  where
+    gameUpdateFunction =
+      withElem "gameNameField" $ \field -> do
+        newName <- getValue field
+        case newName of
+          Just name -> do
+            setProp field "value" ""
+            onServer $ changeGameName api <.> gameID <.> name
+          Nothing -> return ()
 
 -- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: IO ()
