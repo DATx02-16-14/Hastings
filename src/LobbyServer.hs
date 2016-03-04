@@ -13,6 +13,7 @@ module LobbyServer(
   disconnectPlayerFromGame,
   kickPlayer,
   changeNickName,
+  changeGameName,
   findGameName) where
 
 import Haste.App
@@ -178,3 +179,10 @@ changeNickName remoteClientList remoteGames newName = do
     return $ map (\(uuid, GameData ps gameName) -> (uuid, GameData ((updateNick sid) ps) gameName)) gs
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
+
+-- |Change the name of a 'LobbyGame'
+changeGameName :: Server GamesList -> String -> Name -> Server ()
+changeGameName remoteGames uuid newName = do
+  gamesList <- remoteGames
+  liftIO $ CC.modifyMVar_ gamesList $ \games ->
+    return $ updateListElem (\(guuid, gameData) -> (guuid, gameData {gameName = newName})) (\(guuid, _) -> uuid == uuid) games
