@@ -134,6 +134,8 @@ createLobbyDOM api = do
 
   clickEventString "nickNameBtn" nickUpdateFunction
 
+  return ()
+
   where
     nickUpdateFunction =
       withElem "nickNameField" $ \field -> do
@@ -236,6 +238,8 @@ createGameDOM api (gameID,ps) = do
 
   clickEventString "gameNameBtn" gameUpdateFunction
 
+  return ()
+
   where
     gameUpdateFunction =
       withElem "gameNameField" $ \field -> do
@@ -260,39 +264,40 @@ deleteDOM s = withElem s $ \element -> deleteChild documentBody element
 
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: LobbyAPI -> GameAPI-> Client ()
-createGameBtn lapi gapi =
+createGameBtn lapi gapi = do
   clickEventString "createGamebtn" onCreateBtnMouseClick
-    where
-      onCreateBtnMouseClick = do
-        maybeStrings <- onServer (createGame lapi)
-        case maybeStrings of
-          Nothing          -> return ()
-          Just gameStrings -> do
-            switchToGameDOM gameStrings
-            withElem "playerList" $ \pdiv ->
-                fork $ listenForChanges (players gameStrings) (changeWithKicks gameStrings) 1000 pdiv
-            clickEventString "startGameButton" $ do
-                gameDiv <- newElem "div" `with`
-                  [
-                    prop "id" =: "gameDiv"
-                  ]
-                names <- onServer (players gameStrings)
-                startGame gapi names gameDiv
+  return ()
+  where
+    onCreateBtnMouseClick = do
+      maybeStrings <- onServer (createGame lapi)
+      case maybeStrings of
+        Nothing          -> return ()
+        Just gameStrings -> do
+          switchToGameDOM gameStrings
+          withElem "playerList" $ \pdiv ->
+              fork $ listenForChanges (players gameStrings) (changeWithKicks gameStrings) 1000 pdiv
+          clickEventString "startGameButton" $ do
+              gameDiv <- newElem "div" `with`
+                [
+                  prop "id" =: "gameDiv"
+                ]
+              names <- onServer (players gameStrings)
+              startGame gapi names gameDiv
+          return ()
 
-      switchToGameDOM (guid, player) = do
-        liftIO deleteLobbyDOM
-        createGameDOM lapi (guid, [player])
+    switchToGameDOM (guid, player) = do
+      liftIO deleteLobbyDOM
+      createGameDOM lapi (guid, [player])
 
-      players gameStrings = findPlayersInGame lapi <.> fst gameStrings
+    players gameStrings = findPlayersInGame lapi <.> fst gameStrings
 
-      changeWithKicks (guid, _) = addPlayerWithKickToPlayerlist lapi guid
+    changeWithKicks (guid, _) = addPlayerWithKickToPlayerlist lapi guid
 
 -- |Creates a listener for a click event with the Elem with the given String and a function.
-clickEventString :: String -> Client () -> Client ()
+clickEventString :: String -> Client () -> Client HandlerInfo
 clickEventString identifier fun =
   withElem identifier $ \e -> do
     clickEventElem e fun
-    return ()
 
 -- |Creates a listener for a click event with the given 'Elem' and a function.
 clickEventElem :: Elem -> Client () -> Client HandlerInfo
