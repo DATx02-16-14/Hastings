@@ -37,4 +37,4 @@ type Chat = (Name,[SessionID])
 type ConcurrentChatList = CC.MVar [Chat]
 
 lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry
-lookupClientEntry sid cs = find ((sid ==) . sessionID) cs
+lookupClientEntry sid = find ((sid ==) . sessionID)
