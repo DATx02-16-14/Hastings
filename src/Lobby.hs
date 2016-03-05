@@ -130,12 +130,17 @@ createLobbyDOM api = do
   addChildrenToLeftColumn [playerList]
   addChildrenToCenterColumn [header, createGamebtn]
 
-  clickEventString "nickNameBtn" $
-    withElem "nickNameField" $ \field -> do
-      newName <- getValue field
-      case newName of
-        Just name -> onServer $ changeNickName api <.> name
-        Nothing -> return ()
+  onEvent nickNameField KeyPress $ \13 -> nickUpdateFunction
+
+  clickEventString "nickNameBtn" nickUpdateFunction
+
+  where
+    nickUpdateFunction =
+      withElem "nickNameField" $ \field -> do
+        newName <- getValue field
+        case newName of
+          Just name -> onServer $ changeNickName api <.> name
+          Nothing -> return ()
 
 createChatDOM :: Elem -> IO ()
 createChatDOM parentDiv = do
@@ -227,7 +232,7 @@ createGameDOM api (gameID,ps) = do
 
   onEvent gameNameField KeyPress $ \13 -> gameUpdateFunction
 
-  clickEventString "gameNameBtn" $ gameUpdateFunction
+  clickEventString "gameNameBtn" gameUpdateFunction
 
   where
     gameUpdateFunction =
