@@ -186,6 +186,7 @@ createGameDOM api gameID = do
   nameOfGame <- newTextElem gameName
   header <- newElem "h1" `with`
     [
+      attr "id" =: "gameHeader",
       style "text-align" =: "center",
       style "margin-left" =: "auto",
       style "margin-right" =: "auto"
@@ -276,7 +277,9 @@ createGameBtn lapi gapi = do
         Just gameUuid -> do
           switchToGameDOM gameUuid
           withElem "playerList" $ \pdiv ->
-              fork $ listenForChanges (players gameUuid) (changeWithKicks gameUuid) 1000 pdiv
+            fork $ listenForChanges (players gameUuid) (changeWithKicks gameUuid) 1000 pdiv
+          withElem "gameHeader" $ \gh ->
+            fork $ changeHeader gameUuid gh ""
           clickEventString "startGameButton" $ do
               gameDiv <- newElem "div" `with`
                 [
@@ -293,6 +296,21 @@ createGameBtn lapi gapi = do
     players gameUuid = findPlayersInGame lapi <.> gameUuid
 
     changeWithKicks gameUuid = addPlayerWithKickToPlayerlist lapi gameUuid
+
+    -- Method that updates the header, will be deprecated when implementing channels for UI
+    changeHeader :: String -> Elem -> String -> Client ()
+    changeHeader gameUuid elem prevName = do
+      gameName <- onServer $ findGameName lapi <.> gameUuid
+      if gameName == prevName
+        then
+          setTimer (Once 1000) $ changeHeader gameUuid elem prevName
+        else do
+          clearChildren elem
+          gameNameText <- newTextElem gameName
+          appendChild elem gameNameText
+          setTimer (Once 1000) $ changeHeader gameUuid elem gameName
+      return ()
+
 
 -- |Creates a listener for a click event with the Elem with the given String and a function.
 clickEventString :: String -> Client () -> Client HandlerInfo
