@@ -178,11 +178,12 @@ createChatDOM parentDiv = do
 
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
-createGameDOM :: LobbyAPI -> (String,[String]) -> Client ()
-createGameDOM api (gameID,ps) = do
+createGameDOM :: LobbyAPI -> String -> Client ()
+createGameDOM api gameID = do
   parentDiv <- createBootstrapTemplate "lobbyGame"
-
-  nameOfGame <- newTextElem gameID
+  gameName <- onServer $ findGameName api <.> gameID
+  players <- onServer $ findPlayersInGame api <.> gameID
+  nameOfGame <- newTextElem gameName
   header <- newElem "h1" `with`
     [
       style "text-align" =: "center",
@@ -208,9 +209,9 @@ createGameDOM api (gameID,ps) = do
   mapM_ (\p -> do
               name <- newTextElem $ p ++ " "
               appendChild list name
-        ) ps
+        ) players
 
-  mapM_ (addPlayerWithKickToPlayerlist api gameID list) ps
+  mapM_ (addPlayerWithKickToPlayerlist api gameID list) players
 
   gameNameDiv <- newElem "div"
   gameNameText <- newTextElem "Change game name"
@@ -269,29 +270,29 @@ createGameBtn lapi gapi = do
   return ()
   where
     onCreateBtnMouseClick = do
-      maybeStrings <- onServer (createGame lapi)
-      case maybeStrings of
+      maybeUuid <- onServer (createGame lapi)
+      case maybeUuid of
         Nothing          -> return ()
-        Just gameStrings -> do
-          switchToGameDOM gameStrings
+        Just gameUuid -> do
+          switchToGameDOM gameUuid
           withElem "playerList" $ \pdiv ->
-              fork $ listenForChanges (players gameStrings) (changeWithKicks gameStrings) 1000 pdiv
+              fork $ listenForChanges (players gameUuid) (changeWithKicks gameUuid) 1000 pdiv
           clickEventString "startGameButton" $ do
               gameDiv <- newElem "div" `with`
                 [
                   prop "id" =: "gameDiv"
                 ]
-              names <- onServer (players gameStrings)
+              names <- onServer (players gameUuid)
               startGame gapi names gameDiv
           return ()
 
-    switchToGameDOM (guid, player) = do
+    switchToGameDOM guid = do
       liftIO deleteLobbyDOM
-      createGameDOM lapi (guid, [player])
+      createGameDOM lapi guid
 
-    players gameStrings = findPlayersInGame lapi <.> fst gameStrings
+    players gameUuid = findPlayersInGame lapi <.> gameUuid
 
-    changeWithKicks (guid, _) = addPlayerWithKickToPlayerlist lapi guid
+    changeWithKicks gameUuid = addPlayerWithKickToPlayerlist lapi gameUuid
 
 -- |Creates a listener for a click event with the Elem with the given String and a function.
 clickEventString :: String -> Client () -> Client HandlerInfo
@@ -309,9 +310,10 @@ clickEventElem e fun =
 
 -- |Adds DOM for a game
 addGame :: LobbyAPI -> String -> Client ()
-addGame api gameName =
+addGame api gameID =
   withElems ["lobby", "centerContent", "createGamebtn"] $ \[lobbyDiv, centerContent, createGamebtn] -> do
     gameDiv <- newElem "div"
+    gameName <- onServer $ findGameName api <.> gameID
     gameEntry <- newElem "button" `with`
       [
         prop "id" =: gameName
@@ -322,12 +324,12 @@ addGame api gameName =
     insertChildBefore centerContent createGamebtn gameDiv
 
     clickEventString gameName $ do
-        onServer $ joinGame api <.> gameName
-        players <- onServer $ findPlayersInGame api <.> gameName
-        liftIO deleteLobbyDOM
-        createGameDOM api (gameName, players)
-        withElem "playerList" $ \pdiv ->
-            fork $ listenForChanges (findPlayersInGame api <.> gameName) (addPlayerWithKickToPlayerlist api gameName) 1000 pdiv
+      onServer $ joinGame api <.> gameID
+      players <- onServer $ findPlayersInGame api <.> gameID
+      liftIO deleteLobbyDOM
+      createGameDOM api gameID
+      withElem "playerList" $ \pdiv ->
+          fork $ listenForChanges (findPlayersInGame api <.> gameID) (addPlayerWithKickToPlayerlist api gameID) 1000 pdiv
 
     return ()
 

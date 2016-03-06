@@ -78,7 +78,7 @@ disconnectPlayerFromGame remoteGames remoteClientList sid = do
           return (uuid, GameData newClientList gameName)
 
 -- |Creates a new game on the server
-createGame :: Server GamesList -> Server ConcurrentClientList -> Server (Maybe (String,String))
+createGame :: Server GamesList -> Server ConcurrentClientList -> Server (Maybe String)
 createGame remoteGames remoteClientList = do
   concurrentClientList <- remoteClientList
   clientList <- liftIO $ CC.readMVar concurrentClientList
@@ -94,10 +94,10 @@ createGame remoteGames remoteClientList = do
         Just c  -> return $ (uuidStr,GameData [c] "GameName") : gs
         Nothing -> return gs
   case maybeClientEntry of
-    Just p  -> return $ Just ("GameName", name p)
+    Just p  -> return $ Just (uuidStr)
     Nothing -> return Nothing
 
--- |Reteurns a list of the each game's name
+-- |Returns a list of the each game's uuid as a String
 getGamesList :: Server GamesList -> Server [String]
 getGamesList remoteGames = do
   gameList <- remoteGames >>= liftIO . CC.readMVar

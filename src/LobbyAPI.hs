@@ -13,7 +13,7 @@ import LobbyServer as Server
 -- |The api provided by the server.
 data LobbyAPI = LobbyAPI
   { connect :: Remote (String -> Server ())
-  , createGame :: Remote (Server (Maybe (String,String)))
+  , createGame :: Remote (Server (Maybe (String)))
   , getGamesList :: Remote (Server [String])
   , joinGame :: Remote (String -> Server ())
   , findPlayersInGame :: Remote (String -> Server [String])
