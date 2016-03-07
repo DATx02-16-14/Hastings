@@ -295,7 +295,7 @@ createGameBtn lapi gapi = do
 
     players gameUuid = findPlayersInGame lapi <.> gameUuid
 
-    changeWithKicks gameUuid = addPlayerWithKickToPlayerlist lapi gameUuid
+    changeWithKicks = addPlayerWithKickToPlayerlist lapi
 
     -- Method that updates the header, will be deprecated when implementing channels for UI
     changeHeader :: String -> Elem -> String -> Client ()
@@ -315,7 +315,7 @@ createGameBtn lapi gapi = do
 -- |Creates a listener for a click event with the Elem with the given String and a function.
 clickEventString :: String -> Client () -> Client HandlerInfo
 clickEventString identifier fun =
-  withElem identifier $ \e -> do
+  withElem identifier $ \e ->
     clickEventElem e fun
 
 -- |Creates a listener for a click event with the given 'Elem' and a function.
