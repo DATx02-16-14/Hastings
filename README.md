@@ -1,4 +1,4 @@
-# Hastings
+# Hastings [![Build Status](https://travis-ci.org/DATx02-16-14/Hastings.svg?branch=travis-setup)](https://travis-ci.org/DATx02-16-14/Hastings)
 A project for the course DATX02 at CHALMERS UNIVERSITY OF TECHNOLOGY. 
 
 The project aims to assess the suitability of programmig client-server applications in Haskell using Haste.App, supplying feedback to the devloper and demonstrating advantages (if any). 
