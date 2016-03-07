@@ -5,8 +5,8 @@ packages:
 - location:
     git: https://github.com/valderman/haste-standalone
     commit: bbd2641
-system-ghc: false
-extra-deps:  
+system-ghc: true
+extra-deps:
 - tar-0.5.0.1
 - HTTP-4000.2.23
 - cereal-0.4.1.1
