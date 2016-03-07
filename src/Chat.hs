@@ -37,7 +37,7 @@ removeSessionFromChat :: SessionID -> Chat -> Chat
 removeSessionFromChat sid (n,ss) = (n, delete sid ss)
 
 sendMessage :: Name -> ChatMessage -> [Chat] -> [ClientEntry] -> IO ()
-sendMessage chatName msg@(ChatMessage sid message) cs ps = do
+sendMessage chatName msg@(ChatMessage sid message) cs ps =
   case lookup chatName cs of
     Nothing -> return ()
     Just sids -> do
