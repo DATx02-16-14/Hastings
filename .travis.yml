@@ -1,4 +1,4 @@
-sudo: false
+sudo: true
 language: c
 
 before_install:
@@ -7,7 +7,7 @@ before_install:
 - export PATH=$HOME/.local/bin:$PATH
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 - sudo apt-get -qq update
-- sudo apt-get install 
+- sudo apt-get install
 
 script:
 - stack --no-terminal setup
@@ -18,3 +18,4 @@ script:
 cache:
   directories:
   - $HOME/.stack
+  - $HOME/.ghc
