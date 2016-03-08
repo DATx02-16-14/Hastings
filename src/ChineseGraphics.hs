@@ -1,3 +1,5 @@
+module ChineseGraphics where
+
 import Haste
 import Haste.DOM
 import Haste.Graphics.Canvas
@@ -142,7 +144,7 @@ main = do
                           initTable2' can (gameTable $ playerAction gameState (x1,y1))
 --                          render can2 $ text (150,150) ((currentPlayer gameState) ++ "s speltur!")
 --                          CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
-                          case playerDone (playedrs newState) newState of
+                          case playerDone (players newState) newState of
                             Nothing -> graphicGameOver
                             Just x  -> CC.putMVar stateOfGame $ x
 --                          render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
