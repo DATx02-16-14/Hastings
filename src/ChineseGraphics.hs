@@ -11,8 +11,8 @@ import qualified Data.Map.Strict as Map
 filepath :: String
 filepath = "file:////home/michael/"
 
-starOfDavid :: Double -> Double -> Shape ()
-starOfDavid space size = do
+starOfDavid' :: Double -> Double -> Shape ()
+starOfDavid' space size = do
 
 
         path [((12+5-1)*space+12*size, space*(5-2)), ((12+5+1)*space+12*size, space*(5-2)),
@@ -32,7 +32,7 @@ initTable2' can t = sequence_ $ map (renderSquare can 15 20) t
 --        bitmap <- loadBitmap "file:////home/benjamin/Documents/0305509001456402835_chinese_checkers_start_posit.png"
 --        renderOnTop can $ scale (1.4,0.90) $ draw bitmap (20,20)
 renderTable can  = do
-        bitmap <- loadBitmap "file:////home/benjamin/Documents/0305509001456402835_chinese_checkers_start_posit.png"
+        bitmap <- loadBitmap $ filepath ++ "Documents/0305509001456402835_chinese_checkers_start_posit.png"
         renderOnTop can $ scale (1.5,0.90) $ draw bitmap (0,20)
 
 
@@ -123,7 +123,7 @@ main = do
     appendChild documentBody button
     --render can starOfDavidInABox
     --render can (initTable' $ gameTable ((initGame ["Pelle","Lasse","Ingvar","Skrep"])))
-    renderTable can
+--    renderTable can
     initTable2' can $ gameTable $ initGame ["Pelle", "Lasse","Ingvar","Skrep", "sven", "kalle"]
     bitmap <-  loadBitmap "http://www-ece.rice.edu/~wakin/images/lena512.bmp"
     --render can $ draw bitmap (50,50)
@@ -137,12 +137,16 @@ main = do
                          do
                           gameState <- CC.takeMVar stateOfGame
                           let newState = playerAction gameState (x1,y1)
-                          render can2 $ text (50,50) ( (currentPlayer $ playerAction gameState (x1,y1)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
+                          render can2 $ text (50,50) ((currentPlayer $ playerAction gameState (x1,y1)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
                           --render can $ fill $ starOfDavid 15 20
                           initTable2' can (gameTable $ playerAction gameState (x1,y1))
 --                          render can2 $ text (150,150) ((currentPlayer gameState) ++ "s speltur!")
-                          CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
+--                          CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
+                          case playerDone (playedrs newState) newState of
+                            Nothing -> graphicGameOver
+                            Just x  -> CC.putMVar stateOfGame $ x
 --                          render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
+                          where colors xs = map snd xs
 
     onEvent button Click $ \_ -> 
      do
@@ -152,6 +156,17 @@ main = do
       CC.putMVar stateOfGame $ rotatePlayer gameState
 --      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
 
+
+graphicGameOver = undefined
+
+playerDone :: [(String,Color)] -> GameState -> Maybe GameState
+playerDone [] t = Nothing
+playerDone ((s,c):xs) state | playerHome c (gameTable state) = Just $ GameState {gameTable = gameTable state
+                                             , currentPlayer = currentPlayer state
+                                             , players = xs
+                                             , fromCoord = fromCoord state
+                                             , playerMoveAgain = playerMoveAgain state}
+                            | otherwise = Just state
 
 skrep :: GameState -> GameState
 skrep gs = GameState {gameTable = startTable, currentPlayer = mao $ tail (players gs), players = (tail (players gs)) ++ [head (players gs)], fromCoord = fromCoord gs, playerMoveAgain = False}
