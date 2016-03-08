@@ -7,9 +7,10 @@ import Data.List
 -- |A type synonym to clarify that some Strings are Names.
 type Name = String
 -- |A client entry is a player with a SessionID as key.
-data ClientEntry = ClientEntry {sessionID   :: SessionID
-                               ,name        :: Name
-                               ,chatChannel :: CC.Chan ChatMessage}
+data ClientEntry = ClientEntry {sessionID    :: SessionID
+                               ,name         :: Name
+                               ,chatChannel  :: CC.Chan ChatMessage
+                               ,lobbyChannel :: CC.Chan LobbyMessage}
 instance Eq ClientEntry where
   c1 == c2 = sessionID c1 == sessionID c2
   c1 /= c2 = sessionID c1 == sessionID c2
@@ -38,3 +39,6 @@ type ConcurrentChatList = CC.MVar [Chat]
 
 lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry
 lookupClientEntry sid = find ((sid ==) . sessionID)
+
+-- |LobbyMessage is a message to a client idicating some udate to the state that the cliet has to adapt to.
+data LobbyMessage = NickChange String String

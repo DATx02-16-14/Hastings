@@ -38,7 +38,8 @@ connect remoteClientList remoteChats name = do
 
   liftIO $ CC.modifyMVar_ concurrentClientList  $ \clients -> do
     chatChannel <- CC.newChan
-    return $ ClientEntry sid name chatChannel : clients
+    lobbyChannel <- CC.newChan
+    return $ ClientEntry sid name chatChannel lobbyChannel : clients
 
   liftIO $ CC.modifyMVar_ chats $ \cs ->
     return $ addPlayerToChat sid "main" cs
