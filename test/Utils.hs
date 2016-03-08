@@ -15,3 +15,16 @@ prop_updateLookup_correctUpdate find list =
     result = updateLookup updateFun find list
     resultDiff = result \\ list
     updateFun v = v + 1
+
+--Test that checks that the order of the updated list is preserved.
+prop_updateLookup_correctOrder :: Int -> [(Int, Int)] -> Bool
+prop_updateLookup_correctOrder find list =
+  case lookup find list of
+    Just val -> length list == length result && length filteredList == 1
+    Nothing  -> True
+
+    where
+      result = updateLookup updateFun find list
+      zipList = zip result list
+      filteredList = filter (uncurry (/=)) zipList
+      updateFun v = v + 1
