@@ -41,4 +41,4 @@ lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry
 lookupClientEntry sid = find ((sid ==) . sessionID)
 
 -- |LobbyMessage is a message to a client idicating some udate to the state that the cliet has to adapt to.
-data LobbyMessage = NickChange String String
+data LobbyMessage = NickChange
