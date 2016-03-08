@@ -179,8 +179,9 @@ changeNickName remoteClientList remoteGames newName = do
     return $ map (\(uuid, GameData ps gameName) -> (uuid, GameData (updateNick sid ps) gameName)) gs
 
   -- Update the clients with this new information
-  clients <- liftIO $ CC.readMVar mVarClientList
-  liftIO $ mapM_ (\c -> CC.writeChan (lobbyChannel c) NickChange) clients
+  liftIO $ do
+    clients <-  CC.readMVar mVarClientList
+    mapM_ (\c -> CC.writeChan (lobbyChannel c) NickChange) clients
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
 
@@ -190,3 +191,13 @@ changeGameName remoteGames uuid newName = do
   gamesList <- remoteGames
   liftIO $ CC.modifyMVar_ gamesList $ \games ->
     return $ updateListElem (\(guuid, gameData) -> (guuid, gameData {gameName = newName})) (\(guuid, _) -> uuid == uuid) games
+
+readLobbyChannel :: Server ConcurrentClientList -> Server LobbyMessage
+readLobbyChannel remoteClientList = do
+  mVarClientList <- remoteClientList
+  sid <- getSessionID
+  liftIO $ do
+    clients <- CC.readMVar mVarClientList
+    case find (\c -> sessionID c == sid) clients of
+      Just client -> CC.readChan $ lobbyChannel client
+      Nothing     -> error "readLobbyChannel: Could not find session ID"
