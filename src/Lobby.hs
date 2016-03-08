@@ -141,10 +141,11 @@ createLobbyDOM api = do
       withElem "nickNameField" $ \field -> do
         newName <- getValue field
         case newName of
+          Just ""   -> return ()
           Just name -> do
             setProp field "value" ""
             onServer $ changeNickName api <.> name
-          Nothing -> return ()
+          Nothing   -> return ()
 
 createChatDOM :: Elem -> IO ()
 createChatDOM parentDiv = do
