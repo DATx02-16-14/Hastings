@@ -7,6 +7,6 @@ main = defaultMain tests
 
 tests = [
         testGroup "UpdateLookup" [
-                testProperty "Element Updated" prop_updateLookup
+                testProperty "Test that exactly one element is updated and that element is updated correctly" prop_updateLookup_correctUpdate
             ]
     ]
