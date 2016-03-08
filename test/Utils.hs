@@ -24,5 +24,16 @@ prop_updateLookup_correctOrder element list = isJust (lookup element list) ==>
       result = updateLookup updateFunction element list
       filteredList = filter (uncurry (/=)) $ zip result list
 
+prop_updateListElem_correctUpdate :: Int -> [Int] -> Property
+prop_updateListElem_correctUpdate element list = elem element list ==>
+    length resultDiff == 1 && head resultDiff == updateFunction element
+
+    where
+      result = updateListElem updateFunction (updateListElemPredicate element) list
+      resultDiff = result \\ list
+
 updateFunction :: Int -> Int
 updateFunction value = value + 1
+
+updateListElemPredicate :: Int -> Int -> Bool
+updateListElemPredicate expectedValue value = expectedValue == value
