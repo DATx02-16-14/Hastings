@@ -186,11 +186,12 @@ createGameDOM api gameID = do
   players <- onServer $ findPlayersInGame api <.> gameID
 
   startGameBtn <- createStartGameBtn
+  leaveGameBtn <- createLeaveGameBtn
   playerList <- createPlayerList players
   gameNameDIV <- createGamesDIV
   header <- createHeader gameName
 
-  addChildrenToLeftColumn [startGameBtn, playerList]
+  addChildrenToLeftColumn [startGameBtn, leaveGameBtn, playerList]
   addChildrenToRightColumn [gameNameDIV]
   addChildrenToCenterColumn [header]
 
@@ -217,6 +218,15 @@ createGameDOM api gameID = do
       createStartGameBtnText <- newTextElem "Start game"
       appendChild startGameBtn createStartGameBtnText
       return startGameBtn
+
+    createLeaveGameBtn = do
+      leaveGameButton <- newElem "button" `with`
+        [
+          prop "id" =: "leaveGameButton"
+        ]
+      btnText <- newTextElem "Leave game"
+      appendChild leaveGameButton btnText
+      return leaveGameButton
 
     createHeader gameName = do
       nameOfGame <- newTextElem gameName
