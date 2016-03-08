@@ -254,13 +254,23 @@ createGameDOM api gameID = do
             onServer $ changeGameName api <.> gameID <.> name
           Nothing   -> return ()
 
+    createStartGameBtn = do
+      startGameBtn <- newElem "button" `with`
+        [
+          prop "id" =: "startGameButton"
+        ]
+      createStartGameBtnText <- newTextElem "Start game"
+      appendChild startGameBtn createStartGameBtnText
+      return startGameBtn
+
+
 -- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: IO ()
-deleteLobbyDOM = deleteDOM "container-fluid"
+deleteLobbyDOM = deleteDOM "lobby"
 
 -- |Deletes the DOM created for a game in the lobby
 deleteGameDOM :: IO ()
-deleteGameDOM = deleteDOM "container-fluid"
+deleteGameDOM = deleteDOM "lobbyGame"
 
 -- |Helper function that deletes DOM given an identifier from documentBody
 deleteDOM :: String -> IO ()
