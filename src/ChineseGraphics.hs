@@ -7,6 +7,27 @@ import Table
 import qualified Control.Concurrent as CC
 import qualified Data.Map.Strict as Map
 
+
+renderSquare2 can space size (Square (Piece col) _ (x,y))
+        |col == blue = do
+                bitmap <- loadBitmap "file:////home/benjamin/Documents/blue2.bmp"
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+        |col == green = do
+                bitmap <- loadBitmap "file:////home/benjamin/Documents/green2.bmp"
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+        |col == orange = do
+                bitmap <- loadBitmap "file:////home/benjamin/Documents/orange2.bmp"
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+        |col == yellow = do
+                bitmap <- loadBitmap "file:////home/benjamin/Documents/yellow2.bmp"
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+        |col == purple = do
+                bitmap <- loadBitmap "file:////home/benjamin/Documents/purple2.bmp"
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+        |col == red = do
+                bitmap <- loadBitmap "file:////home/benjamin/Documents/red2.bmp"
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+
 starOfDavid' :: Double -> Double -> Shape ()
 starOfDavid' space size = do
 
@@ -16,7 +37,7 @@ starOfDavid' space size = do
               ((24.5+1+5)*space+25*size, size*13+space*(13+5-2)), ((24+5+1)*space+24*size, size*14+space*(14+5-2)),
               ((16+5+1)*space+16*size, size*14+space*(14+5-2)), ((12+5+1)*space+12*size, size*18+space*(18+5-2)),
               ((12+5-1)*space+12*size, size*18+space*(18+5-2)), ((8+5-1)*space+8*size, size*14+space*(14+5-2)),
-              ((8+5-1)*space+8*size, size*14+space*(14+5-2)), ((5-1)*space+0*size, size*14+space*(14+5-2)), 
+              ((8+5-1)*space+8*size, size*14+space*(14+5-2)), ((5-1)*space+0*size, size*14+space*(14+5-2)),
               ((3.5-1)*space+0*size, size*13+space*(13+5-2)), ((3+5-1)*space+3*size, size*9+space*(9+5-2)),
               ((3.5-1)*space+0*size, size*5+space*(5+5-2)), ((5-1)*space+0*size, size*4+space*(4+5-2)),
               ((8+5-1)*space+8*size, size*4+space*(4+5-2)), ((12+5-1)*space+12*size, space*(5-2))]
@@ -104,7 +125,6 @@ mkButton text = do
     set button [prop "innerHTML" =: text]
     return button
 
---main :: IO ()
 main = do
     stateOfGame <- CC.newEmptyMVar
     CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse","Ingvar","Skrep", "sven", "kalle"]
@@ -118,7 +138,7 @@ main = do
     appendChild documentBody button
     --render can starOfDavidInABox
     --render can (initTable' $ gameTable ((initGame ["Pelle","Lasse","Ingvar","Skrep"])))
-    renderTable can
+    --renderTable can
     initTable2' can $ gameTable $ initGame ["Pelle", "Lasse","Ingvar","Skrep", "sven", "kalle"]
     bitmap <-  loadBitmap "http://www-ece.rice.edu/~wakin/images/lena512.bmp"
     --render can $ draw bitmap (50,50)
@@ -144,11 +164,9 @@ main = do
       CC.putMVar stateOfGame $ rotatePlayer gameState
 --      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
 
-
 skrep :: GameState -> GameState
 skrep gs = GameState {gameTable = startTable, currentPlayer = mao $ tail (players gs), players = (tail (players gs)) ++ [head (players gs)], fromCoord = fromCoord gs, playerMoveAgain = False}
    where mao [(x,y)] = x
-
 
 mapCoords :: (Double,Double) -> Maybe (Int,Int)
 mapCoords c1 = case mapCoords' c1 of
