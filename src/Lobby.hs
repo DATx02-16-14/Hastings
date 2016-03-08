@@ -184,60 +184,15 @@ createGameDOM api gameID = do
   parentDiv <- createBootstrapTemplate "lobbyGame"
   gameName <- onServer $ findGameName api <.> gameID
   players <- onServer $ findPlayersInGame api <.> gameID
-  nameOfGame <- newTextElem gameName
-  header <- newElem "h1" `with`
-    [
-      attr "id" =: "gameHeader",
-      style "text-align" =: "center",
-      style "margin-left" =: "auto",
-      style "margin-right" =: "auto"
-    ]
-  appendChild header nameOfGame
 
-  createStartGameBtn <- newElem "button" `with`
-    [
-      prop "id" =: "startGameButton"
-    ]
-  createStartGameBtnText <- newTextElem "Start game"
-  appendChild createStartGameBtn createStartGameBtnText
+  startGameBtn <- createStartGameBtn
+  playerList <- createPlayerList players
+  gameNameDIV <- createGamesDIV
+  header <- createHeader gameName
 
-  list <- newElem "div" `with`
-    [
-      prop "id" =: "playerList"
-    ]
-  listhead <- newTextElem "Players: "
-  appendChild list listhead
-
-  mapM_ (\p -> do
-              name <- newTextElem $ p ++ " "
-              appendChild list name
-        ) players
-
-  mapM_ (addPlayerWithKickToPlayerlist api gameID list) players
-
-  gameNameDiv <- newElem "div"
-  gameNameText <- newTextElem "Change game name"
-  gameNameField <- newElem "input" `with`
-    [
-      attr "type" =: "text",
-      attr "id" =: "gameNameField"
-    ]
-  gameNameButton <- newElem "button" `with`
-    [
-      attr "id" =: "gameNameBtn"
-    ]
-  gameNameBtnText <- newTextElem "Change"
-  appendChild gameNameButton gameNameBtnText
-
-  appendChild gameNameDiv gameNameText
-  appendChild gameNameDiv gameNameField
-  appendChild gameNameDiv gameNameButton
-
-  addChildrenToLeftColumn [createStartGameBtn, list]
-  addChildrenToRightColumn [gameNameDiv]
+  addChildrenToLeftColumn [startGameBtn, playerList]
+  addChildrenToRightColumn [gameNameDIV]
   addChildrenToCenterColumn [header]
-
-  onEvent gameNameField KeyPress $ \13 -> gameUpdateFunction
 
   clickEventString "gameNameBtn" gameUpdateFunction
 
@@ -262,6 +217,57 @@ createGameDOM api gameID = do
       createStartGameBtnText <- newTextElem "Start game"
       appendChild startGameBtn createStartGameBtnText
       return startGameBtn
+
+    createHeader gameName = do
+      nameOfGame <- newTextElem gameName
+      header <- newElem "h1" `with`
+        [
+          attr "id" =: "gameHeader",
+          style "text-align" =: "center",
+          style "margin-left" =: "auto",
+          style "margin-right" =: "auto"
+        ]
+      appendChild header nameOfGame
+      return header
+
+    createGamesDIV = do
+      gamesDIV <- newElem "div"
+      gameNameField <- newElem "input" `with`
+        [
+          attr "type" =: "text",
+          attr "id" =: "gameNameField"
+        ]
+      onEvent gameNameField KeyPress $ \13 -> gameUpdateFunction
+      appendChild gamesDIV gameNameField
+
+      gameNameButton <- newElem "button" `with`
+        [
+          attr "id" =: "gameNameBtn"
+        ]
+      gameNameBtnText <- newTextElem "Change"
+      appendChild gameNameButton gameNameBtnText
+      appendChild gamesDIV gameNameButton
+
+      gameNameText <- newTextElem "Change game name"
+      appendChild gamesDIV gameNameText
+
+      return gamesDIV
+
+    createPlayerList players = do
+      playerList <- newElem "div" `with`
+        [
+          prop "id" =: "playerList"
+        ]
+      listheader <- newTextElem "Players: "
+      appendChild playerList listheader
+
+      mapM_ (\p -> do
+                  name <- newTextElem $ p ++ " "
+                  appendChild playerList name
+            ) players
+
+      mapM_ (addPlayerWithKickToPlayerlist api gameID playerList) players
+      return playerList
 
 
 -- |Deletes the DOM created for the intial lobby view
