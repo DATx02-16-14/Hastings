@@ -8,6 +8,9 @@ import qualified Control.Concurrent as CC
 import qualified Data.Map.Strict as Map
 
 
+renderTest can = do 
+      bitmap <- loadBitmap "file:////home/benjamin/Documents/cooltext170130995424459.gif"
+      renderOnTop can $ draw bitmap (10,10)
 
 renderSquare2 can space size (Square (Piece col) _ (x,y))
         |col == blue = do
@@ -30,7 +33,7 @@ renderSquare2 can space size (Square (Piece col) _ (x,y))
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
 
 filepath :: String
-filepath = "file:////home/michael/"
+filepath = "file:////home/benjamin/Documents/"
 
 starOfDavid' :: Double -> Double -> Shape ()
 starOfDavid' space size = do
@@ -53,31 +56,31 @@ initTable2' can t = sequence_ $ map (renderSquare can 15 20) t
 --        bitmap <- loadBitmap "file:////home/benjamin/Documents/0305509001456402835_chinese_checkers_start_posit.png"
 --        renderOnTop can $ scale (1.4,0.90) $ draw bitmap (20,20)
 renderTable can  = do
-        bitmap <- loadBitmap $ filepath ++ "Documents/0305509001456402835_chinese_checkers_start_posit.png"
+        bitmap <- loadBitmap $ filepath ++ "0305509001456402835_chinese_checkers_start_posit.png"
         renderOnTop can $ scale (1.5,0.90) $ draw bitmap (0,20)
 
 
 renderSquare can space size (Square Empty _ (x,y)) = do
-        bitmap <- loadBitmap $ filepath ++ "empty.bmp"
+        bitmap <- loadBitmap $ "file:////home/benjamin/Documents/empty.bmp"
         renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
 renderSquare can space size (Square (Piece col) _ (x,y))
         |col == blue = do
-                bitmap <- loadBitmap $ filepath ++ "blue.bmp"
+                bitmap <- loadBitmap $ "file:////home/benjamin/Documents/blue.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == green = do
-                bitmap <- loadBitmap $ filepath ++ "green.bmp"
+                bitmap <- loadBitmap $ "file:////home/benjamin/Documents/green.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == orange = do
-                bitmap <- loadBitmap $ filepath ++ "orange.bmp"
+                bitmap <- loadBitmap $ "file:////home/benjamin/Documents/orange.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == yellow = do 
-                bitmap <- loadBitmap $ filepath ++ "yellow.bmp"
+                bitmap <- loadBitmap $ "file:////home/benjamin/Documents/yellow.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == purple = do
-                bitmap <- loadBitmap $ filepath ++ "purple.bmp"
+                bitmap <- loadBitmap $ "file:////home/benjamin/Documents/purple.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == red = do
-                bitmap <- loadBitmap $ filepath ++ "red.bmp"
+                bitmap <- loadBitmap $ "file:////home/benjamin/Documents/red.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
 
 
@@ -130,17 +133,17 @@ mkButton text = do
     set button [prop "innerHTML" =: text]
     return button
 
-main = do
+graphicsChinese parent = do
     stateOfGame <- CC.newEmptyMVar
     CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse","Ingvar","Skrep", "sven", "kalle"]
     canvas <- makeCanvas 1400 800
-    appendChild documentBody canvas
+    appendChild parent canvas
     canvas2 <- makeCanvas 500 800
-    appendChild documentBody canvas2
+    appendChild parent canvas2
     Just can <- fromElem canvas :: IO (Maybe Canvas)
     Just can2 <- fromElem canvas2 :: IO (Maybe Canvas)
     button <- mkButton "Rotate player"
-    appendChild documentBody button
+    appendChild parent button
     --render can starOfDavidInABox
     --render can (initTable' $ gameTable ((initGame ["Pelle","Lasse","Ingvar","Skrep"])))
 
@@ -162,7 +165,7 @@ main = do
                           initTable2' can (gameTable $ playerAction gameState (x1,y1))
 --                          render can2 $ text (150,150) ((currentPlayer gameState) ++ "s speltur!")
 --                          CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
-                          case playerDone (playedrs newState) newState of
+                          case playerDone (players newState) newState of
                             Nothing -> graphicGameOver
                             Just x  -> CC.putMVar stateOfGame $ x
 --                          render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
@@ -176,7 +179,10 @@ main = do
       CC.putMVar stateOfGame $ rotatePlayer gameState
 --      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
 
-graphicGameOver = undefined
+
+graphicGameOver can = do
+      bitmap <- loadBitmap "file:////home/benjamin/Documents/cooltext170130995424459.gif"
+      renderOnTop can $ draw bitmap (10,10)
 
 playerDone :: [(String,Color)] -> GameState -> Maybe GameState
 playerDone [] t = Nothing
