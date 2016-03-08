@@ -32,6 +32,14 @@ prop_updateListElem_correctUpdate element list = elem element list ==>
       result = updateListElem updateFunction (updateListElemPredicate element) list
       resultDiff = result \\ list
 
+prop_updateListElem_correctOrder :: Int -> [Int] -> Property
+prop_updateListElem_correctOrder element list = elem element list ==>
+    length list == length result && length filteredList == 1
+
+    where
+       result = updateListElem updateFunction (updateListElemPredicate element) list
+       filteredList = filter (uncurry (/=)) $ zip result list
+
 updateFunction :: Int -> Int
 updateFunction value = value + 1
 
