@@ -177,6 +177,10 @@ changeNickName remoteClientList remoteGames newName = do
   mVarGamesList <- remoteGames
   liftIO $ CC.modifyMVar_ mVarGamesList $ \gs ->
     return $ map (\(uuid, GameData ps gameName) -> (uuid, GameData (updateNick sid ps) gameName)) gs
+
+  -- Update the clients with this new information
+  clients <- liftIO $ CC.readMVar mVarClientList
+  liftIO $ mapM_ (\c -> CC.writeChan (lobbyChannel c) NickChange) clients
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
 
