@@ -12,5 +12,8 @@ haste-cabal:
 embed:
 	stack exec -- Hastings-exe --embed dist/build/Main.js --force
 
+server:
+	stack build Hastings:ServerProduction
+
 run:
 	stack exec Hastings-exe
