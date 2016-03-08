@@ -141,10 +141,11 @@ createLobbyDOM api = do
       withElem "nickNameField" $ \field -> do
         newName <- getValue field
         case newName of
+          Just ""   -> return ()
           Just name -> do
             setProp field "value" ""
             onServer $ changeNickName api <.> name
-          Nothing -> return ()
+          Nothing   -> return ()
 
 createChatDOM :: Elem -> IO ()
 createChatDOM parentDiv = do
@@ -247,10 +248,11 @@ createGameDOM api gameID = do
       withElem "gameNameField" $ \field -> do
         newName <- getValue field
         case newName of
+          Just ""   -> return ()
           Just name -> do
             setProp field "value" ""
             onServer $ changeGameName api <.> gameID <.> name
-          Nothing -> return ()
+          Nothing   -> return ()
 
 -- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: IO ()
