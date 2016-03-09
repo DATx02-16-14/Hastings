@@ -3,6 +3,8 @@ module LobbyTypes where
 import qualified Control.Concurrent as CC
 import Haste.App
 import Data.List
+import Data.Word
+import Haste.Binary (Binary, Get)
 
 -- |A type synonym to clarify that some Strings are Names.
 type Name = String
@@ -42,3 +44,11 @@ lookupClientEntry sid = find ((sid ==) . sessionID)
 
 -- |LobbyMessage is a message to a client idicating some udate to the state that the cliet has to adapt to.
 data LobbyMessage = NickChange
+
+instance Binary LobbyMessage where
+  put NickChange = put (0 :: Word8)
+
+  get = do
+    tag <- get :: Get Word8
+    case tag of
+      0 -> return NickChange
