@@ -386,6 +386,19 @@ addPlayerWithKickToPlayerlist api gameID parent name = do
   appendChild parent kickBtn
   appendChild parent br
 
+-- |Updates the list of players on the client
+updatePlayerList :: LobbyAPI -> Client ()
+updatePlayerList api = do
+  players <- onServer $ getPlayerNameList api
+  playerDiv <- elemById "playerList"
+
+  case playerDiv of
+    Just parent -> do
+      clearChildren parent
+      mapM_ (addPlayerToPlayerlist parent) players
+    Nothing     -> return ()
+
+
 -- |Adds the playername followed by a <br> tag to the given parent.
 addPlayerToPlayerlist :: Elem -> String -> Client ()
 addPlayerToPlayerlist parent name = do
