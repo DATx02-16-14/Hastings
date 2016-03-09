@@ -14,7 +14,8 @@ module LobbyServer(
   kickPlayer,
   changeNickName,
   changeGameName,
-  findGameName) where
+  findGameName,
+  readLobbyChannel) where
 
 import Haste.App
 import qualified Control.Concurrent as CC

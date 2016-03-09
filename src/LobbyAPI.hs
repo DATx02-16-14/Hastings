@@ -26,6 +26,8 @@ data LobbyAPI = LobbyAPI
   , changeNickName :: Remote (Name -> Server ())
     -- |Change the name of the game with the String to the new name
   , changeGameName :: Remote (String -> Name -> Server())
+    -- |Reads the value from the lobby channel
+  , readLobbyChannel :: Remote (Server LobbyMessage)
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -41,3 +43,4 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.kickPlayer gamesList))
             <*> REMOTE((Server.changeNickName playersList gamesList))
             <*> REMOTE((Server.changeGameName gamesList))
+            <*> REMOTE((Server.readLobbyChannel playersList))
