@@ -7,6 +7,7 @@ import Haste.DOM
 import Haste.Concurrent
 import Data.Maybe
 import GameAPI
+import LobbyTypes
 
 -- |Main mehtod for the client.
 clientMain :: LobbyAPI -> Client ()
@@ -22,8 +23,13 @@ clientMain api = do
   gameList <- onServer $ getGamesList api
   mapM_ (addGame api) gameList
 
-  playerDiv <- elemById "playerList"
-  fork $ listenForChanges (getPlayerNameList api) addPlayerToPlayerlist 1000 $ fromJust playerDiv
-
+  fork $ listenForLobbyChanges api
 
   return ()
+
+listenForLobbyChanges :: LobbyAPI -> Client ()
+listenForLobbyChanges api = do
+  message <- onServer $ readLobbyChannel api
+  case message of
+    NickChange -> updatePlayerList api
+  listenForLobbyChanges api
