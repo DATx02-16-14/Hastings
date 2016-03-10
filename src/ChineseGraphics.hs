@@ -8,10 +8,6 @@ import qualified Control.Concurrent as CC
 import qualified Data.Map.Strict as Map
 
 
-renderTest can = do 
-      bitmap <- loadBitmap "file:////home/benjamin/Documents/cooltext170130995424459.gif"
-      renderOnTop can $ draw bitmap (10,10)
-
 renderSquare2 can space size (Square (Piece col) _ (x,y))
         |col == blue = do
                 bitmap <- loadBitmap "file:////home/benjamin/Documents/blue2.bmp"
@@ -133,17 +129,17 @@ mkButton text = do
     set button [prop "innerHTML" =: text]
     return button
 
-graphicsChinese parent = do
+main = do
     stateOfGame <- CC.newEmptyMVar
     CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse","Ingvar","Skrep", "sven", "kalle"]
     canvas <- makeCanvas 1400 800
-    appendChild parent canvas
+    appendChild documentBody canvas
     canvas2 <- makeCanvas 500 800
-    appendChild parent canvas2
+    appendChild documentBody canvas2
     Just can <- fromElem canvas :: IO (Maybe Canvas)
     Just can2 <- fromElem canvas2 :: IO (Maybe Canvas)
     button <- mkButton "Rotate player"
-    appendChild parent button
+    appendChild documentBody button
     --render can starOfDavidInABox
     --render can (initTable' $ gameTable ((initGame ["Pelle","Lasse","Ingvar","Skrep"])))
 
@@ -160,13 +156,13 @@ graphicsChinese parent = do
                          do
                           gameState <- CC.takeMVar stateOfGame
                           let newState = playerAction gameState (x1,y1)
-                          render can2 $ text (50,50) ((currentPlayer $ playerAction gameState (x1,y1)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
+                          render can2 $ scale (5,5) $ text (0,10) ((currentPlayer $ playerAction gameState (x1,y1)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
                           --render can $ fill $ starOfDavid 15 20
                           initTable2' can (gameTable $ playerAction gameState (x1,y1))
 --                          render can2 $ text (150,150) ((currentPlayer gameState) ++ "s speltur!")
 --                          CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
                           case playerDone (players newState) newState of
-                            Nothing -> graphicGameOver
+                            Nothing -> graphicGameOver can
                             Just x  -> CC.putMVar stateOfGame $ x
 --                          render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
                           where colors xs = map snd xs
@@ -175,7 +171,7 @@ graphicsChinese parent = do
      do
       gameState <- CC.takeMVar stateOfGame
       let newState = rotatePlayer gameState
-      render can2 $ text (50,50) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
+      render can2 $ scale (5,5) $ text (0,10) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
       CC.putMVar stateOfGame $ rotatePlayer gameState
 --      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
 
