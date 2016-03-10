@@ -1,4 +1,3 @@
-module ChineseGame where
 
 import ChineseCheckers
 import ChineseGraphics
@@ -9,40 +8,48 @@ import Haste.DOM
 import Haste.Graphics.Canvas
 import Haste.Events
 
-data GameAction = StartGame | Move Coord Coord | RotatePlayer
-    deriving (Show)
-
-type GameChan = Chan (GameAction)
-
 parseGameAction :: GameAction -> GameState -> GameState
 parseGameAction StartGame _ = undefined
 parseGameAction RotatePlayer gs = rotatePlayer gs
 parseGameAction (Move c1 c2) gs = playerAction newState c2
 
-    where newState = mkState (Move c1 c2) gs
+   where newState = undefined --mkState (Move c1 c2) gs
 
-
+{-
 mkState :: GameAction -> GameState -> GameState
-mkState (Move c1 c2) state = GameState {gameTable = gameTable state
+mkState (Move c1 c2) state = GameState {gameTable = playerAction state 
                                              , currentPlayer = currentPlayer state
                                              , players = players state
                                              , fromCoord = Just c1
                                              , playerMoveAgain = playerMoveAgain state}
+-}
 
-runGame :: parent -> GameChan -> [String] -> IO ()
+runGame :: parent -> GameChan -> [String] -> IO HandlerInfo
 runGame parent chan players = do
                                 gameState <- newEmptyMVar
                                 putMVar gameState $ initGame players
-                                printGame parent chan
-                                gameLoop chan gameState
+                                drawGame gameState chan documentBody
+--                                gameLoop chan gameState
+
+chan :: IO (GameChan)
+chan = newChan
+
+main = do 
+    channel <- chan
+    runGame documentBody channel ["pelle","lars","erich","Per"]
 
 
-printGame = undefined
+test channel = do
+        writeChan channel StartGame
+        hej <- readChan channel
+        putStrLn $ show hej
 
+test2 = do
+         channel <- chan
+         test channel
 
 gameLoop :: GameChan -> MVar GameState -> IO ()
 gameLoop chan state = do
                  action <- readChan chan
                  gs <- takeMVar state
                  putMVar state $ parseGameAction action gs
-                 

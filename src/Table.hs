@@ -1,5 +1,6 @@
 module Table where
 import Haste.Graphics.Canvas
+import Control.Concurrent
 
 type Table = [Square]
 --data Color = blue | red | purple | green | orange | yellow | white
@@ -10,6 +11,13 @@ data Content = Empty | Piece Color
 
 data Square = Square Content Color Coord
 -- deriving (Show, Eq)
+
+data GameAction = StartGame | Move Coord Coord | RotatePlayer
+    deriving (Show)
+
+
+type GameChan = Chan (GameAction)
+
 
 data GameState = GameState { gameTable :: Table
                            , currentPlayer :: String
