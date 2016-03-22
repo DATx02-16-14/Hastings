@@ -11,7 +11,7 @@ module LobbyServer(
   getConnectedPlayerNames,
   disconnectPlayerFromLobby,
   disconnectPlayerFromGame,
-  kickPlayer,
+  kickPlayerWithGameID,
   changeNickName,
   changeGameNameWithID,
   findGameName,
@@ -166,8 +166,8 @@ getConnectedPlayerNames remoteClientList = do
   return $ map name clientList
 
 -- | Kicks the player with 'Name' from the game with id String
-kickPlayer :: Server GamesList -> String -> Name -> Server ()
-kickPlayer remoteGames gameID clientName = do
+kickPlayerWithGameID :: Server GamesList -> String -> Name -> Server ()
+kickPlayerWithGameID remoteGames gameID clientName = do
   mVarGamesList <- remoteGames
   liftIO $ CC.modifyMVar_ mVarGamesList $ \lst -> do
     let (h,t) = break ((gameID ==) . fst) lst
