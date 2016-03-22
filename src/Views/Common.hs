@@ -37,10 +37,8 @@ createBootstrapTemplate parentName = do
   appendChild documentBody containerDiv
   appendChild containerDiv rowDiv
   appendChild rowDiv parentDiv
-  appendChild parentDiv leftPaddingColDiv
-  appendChild parentDiv centerColDiv
-  appendChild parentDiv rightPaddingColDiv
 
+  addChildrenToParent parentName [leftPaddingColDiv, centerColDiv, rightPaddingColDiv]
   return parentDiv
 
 createDiv :: [(String, String)] -> Client Elem
