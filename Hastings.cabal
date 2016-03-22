@@ -18,6 +18,11 @@ Flag HasteStandalone
   -- Cabal checks if the configuration is possible, first
   -- with this flag set to True and if not it tries with False
 
+Flag NoHasteStandalone
+  Description: If the HasteStandalone package is available.
+  -- Cabal checks if the configuration is possible, first
+  -- with this flag set to True and if not it tries with False
+
 library
   hs-source-dirs:      src
   build-depends:
@@ -36,16 +41,18 @@ library
 
 executable Hastings-exe
   hs-source-dirs:      app
-  if flag(HasteStandalone)
-    main-is:             StandaloneApp.hs
-  else
+
+  if flag(NoHasteStandalone)
     main-is:             Main.hs
+  else
+    main-is:             StandaloneApp.hs
+
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:
    base      >= 4.8 && < 4.9,
    Hastings
 
-  if flag(HasteStandalone)
+  if !flag(NoHasteStandalone)
     build-depends:
       haste-standalone
 

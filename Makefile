@@ -1,11 +1,14 @@
-all: stack haste-cabal embed run
+all: stack-standalone haste-cabal embed run
 server: stack haste-cabal run
 
 clean:
 	rm -rf dist .stack-work
 
+stack-standalone:
+	stack build --flag Hastings:HasteStandalone
+
 stack:
-	stack build
+	stack build --flag Hastings:NoHasteStandalone
 
 haste-cabal:
 	haste-cabal configure && haste-cabal build

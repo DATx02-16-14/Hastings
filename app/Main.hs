@@ -3,7 +3,6 @@
 module Main
     where
 import Haste.App
-import Haste.App.Standalone
 import Haste.App.Concurrent
 import Lobby
 import qualified Control.Concurrent as CC
