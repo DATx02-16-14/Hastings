@@ -27,38 +27,12 @@ initDOM = do
 createBootstrapTemplate :: String -> Client Elem
 createBootstrapTemplate parentName = do
 
-  containerDiv <- newElem "div" `with`
-    [
-      attr "class" =: "container-fluid",
-      attr "id"    =: "container-fluid"
-    ]
-
-  rowDiv <- newElem "div" `with`
-    [
-      attr "class" =: "row",
-      attr "id"    =: "row"
-    ]
-
-  leftPaddingColDiv <- newElem "div" `with`
-    [
-      attr "class" =: "col-md-3",
-      attr "id"    =: "leftContent"
-    ]
-  rightPaddingColDiv <- newElem "div" `with`
-    [
-      attr "class" =: "col-md-3",
-      attr "id"    =: "rightContent"
-    ]
-
-  centerColDiv <- newElem "div" `with`
-    [
-      attr "class" =: "col-md-6",
-      attr "id"    =: "centerContent"
-    ]
-  parentDiv <- newElem "div" `with`
-    [
-      prop "id" =: parentName
-    ]
+  containerDiv        <- createDiv [("class", "container-fluid"), ("id", "container-fluid")]
+  rowDiv              <- createDiv [("class", "row"), ("id", "row")]
+  leftPaddingColDiv   <- createDiv [("class", "col-md-3"), ("id", "leftContent")]
+  rightPaddingColDiv  <- createDiv [("class", "col-md-3"), ("id", "rightContent")]
+  centerColDiv        <- createDiv [("class", "col-md-6"), ("id", "centerContent")]
+  parentDiv           <- createDiv [("id", parentName)]
 
   appendChild documentBody containerDiv
   appendChild containerDiv rowDiv
