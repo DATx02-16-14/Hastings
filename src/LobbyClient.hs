@@ -1,6 +1,8 @@
 -- |Module for all of the client only code
 module LobbyClient where
-import Lobby
+import Views.Common
+import Views.Lobby
+import Views.Game
 import Haste.App
 import LobbyAPI
 import Haste.DOM
