@@ -193,6 +193,8 @@ changeGameName remoteGames uuid newName = do
   liftIO $ CC.modifyMVar_ gamesList $ \games ->
     return $ updateListElem (\(guuid, gameData) -> (guuid, gameData {gameName = newName})) (\(guuid, _) -> uuid == uuid) games
 
+-- |Reads the lobby channel of the current client and returns the message.
+-- |Blocking method if the channel is empty
 readLobbyChannel :: Server ConcurrentClientList -> Server LobbyMessage
 readLobbyChannel remoteClientList = do
   mVarClientList <- remoteClientList
