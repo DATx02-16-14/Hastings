@@ -135,7 +135,7 @@ createGameBtn lapi gapi = do
         Just gameUuid -> do
           switchToGameDOM gameUuid
           withElem "playerList" $ \pdiv ->
-            fork $ listenForChanges (players gameUuid) (changeWithKicks gameUuid) 1000 pdiv
+            fork $ listenForChanges (findPlayersInGame lapi) (addPlayerWithKickToPlayerlist lapi) 1000 pdiv
           withElem "gameHeader" $ \gh ->
             fork $ changeHeader gameUuid gh ""
           clickEventString "startGameButton" $ do
@@ -143,22 +143,18 @@ createGameBtn lapi gapi = do
                 [
                   prop "id" =: "gameDiv"
                 ]
-              names <- onServer (players gameUuid)
+              names <- onServer (findPlayersInGame lapi)
               startGame gapi names gameDiv
           return ()
 
     switchToGameDOM guid = do
       liftIO deleteLobbyDOM
-      createGameDOM lapi guid
-
-    players gameUuid = findPlayersInGame lapi <.> gameUuid
-
-    changeWithKicks = addPlayerWithKickToPlayerlist lapi
+      createGameDOM lapi
 
     -- Method that updates the header, will be deprecated when implementing channels for UI
     changeHeader :: String -> Elem -> String -> Client ()
     changeHeader gameUuid elem prevName = do
-      gameName <- onServer $ findGameName lapi <.> gameUuid
+      gameName <- onServer $ findGameName lapi
       if gameName == prevName
         then
           setTimer (Once 1000) $ changeHeader gameUuid elem prevName

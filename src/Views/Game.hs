@@ -12,11 +12,11 @@ import Views.Common
 
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
-createGameDOM :: LobbyAPI -> String -> Client ()
-createGameDOM api gameID = do
+createGameDOM :: LobbyAPI -> Client ()
+createGameDOM api = do
   parentDiv <- createBootstrapTemplate "lobbyGame"
-  gameName <- onServer $ findGameName api <.> gameID
-  players <- onServer $ findPlayersInGame api <.> gameID
+  gameName <- onServer $ findGameName api
+  players <- onServer $ findPlayersInGame api
   nameOfGame <- newTextElem gameName
   header <- newElem "h1" `with`
     [
@@ -46,7 +46,7 @@ createGameDOM api gameID = do
               appendChild list name
         ) players
 
-  mapM_ (addPlayerWithKickToPlayerlist api gameID list) players
+  mapM_ (addPlayerWithKickToPlayerlist api list) players
 
   gameNameDiv <- newElem "div"
   gameNameText <- newTextElem "Change game name"
@@ -84,21 +84,21 @@ createGameDOM api gameID = do
           Just ""   -> return ()
           Just name -> do
             setProp field "value" ""
-            onServer $ changeGameName api <.> gameID <.> name
+            onServer $ changeGameName api <.> name
           Nothing   -> return ()
 
 -- |Convenience function for calling on the kick function.
-kickFunction :: String -> Name -> LobbyAPI -> Client ()
-kickFunction string name api = onServer $ kickPlayer api <.> string <.> name
+kickFunction :: Name -> LobbyAPI -> Client ()
+kickFunction name api = onServer $ kickPlayer api <.> name
 
 -- |Adds the playername and a button to kick them followed by a <br> tag to the given parent.
-addPlayerWithKickToPlayerlist :: LobbyAPI -> String -> Elem -> String -> Client ()
-addPlayerWithKickToPlayerlist api gameID parent name = do
+addPlayerWithKickToPlayerlist :: LobbyAPI -> Elem -> String -> Client ()
+addPlayerWithKickToPlayerlist api parent name = do
   textElem <- newTextElem name
   br <- newElem "br"
   kickBtn <- newElem "button"
   kick <- newTextElem "kick"
-  clickEventElem kickBtn $ kickFunction gameID name api
+  clickEventElem kickBtn $ kickFunction name api
   appendChild kickBtn kick
   appendChild parent textElem
   appendChild parent kickBtn
@@ -109,7 +109,7 @@ addGame :: LobbyAPI -> String -> Client ()
 addGame api gameID =
   withElems ["lobby", "centerContent", "createGamebtn"] $ \[lobbyDiv, centerContent, createGamebtn] -> do
     gameDiv <- newElem "div"
-    gameName <- onServer $ findGameName api <.> gameID
+    gameName <- onServer $ findGameName api
     gameEntry <- newElem "button" `with`
       [
         prop "id" =: gameName
@@ -121,10 +121,10 @@ addGame api gameID =
 
     clickEventString gameName $ do
       onServer $ joinGame api <.> gameID
-      players <- onServer $ findPlayersInGame api <.> gameID
+      players <- onServer $ findPlayersInGame api
       liftIO deleteLobbyDOM
-      createGameDOM api gameID
+      createGameDOM api
       withElem "playerList" $ \pdiv ->
-          fork $ listenForChanges (findPlayersInGame api <.> gameID) (addPlayerWithKickToPlayerlist api gameID) 1000 pdiv
+          fork $ listenForChanges (findPlayersInGame api) (addPlayerWithKickToPlayerlist api) 1000 pdiv
 
     return ()
