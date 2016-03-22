@@ -149,6 +149,15 @@ findGameWithID gid mVarGamesList = do
   gamesList <- CC.readMVar mVarGamesList
   return $ find (\g -> fst g == gid) gamesList
 
+-- |Finds the 'LobbyGame' that the current connection is in (or the first if there are multiple)
+findGameWithSid :: GamesList -> Server (Maybe LobbyGame)
+findGameWithSid mVarGamesList = do
+  gamesList <- liftIO $ CC.readMVar mVarGamesList
+  sid <- getSessionID
+  return $ find (\(_, gameData) -> sid `elem` sidsInGame gameData) gamesList
+  where
+    sidsInGame gameData = map sessionID $ players gameData
+
 -- |Returns a list of strings containing all connected players names.
 getConnectedPlayerNames :: Server ConcurrentClientList -> Server [String]
 getConnectedPlayerNames remoteClientList = do
