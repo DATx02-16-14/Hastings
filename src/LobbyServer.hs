@@ -134,6 +134,15 @@ findGameNameWithID remoteGames gid = do
     Just (_, GameData _ name) -> return name
     Nothing                   -> return ""
 
+-- |Finds the name of the game the client is currently in
+findGameNameWithSid :: Server GamesList -> Server String
+findGameNameWithSid remoteGames = do
+  mVarGamesList <- remoteGames
+  maybeGame <- findGameWithSid mVarGamesList
+  case maybeGame of
+    Just (_, GameData _ name) -> return name
+    Nothing                   -> return ""
+
 -- |Finds the name of the players of a game given it's identifier
 playerNamesInGameWithID :: Server GamesList -> String -> Server [String]
 playerNamesInGameWithID remoteGameList gid = do
