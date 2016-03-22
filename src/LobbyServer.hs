@@ -177,6 +177,20 @@ kickPlayerWithGameID remoteGames gameID clientName = do
           newGame = (gameID, GameData (filter ((clientName /=) . name) ps) gameName)
       _              -> return $ h ++ t
 
+-- |Kicks the player with 'Name' from the game that the current client is in.
+kickPlayerWithSid :: Server GamesList -> Name -> Server ()
+kickPlayerWithSid remoteGames clientName = do
+  mVarGamesList <- remoteGames
+  maybeGame <- findGameWithSid mVarGamesList
+  case maybeGame of
+    Nothing   -> return ()
+    Just game -> liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
+      return $ updateListElem newGame (\g -> g == game) games
+        where
+          newGame (guuid, GameData ps gameName) =
+            (guuid, GameData (filter ((clientName /=) . name) ps) gameName)
+
+
 -- |Change the nick name of the current player to that given.
 changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()
 changeNickName remoteClientList remoteGames newName = do
@@ -202,14 +216,14 @@ changeGameNameWithID remoteGames uuid newName = do
   liftIO $ CC.modifyMVar_ gamesList $ \games ->
     return $ updateListElem (\(guuid, gameData) -> (guuid, gameData {gameName = newName})) (\(guuid, _) -> uuid == uuid) games
 
-
+-- |Change the name of a 'LobbyGame' that the connected client is in
 changeGameNameWithSid :: Server GamesList -> Name -> Server ()
 changeGameNameWithSid remoteGames newName = do
   mVarGamesList <- remoteGames
   maybeGame <- findGameWithSid mVarGamesList
   case maybeGame of
     Nothing   -> return ()
-    Just game -> do
+    Just game ->
       liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
         return $ updateListElem
           (\(guuid, gameData) -> (guuid, gameData {gameName = newName}))
