@@ -14,7 +14,7 @@ module LobbyServer(
   kickPlayerWithGameID,
   changeNickName,
   changeGameNameWithID,
-  findGameName,
+  findGameNameWithID,
   readLobbyChannel) where
 
 import Haste.App
@@ -126,8 +126,8 @@ addPlayerToGame client gameID =
 
 -- |Finds the name of a game given it's identifier
 -- (seems useless since the name is the identifier atm.)
-findGameName :: Server GamesList -> String -> Server String
-findGameName remoteGames gid = do
+findGameNameWithID :: Server GamesList -> String -> Server String
+findGameNameWithID remoteGames gid = do
   mVarGamesList <- remoteGames
   maybeGame <- liftIO $ findGameWithID gid mVarGamesList
   case maybeGame of
@@ -149,7 +149,7 @@ playerNamesInGameWithSid remoteGameList = do
   mVarGamesList <- remoteGameList
   maybeGame <- findGameWithSid mVarGamesList
   case maybeGame of
-    Nothing   -> return []
+    Nothing            -> return []
     Just (_, gameData) -> return $ map name (players gameData)
 
 -- |Finds the 'LobbyGame' matching the first parameter and returns it
