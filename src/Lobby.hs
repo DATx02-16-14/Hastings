@@ -179,11 +179,11 @@ createChatDOM parentDiv = do
 
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
-createGameDOM :: LobbyAPI -> String -> Client ()
-createGameDOM api gameID = do
+createGameDOM :: LobbyAPI -> Client ()
+createGameDOM api = do
   parentDiv <- createBootstrapTemplate "lobbyGame"
-  gameName <- onServer $ findGameName api <.> gameID
-  players <- onServer $ findPlayersInGame api <.> gameID
+  gameName <- onServer $ findGameName api
+  players <- onServer $ findPlayersInGame api
   nameOfGame <- newTextElem gameName
   header <- newElem "h1" `with`
     [
@@ -213,7 +213,7 @@ createGameDOM api gameID = do
               appendChild list name
         ) players
 
-  mapM_ (addPlayerWithKickToPlayerlist api gameID list) players
+  mapM_ (addPlayerWithKickToPlayerlist api list) players
 
   gameNameDiv <- newElem "div"
   gameNameText <- newTextElem "Change game name"
@@ -251,7 +251,7 @@ createGameDOM api gameID = do
           Just ""   -> return ()
           Just name -> do
             setProp field "value" ""
-            onServer $ changeGameName api <.> gameID <.> name
+            onServer $ changeGameName api <.> name
           Nothing   -> return ()
 
 -- |Deletes the DOM created for the intial lobby view
@@ -277,9 +277,9 @@ createGameBtn lapi gapi = do
       case maybeUuid of
         Nothing          -> return ()
         Just gameUuid -> do
-          switchToGameDOM gameUuid
+          switchToGameDOM
           withElem "playerList" $ \pdiv ->
-            fork $ listenForChanges (players gameUuid) (changeWithKicks gameUuid) 1000 pdiv
+            fork $ listenForChanges (findPlayersInGame lapi) (addPlayerWithKickToPlayerlist lapi) 1000 pdiv
           withElem "gameHeader" $ \gh ->
             fork $ changeHeader gameUuid gh ""
           clickEventString "startGameButton" $ do
@@ -287,22 +287,18 @@ createGameBtn lapi gapi = do
                 [
                   prop "id" =: "gameDiv"
                 ]
-              names <- onServer (players gameUuid)
+              names <- onServer (findPlayersInGame lapi)
               startGame gapi names gameDiv
           return ()
 
-    switchToGameDOM guid = do
+    switchToGameDOM = do
       liftIO deleteLobbyDOM
-      createGameDOM lapi guid
-
-    players gameUuid = findPlayersInGame lapi <.> gameUuid
-
-    changeWithKicks = addPlayerWithKickToPlayerlist lapi
+      createGameDOM lapi
 
     -- Method that updates the header, will be deprecated when implementing channels for UI
     changeHeader :: String -> Elem -> String -> Client ()
     changeHeader gameUuid elem prevName = do
-      gameName <- onServer $ findGameName lapi <.> gameUuid
+      gameName <- onServer $ findGameName lapi
       if gameName == prevName
         then
           setTimer (Once 1000) $ changeHeader gameUuid elem prevName
@@ -333,7 +329,7 @@ addGame :: LobbyAPI -> String -> Client ()
 addGame api gameID =
   withElems ["lobby", "centerContent", "createGamebtn"] $ \[lobbyDiv, centerContent, createGamebtn] -> do
     gameDiv <- newElem "div"
-    gameName <- onServer $ findGameName api <.> gameID
+    gameName <- onServer $ findGameName api
     gameEntry <- newElem "button" `with`
       [
         prop "id" =: gameName
@@ -345,11 +341,11 @@ addGame api gameID =
 
     clickEventString gameName $ do
       onServer $ joinGame api <.> gameID
-      players <- onServer $ findPlayersInGame api <.> gameID
+      players <- onServer $ findPlayersInGame api
       liftIO deleteLobbyDOM
-      createGameDOM api gameID
+      createGameDOM api
       withElem "playerList" $ \pdiv ->
-          fork $ listenForChanges (findPlayersInGame api <.> gameID) (addPlayerWithKickToPlayerlist api gameID) 1000 pdiv
+          fork $ listenForChanges (findPlayersInGame api) (addPlayerWithKickToPlayerlist api) 1000 pdiv
 
     return ()
 
@@ -370,17 +366,17 @@ listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForCh
       return ()
 
 -- |Convenience function for calling on the kick function.
-kickFunction :: String -> Name -> LobbyAPI -> Client ()
-kickFunction string name api = onServer $ kickPlayer api <.> string <.> name
+kickFunction :: Name -> LobbyAPI -> Client ()
+kickFunction name api = onServer $ kickPlayer api <.> name
 
 -- |Adds the playername and a button to kick them followed by a <br> tag to the given parent.
-addPlayerWithKickToPlayerlist :: LobbyAPI -> String -> Elem -> String -> Client ()
-addPlayerWithKickToPlayerlist api gameID parent name = do
+addPlayerWithKickToPlayerlist :: LobbyAPI -> Elem -> String -> Client ()
+addPlayerWithKickToPlayerlist api parent name = do
   textElem <- newTextElem name
   br <- newElem "br"
   kickBtn <- newElem "button"
   kick <- newTextElem "kick"
-  clickEventElem kickBtn $ kickFunction gameID name api
+  clickEventElem kickBtn $ kickFunction name api
   appendChild kickBtn kick
   appendChild parent textElem
   appendChild parent kickBtn

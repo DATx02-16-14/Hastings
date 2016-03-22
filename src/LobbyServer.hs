@@ -7,14 +7,15 @@ module LobbyServer(
   createGame,
   getGamesList,
   playerJoinGame,
-  playerNamesInGameWithID,
+  playerNamesInGameWithSid,
   getConnectedPlayerNames,
   disconnectPlayerFromLobby,
   disconnectPlayerFromGame,
-  kickPlayerWithGameID,
+  kickPlayerWithSid,
   changeNickName,
-  changeGameNameWithID,
+  changeGameNameWithSid,
   findGameNameWithID,
+  findGameNameWithSid,
   readLobbyChannel) where
 
 import Haste.App
@@ -125,7 +126,6 @@ addPlayerToGame client gameID =
   updateListElem (\(gID, GameData ps gameName) -> (gID, GameData (nub $ client:ps) gameName)) (\g -> gameID == fst g)
 
 -- |Finds the name of a game given it's identifier
--- (seems useless since the name is the identifier atm.)
 findGameNameWithID :: Server GamesList -> String -> Server String
 findGameNameWithID remoteGames gid = do
   mVarGamesList <- remoteGames

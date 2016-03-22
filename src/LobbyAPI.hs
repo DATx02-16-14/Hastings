@@ -16,16 +16,18 @@ data LobbyAPI = LobbyAPI
   , createGame :: Remote (Server (Maybe (String)))
   , getGamesList :: Remote (Server [String])
   , joinGame :: Remote (String -> Server ())
-  , findPlayersInGame :: Remote (String -> Server [String])
+  , findPlayersInGame :: Remote (Server [String])
     -- |Finds the name of the game with String as identifier
-  , findGameName :: Remote (String -> Server String)
+  , findGameNameWithID :: Remote (String -> Server String)
+    -- |Finds the name of the game that the client is in
+  , findGameName :: Remote (Server String)
   , getPlayerNameList :: Remote (Server [String])
     -- |Kicks a player frrom a game.
-  , kickPlayer :: Remote (String -> Name -> Server ())
+  , kickPlayer :: Remote (Name -> Server ())
     -- |Changes the nickname of the active player
   , changeNickName :: Remote (Name -> Server ())
-    -- |Change the name of the game with the String to the new name
-  , changeGameName :: Remote (String -> Name -> Server())
+    -- |Change the name of the game to the new name
+  , changeGameName :: Remote (Name -> Server())
     -- |Reads the value from the lobby channel
   , readLobbyChannel :: Remote (Server LobbyMessage)
   }
@@ -37,10 +39,11 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.createGame gamesList playersList))
             <*> REMOTE((Server.getGamesList gamesList))
             <*> REMOTE((Server.playerJoinGame playersList gamesList))
-            <*> REMOTE((Server.playerNamesInGameWithID gamesList))
+            <*> REMOTE((Server.playerNamesInGameWithSid gamesList))
             <*> REMOTE((Server.findGameNameWithID gamesList))
+            <*> REMOTE((Server.findGameNameWithSid gamesList))
             <*> REMOTE((Server.getConnectedPlayerNames playersList))
-            <*> REMOTE((Server.kickPlayerWithGameID gamesList))
+            <*> REMOTE((Server.kickPlayerWithSid gamesList))
             <*> REMOTE((Server.changeNickName playersList gamesList))
-            <*> REMOTE((Server.changeGameNameWithID gamesList))
+            <*> REMOTE((Server.changeGameNameWithSid gamesList))
             <*> REMOTE((Server.readLobbyChannel playersList))
