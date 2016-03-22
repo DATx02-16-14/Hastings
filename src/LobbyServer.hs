@@ -13,7 +13,7 @@ module LobbyServer(
   disconnectPlayerFromGame,
   kickPlayer,
   changeNickName,
-  changeGameName,
+  changeGameNameWithID,
   findGameName,
   readLobbyChannel) where
 
@@ -119,7 +119,7 @@ playerJoinGame remoteClientList remoteGameList gameID = do
 
   return ()
 
--- |Adds a player to a lobby game.
+-- |Adds a player to a lobby game with the game ID
 addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]
 addPlayerToGame client gameID =
   updateListElem (\(gID, GameData ps gameName) -> (gID, GameData (nub $ client:ps) gameName)) (\g -> gameID == fst g)
@@ -195,12 +195,26 @@ changeNickName remoteClientList remoteGames newName = do
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
 
--- |Change the name of a 'LobbyGame'
-changeGameName :: Server GamesList -> String -> Name -> Server ()
-changeGameName remoteGames uuid newName = do
+-- |Change the name of a 'LobbyGame' given the game's ID
+changeGameNameWithID :: Server GamesList -> String -> Name -> Server ()
+changeGameNameWithID remoteGames uuid newName = do
   gamesList <- remoteGames
   liftIO $ CC.modifyMVar_ gamesList $ \games ->
     return $ updateListElem (\(guuid, gameData) -> (guuid, gameData {gameName = newName})) (\(guuid, _) -> uuid == uuid) games
+
+
+changeGameNameWithSid :: Server GamesList -> Name -> Server ()
+changeGameNameWithSid remoteGames newName = do
+  mVarGamesList <- remoteGames
+  maybeGame <- findGameWithSid mVarGamesList
+  case maybeGame of
+    Nothing   -> return ()
+    Just game -> do
+      liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
+        return $ updateListElem
+          (\(guuid, gameData) -> (guuid, gameData {gameName = newName}))
+          (\g -> g == game)
+          games
 
 readLobbyChannel :: Server ConcurrentClientList -> Server LobbyMessage
 readLobbyChannel remoteClientList = do
