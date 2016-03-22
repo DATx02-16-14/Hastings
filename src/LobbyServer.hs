@@ -129,7 +129,7 @@ addPlayerToGame client gameID =
 findGameName :: Server GamesList -> String -> Server String
 findGameName remoteGames gid = do
   mVarGamesList <- remoteGames
-  maybeGame <- liftIO $ findGame gid mVarGamesList
+  maybeGame <- liftIO $ findGameWithID gid mVarGamesList
   case maybeGame of
     Just (_, GameData _ name) -> return name
     Nothing                   -> return ""
@@ -138,14 +138,14 @@ findGameName remoteGames gid = do
 playerNamesInGame :: Server GamesList -> String -> Server [String]
 playerNamesInGame remoteGameList gid = do
   mVarGamesList <- remoteGameList
-  maybeGame <- liftIO $ findGame gid mVarGamesList
+  maybeGame <- liftIO $ findGameWithID gid mVarGamesList
   case maybeGame of
     Just (gid, GameData ps gameName)   -> return $ map name ps
     Nothing                            -> return []
 
 -- |Finds the 'LobbyGame' matching the first parameter and returns it
-findGame :: String -> GamesList -> IO (Maybe LobbyGame)
-findGame gid mVarGamesList = do
+findGameWithID :: String -> GamesList -> IO (Maybe LobbyGame)
+findGameWithID gid mVarGamesList = do
   gamesList <- CC.readMVar mVarGamesList
   return $ find (\g -> fst g == gid) gamesList
 
