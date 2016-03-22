@@ -69,6 +69,11 @@ createBootstrapTemplate parentName = do
 
   return parentDiv
 
+createDiv :: [(String, String)] -> Client Elem
+createDiv as = newElem "div" `with` attributes
+  where
+    attributes = map (\(name, value) -> attr name =: value) as
+
 -- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: IO ()
 deleteLobbyDOM = deleteDOM "container-fluid"
