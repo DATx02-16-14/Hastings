@@ -72,8 +72,6 @@ createLobbyDOM api = do
   leftContent <- elemById "leftContent"
   liftIO $ createChatDOM $ fromJust leftContent
 
-  appendChild documentBody lobbyDiv
-
   addChildrenToLeftColumn [playerList]
   addChildrenToCenterColumn [header, createGamebtn]
 
