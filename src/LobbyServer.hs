@@ -143,7 +143,14 @@ playerNamesInGameWithID remoteGameList gid = do
     Just (gid, GameData ps gameName)   -> return $ map name ps
     Nothing                            -> return []
 
-
+-- |Finds the name of the players of the game the current client is in
+playerNamesInGameWithSid :: Server GamesList -> Server [String]
+playerNamesInGameWithSid remoteGameList = do
+  mVarGamesList <- remoteGameList
+  maybeGame <- findGameWithSid mVarGamesList
+  case maybeGame of
+    Nothing   -> return []
+    Just (_, gameData) -> return $ map name (players gameData)
 
 -- |Finds the 'LobbyGame' matching the first parameter and returns it
 findGameWithID :: String -> GamesList -> IO (Maybe LobbyGame)
