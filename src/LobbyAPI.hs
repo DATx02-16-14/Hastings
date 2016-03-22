@@ -37,7 +37,7 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.createGame gamesList playersList))
             <*> REMOTE((Server.getGamesList gamesList))
             <*> REMOTE((Server.playerJoinGame playersList gamesList))
-            <*> REMOTE((Server.playerNamesInGame gamesList))
+            <*> REMOTE((Server.playerNamesInGameWithID gamesList))
             <*> REMOTE((Server.findGameName gamesList))
             <*> REMOTE((Server.getConnectedPlayerNames playersList))
             <*> REMOTE((Server.kickPlayerWithGameID gamesList))

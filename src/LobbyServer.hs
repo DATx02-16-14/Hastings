@@ -7,7 +7,7 @@ module LobbyServer(
   createGame,
   getGamesList,
   playerJoinGame,
-  playerNamesInGame,
+  playerNamesInGameWithID,
   getConnectedPlayerNames,
   disconnectPlayerFromLobby,
   disconnectPlayerFromGame,
@@ -135,13 +135,15 @@ findGameName remoteGames gid = do
     Nothing                   -> return ""
 
 -- |Finds the name of the players of a game given it's identifier
-playerNamesInGame :: Server GamesList -> String -> Server [String]
-playerNamesInGame remoteGameList gid = do
+playerNamesInGameWithID :: Server GamesList -> String -> Server [String]
+playerNamesInGameWithID remoteGameList gid = do
   mVarGamesList <- remoteGameList
   maybeGame <- liftIO $ findGameWithID gid mVarGamesList
   case maybeGame of
     Just (gid, GameData ps gameName)   -> return $ map name ps
     Nothing                            -> return []
+
+
 
 -- |Finds the 'LobbyGame' matching the first parameter and returns it
 findGameWithID :: String -> GamesList -> IO (Maybe LobbyGame)
