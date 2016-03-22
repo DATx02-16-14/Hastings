@@ -15,11 +15,11 @@ initDOM :: Client ()
 initDOM = do
   cssLink <- newElem "link" `with`
     [
-      prop "rel"          =: "stylesheet",
-      prop "type"         =: "text/css",
-      prop "href"         =: "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css",
-    --prop "integrity"    =: "sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7",
-      prop "crossorigin"  =: "anonymous"
+      attr "rel"          =: "stylesheet",
+      attr "type"         =: "text/css",
+      attr "href"         =: "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css",
+      attr "integrity"    =: "sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7",
+      attr "crossorigin"  =: "anonymous"
     ]
 
   appendChild documentBody cssLink
