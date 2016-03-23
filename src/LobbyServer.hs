@@ -96,6 +96,7 @@ createGame remoteGames remoteClientList = do
     case maybeClientEntry of
         Just c  -> return $ (uuidStr,GameData [c] "GameName") : gs
         Nothing -> return gs
+  liftIO $ messageClients GameAdded clientList
   case maybeClientEntry of
     Just p  -> return $ Just (uuidStr)
     Nothing -> return Nothing
