@@ -39,4 +39,7 @@ listenForLobbyChanges api = do
       createLobbyDOM api
     GameAdded      -> updateGamesList api
     ClientJoined   -> updatePlayerList api
+    ClientLeft     -> do
+      updatePlayerList api
+      updatePlayerListGame api
   listenForLobbyChanges api
