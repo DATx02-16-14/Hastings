@@ -234,9 +234,10 @@ changeNickName remoteClientList remoteGames newName = do
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
 
 -- |Change the name of a 'LobbyGame' given the game's ID
-changeGameNameWithID :: Server GamesList -> String -> Name -> Server ()
-changeGameNameWithID remoteGames uuid newName = do
+changeGameNameWithID :: Server GamesList -> Server ConcurrentClientList -> String -> Name -> Server ()
+changeGameNameWithID remoteGames remoteClients uuid newName = do
   gamesList <- remoteGames
+  mVarClientList <- remoteClients
   maybeGame <- liftIO $ findGameWithID uuid gamesList
   case maybeGame of
     Nothing           -> return ()
@@ -246,16 +247,15 @@ changeGameNameWithID remoteGames uuid newName = do
           (\(guuid, gData) -> (guuid, gData {gameName = newName}))
           (\g -> g == game)
           games
-      messageClients GameNameChange (players gameData)
-
--- |Maps over the clients and writes the message to their channel
-messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
-messageClients m cs = mapM_ (\c -> CC.writeChan (lobbyChannel c) m) cs
+  liftIO $ do
+    clientsList <- CC.readMVar mVarClientList
+    messageClients GameNameChange (clientsList)
 
 -- |Change the name of a 'LobbyGame' that the connected client is in
-changeGameNameWithSid :: Server GamesList -> Name -> Server ()
-changeGameNameWithSid remoteGames newName = do
+changeGameNameWithSid :: Server GamesList -> Server ConcurrentClientList -> Name -> Server ()
+changeGameNameWithSid remoteGames remoteClients newName = do
   gamesList <- remoteGames
+  mVarClientList <- remoteClients
   maybeGame <- findGameWithSid gamesList
   case maybeGame of
     Nothing           -> return ()
@@ -265,7 +265,9 @@ changeGameNameWithSid remoteGames newName = do
           (\(guuid, gData) -> (guuid, gData {gameName = newName}))
           (\g -> g == game)
           games
-      messageClients GameNameChange (players gameData)
+  liftIO $ do
+    clientsList <- CC.readMVar mVarClientList
+    messageClients GameNameChange (clientsList)
 
 -- |Reads the lobby channel of the current client and returns the message.
 -- |Blocking method if the channel is empty
@@ -282,3 +284,7 @@ readLobbyChannel remoteClientList = do
 -- |Finds the client with 'Name' from the list of 'ClientEntry'
 findClient :: Name -> [ClientEntry] -> Maybe ClientEntry
 findClient clientName clientList = find ((clientName ==).name) clientList
+
+-- |Maps over the clients and writes the message to their channel
+messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
+messageClients m cs = mapM_ (\c -> CC.writeChan (lobbyChannel c) m) cs

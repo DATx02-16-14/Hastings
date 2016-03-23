@@ -177,7 +177,7 @@ addGameToDOM api gameName = do
   gameDiv <- newElem "div"
   gameEntry <- newElem "button" `with`
     [
-      prop "id" =: gameName
+      prop "id" =: "gameName"
     ]
   textElem <- newTextElem gameName
   appendChild gameEntry textElem
@@ -186,3 +186,15 @@ addGameToDOM api gameName = do
 
   clickEventString gameName $ onServer $ joinGame api <.> gameName
   return ()
+
+-- |Updates the list of games that a player can join
+updateGamesList :: LobbyAPI -> Client ()
+updateGamesList api = do
+  gamesList <- elemById "gamesList"
+  centerContent <- elemById "centerContent"
+  case (gamesList, centerContent) of
+    (Just list, Just center) -> do
+      deleteChild center list
+      gameList <- onServer $ getGamesList api
+      mapM_ (addGame api) gameList
+    _ -> return ()

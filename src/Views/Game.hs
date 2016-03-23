@@ -108,7 +108,10 @@ addPlayerWithKickToPlayerlist api parent name = do
 addGame :: LobbyAPI -> String -> Client ()
 addGame api gameID =
   withElems ["lobby", "centerContent", "createGamebtn"] $ \[lobbyDiv, centerContent, createGamebtn] -> do
-    gameDiv <- newElem "div"
+    gameDiv <- newElem "div" `with`
+      [
+        attr "id" =: "gamesList"
+      ]
     gameName <- onServer $ findGameNameWithID api <.> gameID
     gameEntry <- newElem "button" `with`
       [
