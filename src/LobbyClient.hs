@@ -38,4 +38,5 @@ listenForLobbyChanges api = do
       deleteGameDOM
       createLobbyDOM api
     GameAdded      -> updateGamesList api
+    ClientJoined   -> updatePlayerList api
   listenForLobbyChanges api
