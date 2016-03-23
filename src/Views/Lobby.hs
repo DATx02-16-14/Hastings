@@ -196,17 +196,10 @@ addGameToDOM api gameName = do
 -- |Updates the list of games that a player can join
 updateGamesList :: LobbyAPI -> Client ()
 updateGamesList api = do
-  gamesList <- elemById "gamesList"
-  centerContent <- elemById "centerContent"
-  lobbyDiv <- elemById "lobby"
-  -- The lobby div is included here because we need to know we are in the lobby and not in a game
-  case (lobbyDiv, gamesList, centerContent) of
-    (Just _, Just list, Just center) -> do
-      deleteChild center list
+  gamesListDiv <- elemById "gamesList"
+  case gamesListDiv of
+    Just listDiv -> do
+      clearChildren listDiv
       gameList <- onServer $ getGamesList api
       mapM_ (addGame api) gameList
-      -- If the divs aren't created we won't have to delete the current list,
-      -- but we still need to know we are in the lobby
-    (Just _, _, _) -> do
-      gameList <- onServer $ getGamesList api
-      mapM_ (addGame api) gameList
+    _ -> return ()
