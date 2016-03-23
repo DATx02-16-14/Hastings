@@ -38,13 +38,19 @@ connect remoteClientList remoteChats name = do
   concurrentClientList <- remoteClientList
   sid <- getSessionID
 
-  liftIO $ CC.modifyMVar_ concurrentClientList  $ \clients -> do
-    chatChannel <- CC.newChan
-    lobbyChannel <- CC.newChan
-    return $ ClientEntry sid name chatChannel lobbyChannel : clients
+  liftIO $ do
+    CC.modifyMVar_ concurrentClientList  $ \clients -> do
+      chatChannel <- CC.newChan
+      lobbyChannel <- CC.newChan
+      return $ ClientEntry sid name chatChannel lobbyChannel : clients
 
-  liftIO $ CC.modifyMVar_ chats $ \cs ->
-    return $ addPlayerToChat sid "main" cs
+    CC.modifyMVar_ chats $ \cs ->
+      return $ addPlayerToChat sid "main" cs
+
+    clientList <- CC.readMVar concurrentClientList
+    messageClients ClientJoined clientList
+
+
 
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
