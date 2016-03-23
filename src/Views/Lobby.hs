@@ -69,13 +69,19 @@ createLobbyDOM api = do
       prop "id" =: "playerList"
     ]
 
+  gamesListDiv <- newElem "div" `with`
+    [
+      attr "id" =: "gamesList"
+    ]
+
   leftContent <- elemById "leftContent"
   liftIO $ createChatDOM $ fromJust leftContent
 
   addChildrenToLeftColumn [playerList]
-  addChildrenToCenterColumn [header, createGamebtn]
+  addChildrenToCenterColumn [header, gamesListDiv, createGamebtn]
 
   onEvent nickNameField KeyPress $ \13 -> nickUpdateFunction
+
 
   clickEventString "nickNameBtn" nickUpdateFunction
 
