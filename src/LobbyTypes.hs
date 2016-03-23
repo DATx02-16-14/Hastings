@@ -45,15 +45,17 @@ lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry
 lookupClientEntry sid = find ((sid ==) . sessionID)
 
 -- |LobbyMessage is a message to a client idicating some udate to the state that the cliet has to adapt to.
-data LobbyMessage = NickChange | GameNameChange
+data LobbyMessage = NickChange | GameNameChange | KickedFromGame
   deriving (Eq)
 
 instance Binary LobbyMessage where
   put NickChange     = put (0 :: Word8)
   put GameNameChange = put (1 :: Word8)
+  put KickedFromGame = put (2 :: Word8)
 
   get = do
     tag <- get :: Get Word8
     case tag of
       0 -> return NickChange
       1 -> return GameNameChange
+      2 -> return KickedFromGame
