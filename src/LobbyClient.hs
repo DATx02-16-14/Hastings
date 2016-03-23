@@ -32,4 +32,7 @@ listenForLobbyChanges api = do
     NickChange     -> do
       updatePlayerList api
       updatePlayerListGame api
+    KickedFromGame -> do
+      deleteGameDOM
+      createLobbyDOM api
   listenForLobbyChanges api
