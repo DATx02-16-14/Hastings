@@ -109,7 +109,7 @@ addGame :: LobbyAPI -> String -> Client ()
 addGame api gameID =
   withElems ["lobby", "centerContent", "createGamebtn"] $ \[lobbyDiv, centerContent, createGamebtn] -> do
     gameDiv <- newElem "div"
-    gameName <- onServer $ findGameName api
+    gameName <- onServer $ findGameNameWithID api <.> gameID
     gameEntry <- newElem "button" `with`
       [
         prop "id" =: gameName
