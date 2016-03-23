@@ -36,7 +36,7 @@ createGameDOM api = do
 
   list <- newElem "div" `with`
     [
-      prop "id" =: "playerList"
+      prop "id" =: "gamePlayerList"
     ]
   listhead <- newTextElem "Players: "
   appendChild list listhead
@@ -124,7 +124,19 @@ addGame api gameID =
       players <- onServer $ findPlayersInGame api
       liftIO deleteLobbyDOM
       createGameDOM api
-      withElem "playerList" $ \pdiv ->
+      withElem "gamePlayerList" $ \pdiv ->
           fork $ listenForChanges (findPlayersInGame api) (addPlayerWithKickToPlayerlist api) 1000 pdiv
 
     return ()
+
+-- |Updates the list of players in a game on the client
+updatePlayerListGame :: LobbyAPI -> Client ()
+updatePlayerListGame api = do
+  playerDiv <- elemById "gamePlayerList"
+
+  case playerDiv of
+    Just parent -> do
+      players <- onServer $ findPlayersInGame api
+      clearChildren parent
+      mapM_ (addPlayerWithKickToPlayerlist api parent) players
+    Nothing     -> return ()

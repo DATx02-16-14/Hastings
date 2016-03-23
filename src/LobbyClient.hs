@@ -33,5 +33,7 @@ listenForLobbyChanges :: LobbyAPI -> Client ()
 listenForLobbyChanges api = do
   message <- onServer $ readLobbyChannel api
   case message of
-    NickChange -> updatePlayerList api
+    NickChange -> do
+      updatePlayerList api
+      updatePlayerListGame api
   listenForLobbyChanges api
