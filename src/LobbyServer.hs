@@ -59,6 +59,11 @@ disconnect (clientList, games, chats) sid = do
   disconnectPlayerFromGame games clientList sid
   disconnectPlayerFromLobby clientList sid
 
+  mVarClients <- clientList
+  liftIO $ do
+    clients <- CC.readMVar mVarClients
+    messageClients ClientLeft clients
+
 disconnectPlayerFromChats :: Server ConcurrentChatList -> SessionID -> Server()
 disconnectPlayerFromChats remoteChats sid = do
   chats <- remoteChats
