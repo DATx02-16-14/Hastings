@@ -197,4 +197,6 @@ updateGamesList api = do
       deleteChild center list
       gameList <- onServer $ getGamesList api
       mapM_ (addGame api) gameList
-    _ -> return ()
+    _ -> do
+      gameList <- onServer $ getGamesList api
+      mapM_ (addGame api) gameList

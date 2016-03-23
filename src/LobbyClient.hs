@@ -37,4 +37,5 @@ listenForLobbyChanges api = do
     KickedFromGame -> do
       deleteGameDOM
       createLobbyDOM api
+    GameAdded      -> updateGamesList api
   listenForLobbyChanges api
