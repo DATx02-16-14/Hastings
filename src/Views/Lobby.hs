@@ -134,8 +134,6 @@ createGameBtn lapi gapi = do
         Nothing          -> return ()
         Just gameUuid -> do
           switchToGameDOM gameUuid
-          withElem "playerList" $ \pdiv ->
-            fork $ listenForChanges (findPlayersInGame lapi) (addPlayerWithKickToPlayerlist lapi) 1000 pdiv
           withElem "gameHeader" $ \gh ->
             fork $ changeHeader gameUuid gh ""
           clickEventString "startGameButton" $ do

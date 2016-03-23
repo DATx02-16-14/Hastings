@@ -124,9 +124,6 @@ addGame api gameID =
       players <- onServer $ findPlayersInGame api
       liftIO deleteLobbyDOM
       createGameDOM api
-      withElem "gamePlayerList" $ \pdiv ->
-          fork $ listenForChanges (findPlayersInGame api) (addPlayerWithKickToPlayerlist api) 1000 pdiv
-
     return ()
 
 -- |Updates the list of players in a game on the client
