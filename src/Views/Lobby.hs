@@ -79,7 +79,10 @@ createLobbyDOM api = do
 
   clickEventString "nickNameBtn" nickUpdateFunction
 
-  return ()
+  createGameBtn api newGameAPI
+
+  gameList <- onServer $ getGamesList api
+  mapM_ (addGame api) gameList
 
   where
     nickUpdateFunction =

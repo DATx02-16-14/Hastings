@@ -20,11 +20,6 @@ clientMain api = do
   initDOM
   createLobbyDOM api
 
-  createGameBtn api newGameAPI
-
-  gameList <- onServer $ getGamesList api
-  mapM_ (addGame api) gameList
-
   fork $ listenForLobbyChanges api
 
   return ()
