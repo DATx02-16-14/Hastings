@@ -106,28 +106,28 @@ addPlayerWithKickToPlayerlist api parent name = do
 
 -- |Adds DOM for a game
 addGame :: LobbyAPI -> String -> Client ()
-addGame api gameID =
-  withElems ["lobby", "centerContent", "createGamebtn"] $ \[lobbyDiv, centerContent, createGamebtn] -> do
-    gameDiv <- newElem "div" `with`
-      [
-        attr "id" =: "gamesList"
-      ]
-    gameName <- onServer $ findGameNameWithID api <.> gameID
-    gameEntry <- newElem "button" `with`
-      [
-        prop "id" =: gameName
-      ]
-    textElem <- newTextElem gameName
-    appendChild gameEntry textElem
-    appendChild gameDiv gameEntry
-    insertChildBefore centerContent createGamebtn gameDiv
+addGame api gameID = do
+  maybeGameListDiv <- elemById "gamesList"
+  case maybeGameListDiv of
+    Nothing -> return ()
+    Just gameListDiv -> do
+      gameDiv <- newElem "div"
+      gameName <- onServer $ findGameNameWithID api <.> gameID
+      gameEntry <- newElem "button" `with`
+        [
+          prop "id" =: gameName
+        ]
+      textElem <- newTextElem gameName
+      appendChild gameEntry textElem
+      appendChild gameDiv gameEntry
+      appendChild gameListDiv gameDiv
 
-    clickEventString gameName $ do
-      onServer $ joinGame api <.> gameID
-      players <- onServer $ findPlayersInGame api
-      deleteLobbyDOM
-      createGameDOM api
-    return ()
+      clickEventString gameName $ do
+        onServer $ joinGame api <.> gameID
+        players <- onServer $ findPlayersInGame api
+        deleteLobbyDOM
+        createGameDOM api
+      return ()
 
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()
