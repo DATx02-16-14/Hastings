@@ -5,7 +5,7 @@ module Main
 import Haste.App
 import Haste.App.Standalone
 import Haste.App.Concurrent
-import Lobby
+import Views.Lobby
 import qualified Control.Concurrent as CC
 import Haste.Events
 import Haste.DOM
