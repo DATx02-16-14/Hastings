@@ -144,7 +144,7 @@ createGameBtn lapi gapi = do
           return ()
 
     switchToGameDOM guid = do
-      liftIO deleteLobbyDOM
+      deleteLobbyDOM
       createGameDOM lapi
 
 -- |Updates the list of players on the client

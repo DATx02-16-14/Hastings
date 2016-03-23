@@ -122,7 +122,7 @@ addGame api gameID =
     clickEventString gameName $ do
       onServer $ joinGame api <.> gameID
       players <- onServer $ findPlayersInGame api
-      liftIO deleteLobbyDOM
+      deleteLobbyDOM
       createGameDOM api
     return ()
 

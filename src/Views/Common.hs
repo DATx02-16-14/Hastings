@@ -47,15 +47,15 @@ createDiv as = newElem "div" `with` attributes
     attributes = map (\(name, value) -> attr name =: value) as
 
 -- |Deletes the DOM created for the intial lobby view
-deleteLobbyDOM :: IO ()
+deleteLobbyDOM :: Client ()
 deleteLobbyDOM = deleteDOM "container-fluid"
 
 -- |Deletes the DOM created for a game in the lobby
-deleteGameDOM :: IO ()
+deleteGameDOM :: Client ()
 deleteGameDOM = deleteDOM "container-fluid"
 
 -- |Helper function that deletes DOM given an identifier from documentBody
-deleteDOM :: String -> IO ()
+deleteDOM :: String -> Client ()
 deleteDOM s = withElem s $ \element -> deleteChild documentBody element
 
 -- |Creates a listener for a click event with the Elem with the given String and a function.
