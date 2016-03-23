@@ -184,6 +184,8 @@ getConnectedPlayerNames remoteClientList = do
   return $ map name clientList
 
 -- | Kicks the player with 'Name' from the game with id String
+-- Currently does not notify the kicked person it has been kicked
+-- Implement this if the method is used in the future.
 kickPlayerWithGameID :: Server GamesList -> String -> Name -> Server ()
 kickPlayerWithGameID remoteGames gameID clientName = do
   mVarGamesList <- remoteGames
@@ -202,11 +204,15 @@ kickPlayerWithSid remoteGames clientName = do
   maybeGame <- findGameWithSid mVarGamesList
   case maybeGame of
     Nothing   -> return ()
-    Just game -> liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
-      return $ updateListElem newGame (\g -> g == game) games
-        where
-          newGame (guuid, GameData ps gameName) =
-            (guuid, GameData (filter ((clientName /=) . name) ps) gameName)
+    Just game@(_,gameData) -> do
+      liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
+        return $ updateListElem newGame (\g -> g == game) games
+      case findClient clientName (players gameData) of
+        Just c  -> liftIO $ messageClients KickedFromGame [c]
+        Nothing -> return ()
+      where
+        newGame (guuid, GameData ps gameName) =
+          (guuid, GameData (filter ((clientName /=) . name) ps) gameName)
 
 
 -- |Change the nick name of the current player to that given.
@@ -272,3 +278,7 @@ readLobbyChannel remoteClientList = do
     case find (\c -> sessionID c == sid) clients of
       Just client -> CC.readChan $ lobbyChannel client
       Nothing     -> error "readLobbyChannel: Could not find session ID"
+
+-- |Finds the client with 'Name' from the list of 'ClientEntry'
+findClient :: Name -> [ClientEntry] -> Maybe ClientEntry
+findClient clientName clientList = find ((clientName ==).name) clientList
