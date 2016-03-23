@@ -134,8 +134,6 @@ createGameBtn lapi gapi = do
         Nothing          -> return ()
         Just gameUuid -> do
           switchToGameDOM gameUuid
-          withElem "gameHeader" $ \gh ->
-            fork $ changeHeader gameUuid gh ""
           clickEventString "startGameButton" $ do
               gameDiv <- newElem "div" `with`
                 [
@@ -148,21 +146,6 @@ createGameBtn lapi gapi = do
     switchToGameDOM guid = do
       liftIO deleteLobbyDOM
       createGameDOM lapi
-
-    -- Method that updates the header, will be deprecated when implementing channels for UI
-    changeHeader :: String -> Elem -> String -> Client ()
-    changeHeader gameUuid elem prevName = do
-      gameName <- onServer $ findGameName lapi
-      if gameName == prevName
-        then
-          setTimer (Once 1000) $ changeHeader gameUuid elem prevName
-        else do
-          clearChildren elem
-          gameNameText <- newTextElem gameName
-          appendChild elem gameNameText
-          setTimer (Once 1000) $ changeHeader gameUuid elem gameName
-      return ()
-
 
 -- |Updates the list of players on the client
 updatePlayerList :: LobbyAPI -> Client ()
