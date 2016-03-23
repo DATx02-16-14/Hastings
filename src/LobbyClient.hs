@@ -28,18 +28,19 @@ listenForLobbyChanges :: LobbyAPI -> Client ()
 listenForLobbyChanges api = do
   message <- onServer $ readLobbyChannel api
   case message of
-    GameNameChange -> do
+    GameNameChange   -> do
       updateGameHeader api
       updateGamesList api
-    NickChange     -> do
+    NickChange       -> do
       updatePlayerList api
       updatePlayerListGame api
-    KickedFromGame -> do
+    KickedFromGame   -> do
       deleteGameDOM
       createLobbyDOM api
-    GameAdded      -> updateGamesList api
-    ClientJoined   -> updatePlayerList api
-    ClientLeft     -> do
+    GameAdded        -> updateGamesList api
+    ClientJoined     -> updatePlayerList api
+    ClientLeft       -> do
       updatePlayerList api
       updatePlayerListGame api
+    PlayerJoinedGame -> updatePlayerListGame api
   listenForLobbyChanges api
