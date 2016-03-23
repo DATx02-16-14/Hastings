@@ -73,22 +73,6 @@ clickEventElem e fun =
         Nothing        -> return ()
 
 
--- |Queries the server for a list in an interval, applies a function for every item in the list .
-listenForChanges :: (Eq a, Binary a) => Remote (Server [a]) -> (Elem -> a -> Client ()) -> Int -> Elem -> Client ()
-listenForChanges remoteCall addChildrenToParent updateDelay parent = listenForChanges' []
-  where
-    listenForChanges' currentData = do
-      remoteData <- onServer remoteCall
-      if currentData == remoteData
-        then
-          setTimer (Once updateDelay) $ listenForChanges' currentData
-        else
-          (do
-            clearChildren parent
-            mapM_ (addChildrenToParent parent) remoteData
-            setTimer (Once updateDelay) $ listenForChanges' remoteData)
-      return ()
-
 addChildrenToCenterColumn :: [Elem] -> Client ()
 addChildrenToCenterColumn = addChildrenToParent  "centerContent"
 
