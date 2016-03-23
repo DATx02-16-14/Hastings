@@ -130,7 +130,10 @@ playerJoinGame remoteClientList remoteGameList gameID = do
 
     _ -> return ()
 
-  return ()
+  maybeGame <- findGameWithSid gameList
+  case maybeGame of
+    Just (_,gameData) -> liftIO $ messageClients PlayerJoinedGame (players gameData)
+    nothing           -> return ()
 
 -- |Adds a player to a lobby game with the game ID
 addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]
