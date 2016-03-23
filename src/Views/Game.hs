@@ -130,10 +130,21 @@ addGame api gameID =
 updatePlayerListGame :: LobbyAPI -> Client ()
 updatePlayerListGame api = do
   playerDiv <- elemById "gamePlayerList"
-
   case playerDiv of
     Just parent -> do
       players <- onServer $ findPlayersInGame api
       clearChildren parent
       mapM_ (addPlayerWithKickToPlayerlist api parent) players
     Nothing     -> return ()
+
+-- |Updates the game header with the value at the server
+updateGameHeader :: LobbyAPI -> Client ()
+updateGameHeader api = do
+  maybeHeader <- elemById "gameHeader"
+  case maybeHeader of
+    Nothing     -> return ()
+    Just parent -> do
+      gameName <- onServer $ findGameName api
+      clearChildren parent
+      gameNameText <- newTextElem gameName
+      appendChild parent gameNameText

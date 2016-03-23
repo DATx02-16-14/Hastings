@@ -222,8 +222,8 @@ changeNickName remoteClientList remoteGames newName = do
 
   -- Update the clients with this new information
   liftIO $ do
-    clients <-  CC.readMVar mVarClientList
-    mapM_ (\c -> CC.writeChan (lobbyChannel c) NickChange) clients
+    clients <- CC.readMVar mVarClientList
+    messageClients NickChange clients
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
 
@@ -231,22 +231,35 @@ changeNickName remoteClientList remoteGames newName = do
 changeGameNameWithID :: Server GamesList -> String -> Name -> Server ()
 changeGameNameWithID remoteGames uuid newName = do
   gamesList <- remoteGames
-  liftIO $ CC.modifyMVar_ gamesList $ \games ->
-    return $ updateListElem (\(guuid, gameData) -> (guuid, gameData {gameName = newName})) (\(guuid, _) -> uuid == uuid) games
+  maybeGame <- liftIO $ findGameWithID uuid gamesList
+  case maybeGame of
+    Nothing           -> return ()
+    Just game@(_,gameData) -> liftIO $ do
+      CC.modifyMVar_ gamesList $ \games ->
+        return $ updateListElem
+          (\(guuid, gData) -> (guuid, gData {gameName = newName}))
+          (\g -> g == game)
+          games
+      messageClients GameNameChange (players gameData)
+
+-- |Maps over the clients and writes the message to their channel
+messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
+messageClients m cs = mapM_ (\c -> CC.writeChan (lobbyChannel c) m) cs
 
 -- |Change the name of a 'LobbyGame' that the connected client is in
 changeGameNameWithSid :: Server GamesList -> Name -> Server ()
 changeGameNameWithSid remoteGames newName = do
-  mVarGamesList <- remoteGames
-  maybeGame <- findGameWithSid mVarGamesList
+  gamesList <- remoteGames
+  maybeGame <- findGameWithSid gamesList
   case maybeGame of
-    Nothing   -> return ()
-    Just game ->
-      liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
+    Nothing           -> return ()
+    Just game@(_,gameData) -> liftIO $ do
+      CC.modifyMVar_ gamesList $ \games ->
         return $ updateListElem
-          (\(guuid, gameData) -> (guuid, gameData {gameName = newName}))
+          (\(guuid, gData) -> (guuid, gData {gameName = newName}))
           (\g -> g == game)
           games
+      messageClients GameNameChange (players gameData)
 
 -- |Reads the lobby channel of the current client and returns the message.
 -- |Blocking method if the channel is empty
