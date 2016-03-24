@@ -1,4 +1,3 @@
-
 import ChineseCheckers
 import ChineseGraphics
 import Table
@@ -29,9 +28,9 @@ runGame parent chan players = do
                                 gameState <- newEmptyMVar
                                 putMVar gameState $ initGame players
                                 drawGame gameState chan documentBody
---                                gameLoop chan gameState
+                               -- gameLoop chan gameState
 
-chan :: IO (GameChan)
+--chan :: IO (GameChan)
 chan = newChan
 
 main = do 

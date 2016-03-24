@@ -4,19 +4,18 @@ import Control.Concurrent
 
 type Table = [Square]
 --data Color = blue | red | purple | green | orange | yellow | white
--- deriving (Show, Eq)
 
 data Content = Empty | Piece Color
-   deriving (Eq)
+    deriving (Show, Eq)
 
 data Square = Square Content Color Coord
--- deriving (Show, Eq)
+    deriving (Show, Eq)
 
 data GameAction = StartGame | Move Coord Coord | RotatePlayer
     deriving (Show)
 
 
-type GameChan = Chan (GameAction)
+type GameChan = Chan GameAction
 
 
 data GameState = GameState { gameTable :: Table
@@ -29,6 +28,9 @@ type Coord = (Int,Int)
 
 instance Eq Color where
     (==) (RGB c1 c2 c3) (RGB c4 c5 c6) = c1 == c4 && c2 == c5 && c3 == c6 
+
+instance Show Color where
+    show (RGB a b c) = "RGB " ++ show a ++ " " ++ show b ++ " " ++ show c
 
 -- | Colors used for checkers and squares
 red = RGB 255 0 0
