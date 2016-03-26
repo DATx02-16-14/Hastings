@@ -54,9 +54,9 @@ deleteLobbyDOM = deleteDOM "container-fluid"
 deleteGameDOM :: Client ()
 deleteGameDOM = deleteDOM "container-fluid"
 
--- |Helper function that deletes DOM given an identifier from documentBody
-deleteDOM :: String -> Client ()
-deleteDOM s = withElem s $ \element -> deleteChild documentBody element
+-- |Helper function that deletes DOM given an identifier from that element and the parent element
+deleteDOM :: String -> String -> Client ()
+deleteDOM s parent = withElems [s, parent] $ \[element, parentElem] -> deleteChild parentElem element
 
 -- |Creates a listener for a click event with the Elem with the given String and a function.
 clickEventString :: String -> Client () -> Client HandlerInfo
