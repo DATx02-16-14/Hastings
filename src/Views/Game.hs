@@ -41,11 +41,6 @@ createGameDOM api = do
   listhead <- newTextElem "Players: "
   appendChild list listhead
 
-  mapM_ (\p -> do
-              name <- newTextElem $ p ++ " "
-              appendChild list name
-        ) players
-
   mapM_ (addPlayerWithKickToPlayerlist api list) players
 
   gameNameDiv <- newElem "div"
