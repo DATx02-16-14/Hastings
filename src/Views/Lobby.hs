@@ -24,8 +24,6 @@ import Views.Common
 -- |Includes an input field and a button.
 createChangeNickNameDOM :: LobbyAPI -> Client ()
 createChangeNickNameDOM api = do
-  -- Will not work, needs some other way of creating this so that it does not get deleted
-  -- when deleting "container-fluid". Maybe not delete "Container fluid?"
   nickDiv <- createDiv [("id","nickNameDiv")]
 
   nickNameText <- newTextElem "Change nick name"
