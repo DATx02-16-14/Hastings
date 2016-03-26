@@ -85,4 +85,7 @@ addChildrenToRightColumn = addChildrenToParent "rightContent"
 addChildrenToParent :: String -> [Elem] -> Client ()
 addChildrenToParent parent children = do
   parentElem <- elemById parent
-  mapM_ (appendChild $ fromJust parentElem) children
+  addChildrenToParent' (fromJust parentElem) children
+
+addChildrenToParent' :: Elem -> [Elem] -> Client ()
+addChildrenToParent' parent children = mapM_ (appendChild parent) children
