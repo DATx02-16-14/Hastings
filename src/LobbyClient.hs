@@ -18,6 +18,9 @@ clientMain api = do
   onServer $ connect api <.> name
 
   initDOM
+  createBootstrapTemplate "Hastings"
+  createChangeNickNameDOM api
+  createChatDOM
   createLobbyDOM api
 
   fork $ listenForLobbyChanges api

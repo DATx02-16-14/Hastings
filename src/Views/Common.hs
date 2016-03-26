@@ -48,11 +48,13 @@ createDiv as = newElem "div" `with` attributes
 
 -- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: Client ()
-deleteLobbyDOM = deleteDOM "container-fluid"
+deleteLobbyDOM = deleteDOM "lobby" "centerContent"
 
 -- |Deletes the DOM created for a game in the lobby
 deleteGameDOM :: Client ()
-deleteGameDOM = deleteDOM "container-fluid"
+deleteGameDOM = do
+  deleteDOM "lobbyGame" "centerContent"
+  deleteDOM "changeGameName" "rightContent"
 
 -- |Helper function that deletes DOM given an identifier from that element and the parent element
 deleteDOM :: String -> String -> Client ()

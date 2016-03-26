@@ -20,30 +20,14 @@ import Views.Game
 import Views.Common
 
 
--- |Creates the initial DOM upon entering the lobby
-createLobbyDOM :: LobbyAPI -> Client ()
-createLobbyDOM api = do
+-- |Creates DOM for chaning nick name
+-- |Includes an input field and a button.
+createChangeNickNameDOM :: LobbyAPI -> Client ()
+createChangeNickNameDOM api = do
+  -- Will not work, needs some other way of creating this so that it does not get deleted
+  -- when deleting "container-fluid". Maybe not delete "Container fluid?"
+  nickDiv <- createDiv [("id","nickNameDiv")]
 
-  lobbyDiv <- createBootstrapTemplate "lobby"
-
-  createGamebtn <- newElem "button" `with`
-    [
-      prop "id" =: "createGamebtn"
-    ]
-  crGamebtnText <- newTextElem "Create new game"
-
-  header <- newElem "h1" `with`
-    [
-      attr "class" =: "text-center"
-    ]
-
-  headerText <- newTextElem "Hastings Lobby"
-  appendChild header headerText
-
-  nickDiv <- newElem "div" `with`
-    [
-      prop "id" =: "nickNameDiv"
-    ]
   nickNameText <- newTextElem "Change nick name"
   nickNameField <- newElem "input" `with`
     [
@@ -62,6 +46,43 @@ createLobbyDOM api = do
   appendChild nickDiv nickNameButton
   addChildrenToRightColumn [nickDiv]
 
+  onEvent nickNameField KeyPress $ \13 -> nickUpdateFunction
+
+  clickEventString "nickNameBtn" nickUpdateFunction
+  return ()
+
+  where
+    nickUpdateFunction =
+      withElem "nickNameField" $ \field -> do
+        newName <- getValue field
+        case newName of
+          Just ""   -> return ()
+          Just name -> do
+            setProp field "value" ""
+            onServer $ changeNickName api <.> name
+          Nothing   -> return ()
+
+-- |Creates the initial DOM upon entering the lobby
+createLobbyDOM :: LobbyAPI -> Client ()
+createLobbyDOM api = do
+
+  lobbyDiv <- createDiv [("id","lobby")]
+
+  createGamebtn <- newElem "button" `with`
+    [
+      prop "id" =: "createGamebtn"
+    ]
+  crGamebtnText <- newTextElem "Create new game"
+
+  header <- newElem "h1" `with`
+    [
+      attr "class" =: "text-center"
+    ]
+
+  headerText <- newTextElem "Hastings Lobby"
+  appendChild header headerText
+
+
   appendChild createGamebtn crGamebtnText
 
   playerList <- newElem "div" `with`
@@ -75,34 +96,19 @@ createLobbyDOM api = do
     ]
 
   leftContent <- elemById "leftContent"
-  liftIO $ createChatDOM $ fromJust leftContent
 
   addChildrenToLeftColumn [playerList]
-  addChildrenToCenterColumn [header, gamesListDiv, createGamebtn]
-
-  onEvent nickNameField KeyPress $ \13 -> nickUpdateFunction
-
-
-  clickEventString "nickNameBtn" nickUpdateFunction
+  addChildrenToParent' lobbyDiv [header, gamesListDiv, createGamebtn]
+  addChildrenToCenterColumn [lobbyDiv]
 
   createGameBtn api newGameAPI
 
   gameList <- onServer $ getGamesList api
   mapM_ (addGame api) gameList
 
-  where
-    nickUpdateFunction =
-      withElem "nickNameField" $ \field -> do
-        newName <- getValue field
-        case newName of
-          Just ""   -> return ()
-          Just name -> do
-            setProp field "value" ""
-            onServer $ changeNickName api <.> name
-          Nothing   -> return ()
 
-createChatDOM :: Elem -> IO ()
-createChatDOM parentDiv = do
+createChatDOM :: Client ()
+createChatDOM = do
 
   br <- newElem "br"
 
@@ -126,10 +132,9 @@ createChatDOM parentDiv = do
       attr "cols" =: "60"
     ]
 
-  appendChild parentDiv chatDiv
-  appendChild chatDiv chatBox
-  appendChild chatDiv br
-  appendChild chatDiv messageBox
+  addChildrenToParent' chatDiv [chatBox, br, messageBox]
+  addChildrenToLeftColumn [chatDiv]
+
 
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: LobbyAPI -> GameAPI-> Client ()
