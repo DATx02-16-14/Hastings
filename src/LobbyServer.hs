@@ -124,18 +124,20 @@ playerJoinGame remoteClientList remoteGameList gameID = do
   clientList <- remoteClientList >>= liftIO . CC.readMVar
   gameList <- remoteGameList
   sid <- getSessionID
-  case lookupClientEntry sid clientList of
-    Just player -> liftIO $ CC.modifyMVar_ gameList $
-      \gList -> return $ addPlayerToGame player gameID gList
-
-    _ -> return ()
-
-  maybeGame <- findGameWithSid gameList
+  maybeGame <- liftIO $ findGameWithID gameID gameList
   case maybeGame of
+    Nothing           -> return False
     Just (_,gameData) -> do
-      liftIO $ messageClients PlayerJoinedGame (players gameData)
-      return True
-    nothing           -> return False
+      case (maxAmountOfPlayers gameData) > (length $ players gameData) of
+        False -> return False
+        True  -> do
+          case lookupClientEntry sid clientList of
+            Nothing     -> error "playerJoinGame: Client not registered"
+            Just player -> liftIO $ CC.modifyMVar_ gameList $
+              \gList -> return $ addPlayerToGame player gameID gList
+
+          liftIO $ messageClients PlayerJoinedGame (players gameData)
+          return True
 
 -- |Adds a player to a lobby game with the game ID
 addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]
