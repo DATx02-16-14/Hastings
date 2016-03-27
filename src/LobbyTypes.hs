@@ -68,3 +68,13 @@ instance Binary LobbyMessage where
       4 -> return ClientJoined
       5 -> return ClientLeft
       6 -> return PlayerJoinedGame
+
+instance Binary Bool where
+  put True  = put (0 :: Word8)
+  put False = put (1 :: Word8)
+
+  get = do
+    tag <- get :: Get Word8
+    case tag of
+      0 -> return True
+      1 -> return False
