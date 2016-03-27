@@ -34,12 +34,12 @@ type GamesList = CC.MVar [LobbyGame]
 type LobbyState = (Server ConcurrentClientList, Server GamesList, Server ConcurrentChatList)
 
 -- |A chat message sent on a channel.
-data ChatMessage = ChatMessage {from    :: Name
-                              ,content :: String}
-                | ChatJoin
-                | ChatAnnounceJoin {from :: Name}
-                | ChatLeave
-                | ChatAnnounceLeave {from :: Name}
+data ChatMessage = ChatMessage       {from    :: Name
+                                     ,content :: String}
+                 | ChatJoin
+                 | ChatAnnounceJoin  {from :: Name}
+                 | ChatLeave
+                 | ChatAnnounceLeave {from :: Name}
 
 -- |A chat has a name and all sessionIDs currently in the chat.
 type Chat = (Name, CC.Chan ChatMessage)
@@ -49,12 +49,12 @@ instance Binary ChatMessage where
     put (0 :: Word8)
     put from
     put content
-  put (ChatJoin) =
+  put  ChatJoin =
     put (1 :: Word8)
   put (ChatAnnounceJoin from) = do
     put (2 :: Word8)
     put from
-  put (ChatLeave) =
+  put  ChatLeave =
     put (3 :: Word8)
   put (ChatAnnounceLeave from) = do
     put (4 :: Word8)

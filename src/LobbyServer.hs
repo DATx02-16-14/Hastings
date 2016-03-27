@@ -350,7 +350,7 @@ sendChatMessage remoteClientList remoteChatList chatName chatMessage = do
   chatList <- liftIO $ CC.readMVar concurrentChatList
 
   case chatName `lookup` chatList of
-    Nothing -> return ()
+    Nothing   -> return ()
     Just chat ->
       case chatMessage of
         (ChatMessage from content) -> do
