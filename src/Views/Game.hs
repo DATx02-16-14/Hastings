@@ -53,7 +53,8 @@ createGameDOM api = do
   addChildrenToParent' parentDiv [header, list, createStartGameBtn]
   addChildrenToCenterColumn [parentDiv]
 
-
+-- |Creates the DOM for chaning the name of a game.
+-- |It includes an input field and a button.
 createGameChangeNameDOM :: LobbyAPI -> Client ()
 createGameChangeNameDOM api = do
   gameNameDiv <- createDiv [("id", "changeGameName")]
