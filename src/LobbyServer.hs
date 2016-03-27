@@ -16,14 +16,17 @@ module LobbyServer(
   changeGameNameWithSid,
   findGameNameWithID,
   findGameNameWithSid,
-  readLobbyChannel) where
+  readLobbyChannel,
+  readChatChannel,
+  sendChatMessage,
+  joinChat,
+  getClientName) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
 import Data.List
 import Data.Maybe
 import LobbyTypes
-import Chat
 import Hastings.Utils
 #ifndef __HASTE__
 import Data.UUID
@@ -40,12 +43,8 @@ connect remoteClientList remoteChats name = do
 
   liftIO $ do
     CC.modifyMVar_ concurrentClientList  $ \clients -> do
-      chatChannel <- CC.newChan
       lobbyChannel <- CC.newChan
-      return $ ClientEntry sid name chatChannel lobbyChannel : clients
-
-    CC.modifyMVar_ chats $ \cs ->
-      return $ addPlayerToChat sid "main" cs
+      return $ ClientEntry sid name [] lobbyChannel : clients
 
     clientList <- CC.readMVar concurrentClientList
     messageClients ClientJoined clientList
@@ -55,7 +54,6 @@ connect remoteClientList remoteChats name = do
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
 disconnect (clientList, games, chats) sid = do
-  disconnectPlayerFromChats chats sid
   disconnectPlayerFromGame games clientList sid
   disconnectPlayerFromLobby clientList sid
 
@@ -63,12 +61,6 @@ disconnect (clientList, games, chats) sid = do
   liftIO $ do
     clients <- CC.readMVar mVarClients
     messageClients ClientLeft clients
-
-disconnectPlayerFromChats :: Server ConcurrentChatList -> SessionID -> Server()
-disconnectPlayerFromChats remoteChats sid = do
-  chats <- remoteChats
-  liftIO $ CC.modifyMVar_ chats $ \cs ->
-    return $ removePlayerFromChats sid cs
 
 -- |Removes a player that has disconnected from player list
 disconnectPlayerFromLobby :: Server ConcurrentClientList -> SessionID -> Server ()
@@ -303,3 +295,86 @@ findClient clientName clientList = find ((clientName ==).name) clientList
 -- |Maps over the clients and writes the message to their channel
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m cs = mapM_ (\c -> CC.writeChan (lobbyChannel c) m) cs
+
+-- |Called by client to join a chat
+joinChat :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()
+joinChat remoteClientList remoteChatList chatName = do
+  sid <- getSessionID
+  concurrentClientList <- remoteClientList
+  concurrentChatList <- remoteChatList
+
+  cs <- liftIO $ CC.readMVar concurrentChatList
+  if isNothing $ chatName `lookup` cs
+    then do
+      newChatChannel <- liftIO CC.newChan
+      liftIO $ CC.modifyMVar_ concurrentChatList $ \chatList ->
+        return $ (chatName, newChatChannel) : chatList
+      addChannelToClient sid concurrentChatList concurrentClientList
+    else
+      addChannelToClient sid concurrentChatList concurrentClientList
+
+
+    where
+      addChannelToClient sid concurrentChatList concurrentClientList = do
+        cs <- liftIO $ CC.readMVar concurrentChatList
+        let chan = fromJust $ chatName `lookup` cs
+        clientChan <- liftIO $ CC.dupChan chan
+        let newChat = (chatName, clientChan)
+        liftIO $ CC.modifyMVar_ concurrentClientList $ \clients -> do
+          let client = fromJust $ lookupClientEntry sid clients
+          return $ updateListElem (addChatToClient newChat) ((sid ==) . sessionID) clients
+
+      addChatToClient :: Chat -> ClientEntry -> ClientEntry
+      addChatToClient chat client | chatName `elem` map fst (chats client) = client
+                       | otherwise = client {chats = chat : chats client}
+
+-- |Called by a client to read its various chat channels
+readChatChannel :: Server ConcurrentClientList -> String ->  Server ChatMessage
+readChatChannel remoteClientList chatName = do
+  sid <- getSessionID
+  concurrentClientList <- remoteClientList
+  clients <- liftIO $ CC.readMVar concurrentClientList
+  let client = fromJust $ sid `lookupClientEntry` clients
+
+  case chatName `lookup` (chats client) of
+    Nothing -> error $ "LobbyServer.readChatChannel: client hasn't joined chat: " ++ chatName
+    Just chatChannel -> liftIO $ CC.readChan chatChannel
+
+-- | Called by the client to send a chat message
+sendChatMessage :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> ChatMessage -> Server ()
+sendChatMessage remoteClientList remoteChatList chatName chatMessage = do
+  sid <- getSessionID
+  concurrentClientList <- remoteClientList
+  concurrentChatList <- remoteChatList
+  clientList <- liftIO $ CC.readMVar concurrentClientList
+  chatList <- liftIO $ CC.readMVar concurrentChatList
+
+  case chatName `lookup` chatList of
+    Nothing -> return ()
+    Just chat ->
+      case chatMessage of
+        (ChatMessage from content) -> do
+          msg <- setFromName clientList chatMessage
+          liftIO $ CC.writeChan chat msg
+        ChatJoin          -> do
+          msg <- setFromName clientList $ ChatAnnounceJoin "unknown"
+          liftIO $ CC.writeChan chat msg
+        ChatLeave         -> do
+          msg <- setFromName clientList $ ChatAnnounceLeave "unknown"
+          liftIO $ CC.writeChan chat msg
+  return ()
+    where
+      setFromName :: [ClientEntry] -> ChatMessage -> Server ChatMessage
+      setFromName clientList chatMessage = do
+        sid <- getSessionID
+        let client = fromJust $ lookupClientEntry sid clientList
+        return chatMessage {from = name client}
+
+-- |Called by a client to get its name based on sessionID
+getClientName :: Server ConcurrentClientList -> Server String
+getClientName remoteClientList = do
+  sid <- getSessionID
+  concurrentClientList <- remoteClientList
+  clientList <- liftIO $ CC.readMVar concurrentClientList
+  let client = find ((sid ==) . sessionID) clientList
+  return $ name $ fromJust client
