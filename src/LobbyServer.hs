@@ -119,7 +119,7 @@ getGamesList remoteGames = do
   return $ map fst gameList
 
 -- |Lets a player join a 'LobbyGame'
-playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> Server ()
+playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> Server Bool
 playerJoinGame remoteClientList remoteGameList gameID = do
   clientList <- remoteClientList >>= liftIO . CC.readMVar
   gameList <- remoteGameList
@@ -132,8 +132,10 @@ playerJoinGame remoteClientList remoteGameList gameID = do
 
   maybeGame <- findGameWithSid gameList
   case maybeGame of
-    Just (_,gameData) -> liftIO $ messageClients PlayerJoinedGame (players gameData)
-    nothing           -> return ()
+    Just (_,gameData) -> do
+      liftIO $ messageClients PlayerJoinedGame (players gameData)
+      return True
+    nothing           -> return False
 
 -- |Adds a player to a lobby game with the game ID
 addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]

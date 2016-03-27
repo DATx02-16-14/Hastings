@@ -120,10 +120,13 @@ addGame api gameID = do
       appendChild gameListDiv gameDiv
 
       clickEventString gameName $ do
-        onServer $ joinGame api <.> gameID
-        players <- onServer $ findPlayersInGame api
-        deleteLobbyDOM
-        createGameDOM api
+        bool <- onServer $ joinGame api <.> gameID
+        case bool of
+          False -> return ()
+          True  -> do
+            players <- onServer $ findPlayersInGame api
+            deleteLobbyDOM
+            createGameDOM api
       return ()
 
 -- |Updates the list of players in a game on the client

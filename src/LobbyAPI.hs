@@ -15,7 +15,7 @@ data LobbyAPI = LobbyAPI
   { connect :: Remote (String -> Server ())
   , createGame :: Remote (Int -> Server (Maybe (String)))
   , getGamesList :: Remote (Server [String])
-  , joinGame :: Remote (String -> Server ())
+  , joinGame :: Remote (String -> Server Bool)
   , findPlayersInGame :: Remote (Server [String])
     -- |Finds the name of the game with String as identifier
   , findGameNameWithID :: Remote (String -> Server String)

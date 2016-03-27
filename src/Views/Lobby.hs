@@ -190,7 +190,9 @@ addGameToDOM api gameName = do
   appendChild gameDiv gameEntry
   appendChild documentBody gameDiv
 
-  clickEventString gameName $ onServer $ joinGame api <.> gameName
+  clickEventString gameName $ do
+    bool <- onServer $ joinGame api <.> gameName
+    return ()
   return ()
 
 -- |Updates the list of games that a player can join
