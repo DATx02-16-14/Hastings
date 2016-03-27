@@ -23,8 +23,9 @@ type ConcurrentClientList = CC.MVar [ClientEntry]
 type LobbyGame = (String, GameData)
 
 
-data GameData = GameData {players     :: [ClientEntry],
-                          gameName    :: Name}
+data GameData = GameData {players            :: [ClientEntry],
+                          gameName           :: Name,
+                          maxAmountOfPlayers :: Int}
   deriving (Eq)
 
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
