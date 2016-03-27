@@ -138,7 +138,7 @@ createGameBtn lapi gapi = do
   return ()
   where
     onCreateBtnMouseClick = do
-      maybeUuid <- onServer (createGame lapi)
+      maybeUuid <- onServer $ createGame lapi <.> getMaxNumberOfPlayers gapi
       case maybeUuid of
         Nothing          -> return ()
         Just gameUuid -> do
