@@ -29,7 +29,7 @@ createChatDOM api parentDiv = do
       attr "id"       =: "chatBox",
       attr "rows"     =: "10",
       attr "cols"     =: "18",
-      attr "readonly" =: ""
+      attr "readonly" =: "True"
     ]
 
   messageBox <- newElem "input" `with`
