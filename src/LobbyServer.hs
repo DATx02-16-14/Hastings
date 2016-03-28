@@ -321,7 +321,6 @@ joinChat remoteClientList remoteChatList chatName = do
         clientChan <- liftIO $ CC.dupChan chan
         let newChat = (chatName, clientChan)
         liftIO $ CC.modifyMVar_ concurrentClientList $ \clients -> do
-          let client = fromJust $ lookupClientEntry sid clients
           return $ updateListElem (addChatToClient newChat) ((sid ==) . sessionID) clients
 
       addChatToClient :: Chat -> ClientEntry -> ClientEntry
