@@ -85,6 +85,9 @@ chatMessageCallback (ChatAnnounceJoin from)    = do
 chatMessageCallback (ChatAnnounceLeave from)   = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has left"
   pushToChatBox $ from ++ "has left"
+chatMessageCallback (ChatError errorMessage)   = do
+  liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
+  pushToChatBox $ "ChatError" ++ errorMessage
 chatMessageCallback _ =
   liftIO $ print "chatMessageCallback > Bad ChatMessage"
 
