@@ -333,11 +333,12 @@ readChatChannel remoteClientList chatName = do
   sid <- getSessionID
   concurrentClientList <- remoteClientList
   clients <- liftIO $ CC.readMVar concurrentClientList
-  let client = fromJust $ sid `lookupClientEntry` clients
-
-  case chatName `lookup` (chats client) of
-    Nothing -> error $ "LobbyServer.readChatChannel: client hasn't joined chat: " ++ chatName
-    Just chatChannel -> liftIO $ CC.readChan chatChannel
+  case sid `lookupClientEntry` clients of
+    Nothing     -> return $ ChatError "Couldn't find clients sessionID in remotes client list, try reconnecting."
+    Just client -> do
+      case chatName `lookup` (chats client) of
+        Nothing          -> return $ ChatError "Couldn't find chat in clients currently joined chats. join chat before trying to read from it"
+        Just chatChannel -> liftIO $ CC.readChan chatChannel
 
 -- | Called by the client to send a chat message
 sendChatMessage :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> ChatMessage -> Server ()
@@ -350,24 +351,19 @@ sendChatMessage remoteClientList remoteChatList chatName chatMessage = do
 
   case chatName `lookup` chatList of
     Nothing   -> return ()
-    Just chat ->
-      case chatMessage of
-        (ChatMessage from content) -> do
-          msg <- setFromName clientList chatMessage
-          liftIO $ CC.writeChan chat msg
-        ChatJoin          -> do
-          msg <- setFromName clientList $ ChatAnnounceJoin "unknown"
-          liftIO $ CC.writeChan chat msg
-        ChatLeave         -> do
-          msg <- setFromName clientList $ ChatAnnounceLeave "unknown"
-          liftIO $ CC.writeChan chat msg
+    Just chatChannel -> do
+      case sid `lookupClientEntry` clientList of
+        Nothing     -> return()
+        Just client -> do
+          let msg = chatMessage {from = name client}
+          liftIO $ CC.writeChan chatChannel $ mapMessage msg client
+
   return ()
     where
-      setFromName :: [ClientEntry] -> ChatMessage -> Server ChatMessage
-      setFromName clientList chatMessage = do
-        sid <- getSessionID
-        let client = fromJust $ lookupClientEntry sid clientList
-        return chatMessage {from = name client}
+      mapMessage msg1 client = case msg1 of
+        (ChatMessage from content) -> msg1
+        ChatJoin                   -> ChatAnnounceJoin  (name client)
+        ChatLeave                  -> ChatAnnounceLeave (name client)
 
 -- |Called by a client to get its name based on sessionID
 getClientName :: Server ConcurrentClientList -> Server String

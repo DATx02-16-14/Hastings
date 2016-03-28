@@ -40,6 +40,7 @@ data ChatMessage = ChatMessage       {from    :: Name
                  | ChatAnnounceJoin  {from :: Name}
                  | ChatLeave
                  | ChatAnnounceLeave {from :: Name}
+                 | ChatError {errorMessage :: String}
 
 -- |A chat has a name and all sessionIDs currently in the chat.
 type Chat = (Name, CC.Chan ChatMessage)
