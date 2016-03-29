@@ -18,6 +18,7 @@ import qualified Control.Concurrent as CC
 
 import Views.Game
 import Views.Common
+import Views.Chat
 
 
 -- |Creates the initial DOM upon entering the lobby
@@ -75,7 +76,7 @@ createLobbyDOM api = do
     ]
 
   leftContent <- elemById "leftContent"
-  liftIO $ createChatDOM $ fromJust leftContent
+  createChatDOM api $ fromJust leftContent
 
   addChildrenToLeftColumn [playerList]
   addChildrenToCenterColumn [header, gamesListDiv, createGamebtn]
@@ -100,36 +101,6 @@ createLobbyDOM api = do
             setProp field "value" ""
             onServer $ changeNickName api <.> name
           Nothing   -> return ()
-
-createChatDOM :: Elem -> IO ()
-createChatDOM parentDiv = do
-
-  br <- newElem "br"
-
-  chatDiv <- newElem "div" `with`
-    [
-      attr "id" =: "chatDiv"
-    ]
-
-  chatBox <- newElem "textarea" `with`
-    [
-      attr "id"       =: "chatBox",
-      attr "rows"     =: "10",
-      attr "cols"     =: "18",
-      attr "readonly" =: ""
-    ]
-
-  messageBox <- newElem "input" `with`
-    [
-      attr "type" =: "text",
-      attr "id"   =: "messageBox",
-      attr "cols" =: "60"
-    ]
-
-  appendChild parentDiv chatDiv
-  appendChild chatDiv chatBox
-  appendChild chatDiv br
-  appendChild chatDiv messageBox
 
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: LobbyAPI -> GameAPI-> Client ()
