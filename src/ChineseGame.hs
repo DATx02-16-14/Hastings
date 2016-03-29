@@ -7,6 +7,9 @@ import Haste
 import Haste.DOM
 import Haste.Graphics.Canvas
 import Haste.Events
+import qualified Haste.Concurrent as HC
+import Control.Concurrent as CC
+import Control.Concurrent.STM.TChan
 
 parseGameAction :: GameAction -> GameState -> GameState
 parseGameAction StartGame _ = undefined
@@ -24,32 +27,45 @@ mkState (Move c1 c2) state = GameState {gameTable = playerAction state
                                              , playerMoveAgain = playerMoveAgain state}
 -}
 
-runGame :: parent -> GameChan -> [String] -> IO HandlerInfo
-runGame parent chan players = do
-                                gameState <- newEmptyMVar
-                                putMVar gameState $ initGame players
-                                drawGame gameState chan documentBody
+runGame :: parent -> CC.MVar GameState -> CC.MVar GameAction -> [String] -> IO HandlerInfo
+runGame parent gameState outbox players = do
+                                CC.putMVar gameState $ initGame players
+                                drawGame gameState outbox documentBody
 --                                gameLoop chan gameState
 
 chan :: IO (GameChan)
 chan = newChan
 
-main = do 
-    channel <- chan
-    runGame documentBody channel ["pelle","lars","erich","Per"]
+-- | The inbox, outbox and list of names will be supplied by the server
+main = do
+    state <- CC.newEmptyMVar
+    inbox <- CC.newEmptyMVar
+    outbox <- CC.newEmptyMVar
+    forkIO $ updateState inbox state
+    runGame documentBody state outbox ["pelle","lars","erich","Per"]
 
-
-test channel = do
-        writeChan channel StartGame
-        hej <- readChan channel
-        putStrLn $ show hej
-
-test2 = do
-         channel <- chan
-         test channel
 
 gameLoop :: GameChan -> MVar GameState -> IO ()
 gameLoop chan state = do
                  action <- readChan chan
                  gs <- takeMVar state
                  putMVar state $ parseGameAction action gs
+
+-- | Loop to update the current GameState in use of the client, meant to be forked
+updateState :: CC.MVar GameAction -> CC.MVar GameState -> IO ()
+updateState inbox stateOfGame = do
+                                 move <- CC.takeMVar inbox
+                                 state <- CC.takeMVar stateOfGame
+                                 CC.putMVar stateOfGame $ parseGameAction move state
+                                 updateState inbox stateOfGame
+
+
+
+{-
+updateState :: HC.Inbox GameAction -> HC.MVar GameState -> HC.CIO ()
+updateState inbox stateOfGame = do
+                                 move <- HC.receive inbox
+                                 state <- HC.takeMVar stateOfGame
+                                 HC.putMVar stateOfGame $ parseGameAction move state
+                                 updateState inbox stateOfGame
+-}

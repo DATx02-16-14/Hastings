@@ -7,6 +7,7 @@ import Haste.Events
 import ChineseCheckers
 import Table
 import qualified Control.Concurrent as CC
+import qualified Haste.Concurrent as HC
 import qualified Data.Map.Strict as Map
 
 
@@ -136,9 +137,8 @@ mkButton text = do
     return button
 
 --drawGame :: CC.MVar GameState -> CC.Chan (GameState) -> parent -> IO HandlerInfo
-drawGame stateOfGame chan par = do
---    stateOfGame <- CC.newEmptyMVar
---    CC.putMVar stateOfGame $ initGame ["Pelle", "Lasse","Ingvar","Skrep", "sven", "kalle"]
+drawGame stateOfGame outbox par = do
+    gameState <- CC.takeMVar stateOfGame
     canvas <- makeCanvas 1400 800
     appendChild par canvas
     canvas2 <- makeCanvas 500 800
@@ -147,57 +147,46 @@ drawGame stateOfGame chan par = do
     Just can2 <- fromElem canvas2 :: IO (Maybe Canvas)
     button <- mkButton "Rotate player"
     appendChild par button
-    --render can starOfDavidInABox
-    --render can (initTable' $ gameTable ((initGame ["Pelle","Lasse","Ingvar","Skrep"])))
+    initTable2' can $ gameTable gameState
+    CC.putMVar stateOfGame gameState
+    onEvent can Click $ \mouse -> do
+      state <- CC.readMVar stateOfGame
+      case (currentPlayer state) == "pelle" of  -- must save the clients name somehow
+        True -> 
+         let (x,y) = mouseCoords mouse
+            in
+              case mapCoords (fromIntegral x,fromIntegral y) of 
+                Nothing            -> return ()
+                Just (x1,y1)       -> 
+                           do
+                            gameState <- CC.takeMVar stateOfGame
+                            let newState = playerAction gameState (x1,y1)
+                            case fromCoord newState of
 
-    initTable2' can $ gameTable $ initGame ["Pelle", "Lasse","Ingvar","Skrep", "sven", "kalle"]
-    bitmap <-  loadBitmap "http://www-ece.rice.edu/~wakin/images/lena512.bmp"
-    --render can $ draw bitmap (50,50)
-   -- initTable2' can $ gameTable $ initGame ["Pelle", "Lasse","Ingvar","Skrep"]
-    onEvent can Click $ \mouse -> 
-       let (x,y) = mouseCoords mouse
-          in 
-            case mapCoords (fromIntegral x,fromIntegral y) of 
-              Nothing            -> return ()
-              Just (x1,y1)       -> 
-                         do
-                          gameState <- CC.takeMVar stateOfGame
-                          let newState = playerAction gameState (x1,y1)
-                          case fromCoord newState of
-                           Just (x,y) -> do
-                            CC.putMVar stateOfGame newState
---                            render can2 $ text (50,50) ((currentPlayer $ playerAction gameState (x1,y1)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
---                            render can2 $ text (50,50) "hej benjamin"
-                            initTable2' can (gameTable $ playerAction gameState (x1,y1))
-                            renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
-                            CC.writeChan chan (Move (x,y) (x1,y1))
-                            move <- CC.readChan chan
-                            render can2 $ text (50,50) (show move)
-                            --render can $ fill $ starOfDavid 15 20
---                            initTable2' can (gameTable $ playerAction gameState (x1,y1))
-                            case playerDone (players newState) newState of
-                              Nothing -> graphicGameOver can
-                              Just x  -> CC.putMVar stateOfGame $ x
---                          render can2 $ text (150,150) ((currentPlayer gameState) ++ "s speltur!")
---                          CC.putMVar stateOfGame $ playerAction gameState (x1,y1)
---                          render can2 $ text (50,50) ("(" ++(show x1) ++ "," ++ (show y1)++ ")")
-                           Nothing -> do
-                            CC.putMVar stateOfGame newState
-                            initTable2' can (gameTable $ playerAction gameState (x1,y1))
---                            render can2 $ text (50,50) ((currentPlayer $ playerAction gameState (x1,y1)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
-                            renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
-                            --render can $ fill $ starOfDavid 15 20
-                          where colors xs = map snd xs
+                             Just (x,y) -> do
+                              CC.putMVar stateOfGame newState
+                              CC.putMVar outbox $ Move (x1,y1) (x,y)
+                              initTable2' can (gameTable $ newState)
+  --                            renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
+                              renderOnTop can2 $ text (50,50) $ "hejsan2"
+                              case playerDone (players newState) newState of
+                                Nothing -> graphicGameOver can
+                                Just x  -> CC.putMVar stateOfGame $ x
+
+                             Nothing -> do
+                              CC.putMVar stateOfGame newState
+                              initTable2' can (gameTable $ playerAction gameState (x1,y1))
+  --                            render can2 $ text (50,50) ((currentPlayer $ playerAction gameState (x1,y1)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
+                              renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
+                            where colors xs = map snd xs
+        False -> return ()
 
     onEvent button Click $ \_ -> 
      do
       gameState <- CC.takeMVar stateOfGame
       let newState = rotatePlayer gameState
---      render can2 $ text (50,50) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
+      render can2 $ text (50,50) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
       CC.putMVar stateOfGame $ rotatePlayer gameState
-      CC.writeChan chan StartGame
-      move <- CC.readChan chan
-      render can2 $ text (50,50) $ show move
 --      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
 
 
