@@ -21,8 +21,8 @@ import Views.Common
 
 
 -- |Creates the initial DOM upon entering the lobby
-createLobbyDOM :: LobbyAPI -> Client ()
-createLobbyDOM api = do
+createLobbyDOM :: LobbyAPI -> GameAPI -> Client ()
+createLobbyDOM api gapi = do
 
   lobbyDiv <- createBootstrapTemplate "lobby"
 
@@ -88,7 +88,7 @@ createLobbyDOM api = do
   createGameBtn api newGameAPI
 
   gameList <- onServer $ getGamesList api
-  mapM_ (addGame api) gameList
+  mapM_ (addGame api gapi) gameList
 
   where
     nickUpdateFunction =
@@ -154,7 +154,7 @@ createGameBtn lapi gapi = do
 
     switchToGameDOM guid = do
       deleteLobbyDOM
-      createGameDOM lapi
+      createGameDOM lapi gapi
 
 -- |Updates the list of players on the client
 updatePlayerList :: LobbyAPI -> Client ()
@@ -196,12 +196,12 @@ addGameToDOM api gameName = do
   return ()
 
 -- |Updates the list of games that a player can join
-updateGamesList :: LobbyAPI -> Client ()
-updateGamesList api = do
+updateGamesList :: LobbyAPI -> GameAPI -> Client ()
+updateGamesList api gapi = do
   gamesListDiv <- elemById "gamesList"
   case gamesListDiv of
     Just listDiv -> do
       clearChildren listDiv
       gameList <- onServer $ getGamesList api
-      mapM_ (addGame api) gameList
+      mapM_ (addGame api gapi) gameList
     _ -> return ()

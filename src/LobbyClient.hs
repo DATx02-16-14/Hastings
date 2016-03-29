@@ -18,29 +18,29 @@ clientMain api = do
   onServer $ connect api <.> name
 
   initDOM
-  createLobbyDOM api
+  createLobbyDOM api newGameAPI
 
-  fork $ listenForLobbyChanges api
+  fork $ listenForLobbyChanges api newGameAPI
 
   return ()
 
-listenForLobbyChanges :: LobbyAPI -> Client ()
-listenForLobbyChanges api = do
+listenForLobbyChanges :: LobbyAPI -> GameAPI -> Client ()
+listenForLobbyChanges api gapi = do
   message <- onServer $ readLobbyChannel api
   case message of
     GameNameChange   -> do
       updateGameHeader api
-      updateGamesList api
+      updateGamesList api gapi
     NickChange       -> do
       updatePlayerList api
       updatePlayerListGame api
     KickedFromGame   -> do
       deleteGameDOM
-      createLobbyDOM api
-    GameAdded        -> updateGamesList api
+      createLobbyDOM api gapi
+    GameAdded        -> updateGamesList api gapi
     ClientJoined     -> updatePlayerList api
     ClientLeft       -> do
       updatePlayerList api
       updatePlayerListGame api
     PlayerJoinedGame -> updatePlayerListGame api
-  listenForLobbyChanges api
+  listenForLobbyChanges api gapi
