@@ -1,7 +1,6 @@
 import ChineseCheckers
 import ChineseGraphics
 import Table
-import Control.Concurrent
 import Haste
 import Haste.DOM
 import Haste.Graphics.Canvas

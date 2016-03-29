@@ -149,9 +149,10 @@ drawGame stateOfGame outbox par = do
     appendChild par button
     initTable2' can $ gameTable gameState
     CC.putMVar stateOfGame gameState
-    onEvent can Click $ \mouse -> do
+    onEvent can Click $ \mouse ->
+     do
       state <- CC.readMVar stateOfGame
-      case (currentPlayer state) == "pelle" of  -- must save the clients name somehow
+      case currentPlayer state == "pelle" of  -- must save the clients name somehow
         True -> 
          let (x,y) = mouseCoords mouse
             in
@@ -166,26 +167,25 @@ drawGame stateOfGame outbox par = do
                              Just (x,y) -> do
                               CC.putMVar stateOfGame newState
                               CC.putMVar outbox $ Move (x1,y1) (x,y)
-                              initTable2' can (gameTable $ newState)
+                              initTable2' can (gameTable newState)
   --                            renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
-                              renderOnTop can2 $ text (50,50) $ "hejsan2"
+                              renderOnTop can2 $ text (50,50) "hejsan2"
                               case playerDone (players newState) newState of
                                 Nothing -> graphicGameOver can
-                                Just x  -> CC.putMVar stateOfGame $ x
+                                Just x  -> CC.putMVar stateOfGame x
 
                              Nothing -> do
                               CC.putMVar stateOfGame newState
                               initTable2' can (gameTable $ playerAction gameState (x1,y1))
   --                            render can2 $ text (50,50) ((currentPlayer $ playerAction gameState (x1,y1)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
                               renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
-                            where colors xs = map snd xs
+                            where colors = map snd
         False -> return ()
-
     onEvent button Click $ \_ -> 
      do
       gameState <- CC.takeMVar stateOfGame
       let newState = rotatePlayer gameState
-      render can2 $ scale (5,5) $ text (0,10) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
+      render can2 $ scale (5,5) $ text (0,10) $ currentPlayer newState ++ "s speltur!!!" ++ (showColor . snd . head) (players newState)
 --      render can2 $ text (50,50) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
       CC.putMVar stateOfGame $ rotatePlayer gameState
 --      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
