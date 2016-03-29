@@ -14,7 +14,7 @@ data Square = Square Content Color Coord
 data GameAction = StartGame | Move Coord Coord | RotatePlayer
     deriving (Show)
 
-
+type Player = String
 type GameChan = Chan GameAction
 
 

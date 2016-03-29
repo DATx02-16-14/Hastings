@@ -32,9 +32,6 @@ runGame parent gameState outbox players = do
 --                                gameLoop chan gameState
 
 
---chan :: IO (GameChan)
-chan = newChan
-
 -- | The inbox, outbox and list of names will be supplied by the server
 main = do
     state <- CC.newEmptyMVar

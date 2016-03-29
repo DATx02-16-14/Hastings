@@ -4,6 +4,7 @@ import Table
 import Haste.Graphics.Canvas
 
 
+-- | Returns a Squares Content for a given coordinate 
 squareContent :: Table -> Coord -> Content
 squareContent [] _         = error "Table does not contain coordinate"
 squareContent (t:ts) (x,y) = case t of
@@ -48,7 +49,7 @@ removePlayer c = map isPlayer
                                                         | otherwise -> Square content col (x,y)
 
 
-
+-- | removes multiple players
 removePlayers :: [Color] -> Table -> Table
 removePlayers cs t = foldl (flip removePlayer) t cs
 
@@ -88,7 +89,7 @@ movePlayer' c1 c2 t | elem c2 $ map coordinates (canMove c1 t) = Just $ movePiec
                     | otherwise = Nothing
 
 
--- | 
+-- | Checks if a player can move to the suggested coordinate
 movePlayer :: Coord -> Coord -> Table -> Table
 movePlayer c1 c2 t | elem c2 $ map coordinates (canMove c1 t) = movePiece t c1 c2
                    | otherwise = error "Can't move"
@@ -164,8 +165,6 @@ action gs c1 c2 b = case checkPlayer (color $ head (players gs)) (squareContent 
                         True | b && moveAgain c1 c2 -> (movePlayer' c1 c2 (gameTable gs), moveAgain c1 c2)
                              | b && not (moveAgain c1 c2) -> (Nothing, False)
                              | otherwise -> (movePlayer' c1 c2 (gameTable gs), moveAgain c1 c2)
-
---movePlayer' c1 c2 (gameTable gs) 
     where color (s,c) = c
 
 allPlayer :: [Color]
@@ -175,7 +174,7 @@ allPlayer = [blue,orange,purple,green,red,yellow]
   Given a list of player names, initGame associates each player 
   with a color and generates the inital game state
 -}
-initGame :: [String] -> GameState
+initGame :: [Player] -> GameState
 initGame players = case length players of 
                       2         -> create (zipWith mkPlayer players [blue,orange]) 2
                       4         -> create (zipWith mkPlayer players [blue,red,purple,orange]) 4
@@ -186,6 +185,7 @@ initGame players = case length players of
                     create = createProperGame
 
 
+-- | Rotates players in the GameState, placing the current player last
 rotatePlayer :: GameState -> GameState
 rotatePlayer gs = GameState {gameTable = gameTable gs
                             , currentPlayer = fst . head . tail $ players gs
@@ -193,8 +193,11 @@ rotatePlayer gs = GameState {gameTable = gameTable gs
                             , fromCoord = Nothing
                             , playerMoveAgain = False} 
 
-
-createProperGame :: [(String,Color)] -> Int -> GameState
+{-|
+  Given a list of players with their respetive color
+  generates a GameState. Only supposed to be called from initGame
+-}
+createProperGame :: [(Player,Color)] -> Int -> GameState
 createProperGame p i =  case i of
                                 2 ->     GameState {gameTable =  removePlayers [red,purple,green,yellow] startTable
                                          , currentPlayer = fst . head $ p
@@ -226,6 +229,8 @@ checkPlayer c (Piece c1) = c == c1
   The following functions are only used for testing purposes
   They tests the game logic by letting the programmer play the game from stdin/stdout
 -}
+
+
 {-
 
 -- | printing Color
