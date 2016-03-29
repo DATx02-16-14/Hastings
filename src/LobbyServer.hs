@@ -274,7 +274,7 @@ changeGameNameWithSid remoteGames remoteClients newName = do
           games
   liftIO $ do
     clientsList <- CC.readMVar mVarClientList
-    messageClients GameNameChange (clientsList)
+    messageClients GameNameChange clientsList
 
 -- |Reads the lobby channel of the current client and returns the message.
 -- |Blocking method if the channel is empty
