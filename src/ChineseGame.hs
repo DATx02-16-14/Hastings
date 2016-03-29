@@ -1,4 +1,3 @@
-
 import ChineseCheckers
 import ChineseGraphics
 import Table
@@ -33,7 +32,8 @@ runGame parent gameState outbox players = do
                                 drawGame gameState outbox documentBody
 --                                gameLoop chan gameState
 
-chan :: IO (GameChan)
+
+--chan :: IO (GameChan)
 chan = newChan
 
 -- | The inbox, outbox and list of names will be supplied by the server
@@ -50,6 +50,7 @@ gameLoop chan state = do
                  action <- readChan chan
                  gs <- takeMVar state
                  putMVar state $ parseGameAction action gs
+
 
 -- | Loop to update the current GameState in use of the client, meant to be forked
 updateState :: CC.MVar GameAction -> CC.MVar GameState -> IO ()

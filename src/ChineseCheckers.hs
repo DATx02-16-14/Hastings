@@ -65,12 +65,12 @@ isReachable' (x,y) (Square _ _ (x1,y1)) = (abs(x-x1) == 2 && abs(y-y1) == 0) || 
 canMove :: Coord -> Table -> Table
 canMove (x,y) t = filter (checkusPrimus (x,y)) $ filter isEmpty t
 
-    where checkusPrimus (x,y) (Square c _ (x1,y1)) | (x+4) == x1 && y1 == y && not (content (x+2,y) == Empty) = True
-                                                   | (x-4) == x1 && y1 == y && not (content (x-2,y) == Empty) = True
-                                                   | (x-2) == x1 && (y+2) == y1 && not (content (x-1,y+1)== Empty) = True
-                                                   | (x+2) == x1 && (y+2) == y1 && not (content (x+1,y+1) == Empty) = True
-                                                   | (x+2) == x1 && (y-2) == y1 && not (content (x+1,y-1) == Empty) = True
-                                                   | (x-2) == x1 && (y-2) == y1 && not (content (x-1,y-1) == Empty) = True
+    where checkusPrimus (x,y) (Square c _ (x1,y1)) | (x+4) == x1 && y1 == y && (content (x+2,y) /= Empty) = True
+                                                   | (x-4) == x1 && y1 == y && (content (x-2,y) /= Empty) = True
+                                                   | (x-2) == x1 && (y+2) == y1 && (content (x-1,y+1) /= Empty) = True
+                                                   | (x+2) == x1 && (y+2) == y1 && (content (x+1,y+1) /= Empty) = True
+                                                   | (x+2) == x1 && (y-2) == y1 && (content (x+1,y-1) /= Empty) = True
+                                                   | (x-2) == x1 && (y-2) == y1 && (content (x-1,y-1) /= Empty) = True
                                                    | abs(x-x1) == 2 && y == y1 = True
                                                    | abs(x-x1) == 1 && abs(y-y1) == 1 = True
 --                                                   | x == x1 && abs(y-y1) == 4 = False
@@ -80,7 +80,7 @@ canMove (x,y) t = filter (checkusPrimus (x,y)) $ filter isEmpty t
 
 -- | Checks if a player jumped over a piece, then it should be able to move again
 moveAgain :: Coord -> Coord -> Bool
-moveAgain (x,y) (x1,y1) = (abs(x1-x) == 4 && abs(y1-y) == 0) || (abs(x1-x) == 2 && abs(y1-y) == 2)
+moveAgain (x,y) (x1,y1) = (abs(x1-x) == 4 && y1 == y) || (abs(x1-x) == 2 && abs(y1-y) == 2)
 
 
 -- | Same as movePlayer but with Maybe type

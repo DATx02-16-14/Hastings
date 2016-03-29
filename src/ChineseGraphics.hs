@@ -11,7 +11,7 @@ import qualified Haste.Concurrent as HC
 import qualified Data.Map.Strict as Map
 
 
-renderTest can = do 
+renderTest can = do
       bitmap <- loadBitmap "file:////home/michael/Documents/cooltext170130995424459.gif"
       renderOnTop can $ draw bitmap (10,10)
 
@@ -39,8 +39,7 @@ filepath :: String
 filepath = "file:////home/benjamin/Documents/"
 
 starOfDavid' :: Double -> Double -> Shape ()
-starOfDavid' space size = do
-
+starOfDavid' space size = 
 
         path [((12+5-1)*space+12*size, space*(5-2)), ((12+5+1)*space+12*size, space*(5-2)),
               ((16+5+1)*space+16*size, size*4+space*(4+5-2)), ((24+5+1)*space+24*size, size*4+space*(4+5-2)),
@@ -53,7 +52,7 @@ starOfDavid' space size = do
               ((3.5-1)*space+0*size, size*5+space*(5+5-2)), ((5-1)*space+0*size, size*4+space*(4+5-2)),
               ((8+5-1)*space+8*size, size*4+space*(4+5-2)), ((12+5-1)*space+12*size, space*(5-2))]
 
-initTable2' can t = sequence_ $ map (renderSquare can 15 20) t
+initTable2' can = mapM_ (renderSquare can 15 20)
 
 --renderTable can  = do
 --        bitmap <- loadBitmap "file:////home/benjamin/Documents/0305509001456402835_chinese_checkers_start_posit.png"
@@ -64,26 +63,26 @@ renderTable can  = do
 
 
 renderSquare can space size (Square Empty _ (x,y)) = do
-        bitmap <- loadBitmap $ "file:////home/michael/Documents/empty.bmp"
+        bitmap <- loadBitmap "file:////home/michael/Documents/empty.bmp"
         renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
 renderSquare can space size (Square (Piece col) _ (x,y))
         |col == blue = do
-                bitmap <- loadBitmap $ "file:////home/michael/Documents/blue.bmp"
+                bitmap <- loadBitmap "file:////home/michael/Documents/blue.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == green = do
-                bitmap <- loadBitmap $ "file:////home/michael/Documents/green.bmp"
+                bitmap <- loadBitmap "file:////home/michael/Documents/green.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == orange = do
-                bitmap <- loadBitmap $ "file:////home/michael/Documents/orange.bmp"
+                bitmap <- loadBitmap "file:////home/michael/Documents/orange.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == yellow = do 
-                bitmap <- loadBitmap $ "file:////home/michael/Documents/yellow.bmp"
+                bitmap <- loadBitmap "file:////home/michael/Documents/yellow.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == purple = do
-                bitmap <- loadBitmap $ "file:////home/michael/Documents/purple.bmp"
+                bitmap <- loadBitmap "file:////home/michael/Documents/purple.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == red = do
-                bitmap <- loadBitmap $ "file:////home/michael/Documents/red.bmp"
+                bitmap <- loadBitmap "file:////home/michael/Documents/red.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
 
 
@@ -100,7 +99,7 @@ radius :: Double
 radius = 30
 
 initTableCoords :: [Square] -> [((Int,Int),(Double,Double))]
-initTableCoords s = map (initTableCoord2 15 20) s
+initTableCoords = map (initTableCoord2 15 20)
 
 initTableCoord :: Double -> Double -> Square -> ((Int,Int),(Double,Double))
 initTableCoord space size (Square _ _ (x,y)) = ((x,y), (size*fromIntegral x + space*fromIntegral (x+5),size* fromIntegral y+space* fromIntegral (y+5))) 
@@ -111,7 +110,7 @@ initTableCoord2 space size (Square _ _ (x,y)) = ((x,y), (size/2 + size*fromInteg
 initTable' :: Table -> Picture ()
 initTable' t = do
          fill $ starOfDavid' 15 20
-         sequence_ $ map (drawSquare 15 20) t
+         mapM_ (drawSquare 15 20) t
 
 starOfDavid :: Picture ()
 starOfDavid = do
@@ -135,6 +134,7 @@ mkButton text = do
     button <- newElem "button"
     set button [prop "innerHTML" =: text]
     return button
+
 
 --drawGame :: CC.MVar GameState -> CC.Chan (GameState) -> parent -> IO HandlerInfo
 drawGame stateOfGame outbox par = do
@@ -185,7 +185,8 @@ drawGame stateOfGame outbox par = do
      do
       gameState <- CC.takeMVar stateOfGame
       let newState = rotatePlayer gameState
-      render can2 $ text (50,50) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
+      render can2 $ scale (5,5) $ text (0,10) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
+--      render can2 $ text (50,50) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
       CC.putMVar stateOfGame $ rotatePlayer gameState
 --      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
 
@@ -196,7 +197,7 @@ graphicGameOver can = do
 
 playerDone :: [(String,Color)] -> GameState -> Maybe GameState
 playerDone [] t = Nothing
-playerDone ((s,c):xs) state | playerHome c (gameTable state) = Just $ GameState {gameTable = gameTable state
+playerDone ((s,c):xs) state | playerHome c (gameTable state) = Just GameState {gameTable = gameTable state
                                              , currentPlayer = currentPlayer state
                                              , players = xs
                                              , fromCoord = fromCoord state
@@ -204,7 +205,7 @@ playerDone ((s,c):xs) state | playerHome c (gameTable state) = Just $ GameState 
                             | otherwise = Just state
 
 skrep :: GameState -> GameState
-skrep gs = GameState {gameTable = startTable, currentPlayer = mao $ tail (players gs), players = (tail (players gs)) ++ [head (players gs)], fromCoord = fromCoord gs, playerMoveAgain = False}
+skrep gs = GameState {gameTable = startTable, currentPlayer = mao $ tail (players gs), players = tail (players gs) ++ [head (players gs)], fromCoord = fromCoord gs, playerMoveAgain = False}
    where mao [(x,y)] = x
 
 mapCoords :: (Double,Double) -> Maybe (Int,Int)
