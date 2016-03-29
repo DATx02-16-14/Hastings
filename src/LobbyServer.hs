@@ -91,7 +91,7 @@ disconnectPlayerFromGame remoteGames remoteClientList sid = do
           let newClientList = filter ((name clientEntry /=) . name) $ players gameData in
           return (uuid, gameData {players = newClientList})
 
--- |Creates a new game on the server
+-- |Creates a new game on the server. The 'Int' represents the max number of players.
 createGame :: Server GamesList -> Server ConcurrentClientList -> Int -> Server (Maybe String)
 createGame remoteGames remoteClientList maxPlayers = do
   concurrentClientList <- remoteClientList
