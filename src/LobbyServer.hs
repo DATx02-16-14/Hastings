@@ -306,3 +306,12 @@ findClient clientName clientList = find ((clientName ==).name) clientList
 -- |Maps over the clients and writes the message to their channel
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m cs = mapM_ (\c -> CC.writeChan (lobbyChannel c) m) cs
+-- |Returns if the current player is owner of the game it's in
+isOwnerOfGame :: Server GamesList -> Server Bool
+isOwnerOfGame remoteGames = do
+  mVarGames <- remoteGames
+  maybeGame <- findGameWithSid mVarGames
+  sid <- getSessionID
+  case maybeGame of
+    Nothing         -> return False
+    Just (_, gData) -> return $ sessionID (last $ players gData) == sid
