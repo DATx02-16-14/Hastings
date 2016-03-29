@@ -16,7 +16,8 @@ module LobbyServer(
   changeGameNameWithSid,
   findGameNameWithID,
   findGameNameWithSid,
-  readLobbyChannel) where
+  readLobbyChannel,
+  changeMaxNumberOfPlayers) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
