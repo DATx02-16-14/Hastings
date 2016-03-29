@@ -306,6 +306,26 @@ findClient clientName clientList = find ((clientName ==).name) clientList
 -- |Maps over the clients and writes the message to their channel
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m cs = mapM_ (\c -> CC.writeChan (lobbyChannel c) m) cs
+
+-- |Changes the maximum number of players for a game
+-- Requires that the player is the last in the player list (i.e. the owner)
+changeMaxNumberOfPlayers :: Server GamesList -> Int -> Server ()
+changeMaxNumberOfPlayers remoteGames newMax = do
+  mVarGames <- remoteGames
+  bool <- isOwnerOfGame remoteGames
+  if bool then do
+    maybeGame <- findGameWithSid mVarGames
+    case maybeGame of
+      Nothing   -> return ()
+      Just game ->
+        liftIO $ CC.modifyMVar_ mVarGames $ \games ->
+          return $ updateListElem
+            (\(guuid, gData) -> (guuid, gData {maxAmountOfPlayers = newMax}))
+            (== game)
+            games
+  else
+    return ()
+
 -- |Returns if the current player is owner of the game it's in
 isOwnerOfGame :: Server GamesList -> Server Bool
 isOwnerOfGame remoteGames = do
