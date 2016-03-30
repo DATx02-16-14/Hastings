@@ -22,7 +22,10 @@ type ConcurrentClientList = CC.MVar [ClientEntry]
 -- |A game inside of the lobby.
 type LobbyGame = (String, GameData)
 
-
+-- |Data relevant to a game. Currently includes:
+-- |The players who are in the game (where the last one is the owner)
+-- |The name of the game
+-- |The maximum allowed players, can be changed by the owner
 data GameData = GameData {players            :: [ClientEntry],
                           gameName           :: Name,
                           maxAmountOfPlayers :: Int}
