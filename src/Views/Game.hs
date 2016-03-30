@@ -41,12 +41,9 @@ createGameDOM api = do
       prop "id" =: "gamePlayerList"
     ]
   listhead <- newTextElem "Players: "
+  br <- newElem "br"
   appendChild list listhead
-
-  mapM_ (\p -> do
-              name <- newTextElem $ p ++ " "
-              appendChild list name
-        ) players
+  appendChild list br
 
   mapM_ (addPlayerWithKickToPlayerlist api list) players
 
@@ -128,10 +125,12 @@ addGame api gameID = do
       appendChild gameListDiv gameDiv
 
       clickEventString gameName $ do
-        onServer $ joinGame api <.> gameID
-        players <- onServer $ findPlayersInGame api
-        deleteLobbyDOM
-        createGameDOM api
+        bool <- onServer $ joinGame api <.> gameID
+        if bool then do
+            deleteLobbyDOM
+            createGameDOM api
+        else
+          return ()
       return ()
 
 -- |Updates the list of players in a game on the client
@@ -142,6 +141,9 @@ updatePlayerListGame api = do
     Just parent -> do
       players <- onServer $ findPlayersInGame api
       clearChildren parent
+      br <- newElem "br"
+      text <- newTextElem "Players:"
+      addChildrenToParent "gamePlayerList" [text, br]
       mapM_ (addPlayerWithKickToPlayerlist api parent) players
     Nothing     -> return ()
 

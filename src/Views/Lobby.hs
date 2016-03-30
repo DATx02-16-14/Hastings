@@ -18,6 +18,7 @@ import qualified Control.Concurrent as CC
 
 import Views.Game
 import Views.Common
+import Views.Chat
 
 
 -- |Creates DOM for chaning nick name
@@ -93,8 +94,6 @@ createLobbyDOM api = do
       attr "id" =: "gamesList"
     ]
 
-  leftContent <- elemById "leftContent"
-
   addChildrenToLeftColumn [playerList]
   addChildrenToParent' lobbyDiv [header, gamesListDiv, createGamebtn]
   addChildrenToCenterColumn [lobbyDiv]
@@ -104,36 +103,6 @@ createLobbyDOM api = do
   gameList <- onServer $ getGamesList api
   mapM_ (addGame api) gameList
 
-
-createChatDOM :: Client ()
-createChatDOM = do
-
-  br <- newElem "br"
-
-  chatDiv <- newElem "div" `with`
-    [
-      attr "id" =: "chatDiv"
-    ]
-
-  chatBox <- newElem "textarea" `with`
-    [
-      attr "id"       =: "chatBox",
-      attr "rows"     =: "10",
-      attr "cols"     =: "18",
-      attr "readonly" =: ""
-    ]
-
-  messageBox <- newElem "input" `with`
-    [
-      attr "type" =: "text",
-      attr "id"   =: "messageBox",
-      attr "cols" =: "60"
-    ]
-
-  addChildrenToParent' chatDiv [chatBox, br, messageBox]
-  addChildrenToLeftColumn [chatDiv]
-
-
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: LobbyAPI -> GameAPI-> Client ()
 createGameBtn lapi gapi = do
@@ -141,7 +110,7 @@ createGameBtn lapi gapi = do
   return ()
   where
     onCreateBtnMouseClick = do
-      maybeUuid <- onServer (createGame lapi)
+      maybeUuid <- onServer $ createGame lapi <.> getMaxNumberOfPlayers gapi
       case maybeUuid of
         Nothing          -> return ()
         Just gameUuid -> do
@@ -193,7 +162,9 @@ addGameToDOM api gameName = do
   appendChild gameDiv gameEntry
   appendChild documentBody gameDiv
 
-  clickEventString gameName $ onServer $ joinGame api <.> gameName
+  clickEventString gameName $ do
+    bool <- onServer $ joinGame api <.> gameName
+    return ()
   return ()
 
 -- |Updates the list of games that a player can join
