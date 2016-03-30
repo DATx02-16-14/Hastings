@@ -210,9 +210,7 @@ kickPlayerWithGameID remoteGames gameID clientName = do
   liftIO $ CC.modifyMVar_ mVarGamesList $ \lst -> do
     let (h,t) = break ((gameID ==) . fst) lst
     case t of
-      ((_, gameData):gt) -> return $ h ++ newGame : gt
-        where
-          newGame = (gameID, gameData {players = filter ((clientName /=) . name) $ players gameData})
+      (game : gt)    -> return $ h ++ (deletePlayerFromGame clientName game) : gt
       _              -> return $ h ++ t
 
 -- |Kicks the player with 'Name' from the game that the current client is in.
@@ -224,14 +222,10 @@ kickPlayerWithSid remoteGames clientName = do
     Nothing   -> return ()
     Just game@(_,gameData) -> do
       liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
-        return $ updateListElem newGame (\g -> g == game) games
+        return $ updateListElem (deletePlayerFromGame clientName) (\g -> g == game) games
       case findClient clientName (players gameData) of
         Just c  -> liftIO $ messageClients KickedFromGame [c]
         Nothing -> return ()
-      where
-        newGame (guuid, gameData) =
-          (guuid, gameData {players = filter ((clientName /=) . name) $ players gameData})
-
 
 -- |Change the nick name of the current player to that given.
 changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()
@@ -306,3 +300,8 @@ findClient clientName clientList = find ((clientName ==).name) clientList
 -- |Maps over the clients and writes the message to their channel
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m cs = mapM_ (\c -> CC.writeChan (lobbyChannel c) m) cs
+
+-- |Deletes the player with 'Name' from the game.
+deletePlayerFromGame :: Name -> LobbyGame -> LobbyGame
+deletePlayerFromGame clientName (gameID, gameData)  =
+  (gameID, gameData {players = filter ((clientName /=) . name) $ players gameData})
