@@ -148,7 +148,7 @@ clientJoinChat api chatName = do
 -- | Called when a ChatMessage is received
 chatMessageCallback :: String -> ChatMessage -> Client ()
 chatMessageCallback chatName (ChatMessage from content) = do
-  liftIO $ print $ "chatMessageCallback > " ++ from ++ ": " ++ content
+  liftIO $ print $ "chatMessageCallback > Chat:{" ++ chatName ++ "} from:{" ++ from ++ "] message:{" ++ content ++ "}"
   pushToChatBox $ from ++ ": " ++ content
 chatMessageCallback chatName (ChatAnnounceJoin from)    = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has joined"
