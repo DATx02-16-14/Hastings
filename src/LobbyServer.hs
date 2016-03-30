@@ -130,7 +130,7 @@ playerJoinGame remoteClientList remoteGameList gameID = do
     Just (_,gameData) ->
       if maxAmountOfPlayers gameData > length (players gameData) then do
           case lookupClientEntry sid clientList of
-            Nothing     -> error "playerJoinGame: Client not registered"
+            Nothing     -> liftIO $ putStrLn "playerJoinGame: Client not registered"
             Just player -> liftIO $ CC.modifyMVar_ gameList $
               \gList -> return $ addPlayerToGame player gameID gList
 
