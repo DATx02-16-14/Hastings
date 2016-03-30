@@ -113,7 +113,7 @@ addNewChatToChatsContainer chatName =
     chatContainer <- newElem "div" `with`
       [
         attr "id" =: ("chat-container-" ++ chatName),
-        attr "class" =: "tab-pane"
+        attr "style" =: "overflow: auto; height: 200px"
       ]
     appendChild chatsContainer chatContainer
 
@@ -148,7 +148,13 @@ pushToChatBox str = "chat-container-main" `withElem` \chatContainer -> do
   appendChild chatContainer br
   textElem <- newTextElem str
   appendChild chatContainer textElem
+  scrollToBottom chatContainer
   return ()
+
+scrollToBottom :: Elem -> Client()
+scrollToBottom scrollableElem = do
+  scrollHeight <- getProp scrollableElem "scrollHeight"
+  setProp scrollableElem "scrollTop" scrollHeight
 
 -- |Listen for chat messages on a chatChannel until the chat announces that the client leaves
 -- |Start this method with fork $ listenForChatMessage args...
