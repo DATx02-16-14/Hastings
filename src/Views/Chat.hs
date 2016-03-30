@@ -3,7 +3,6 @@ module Views.Chat
     listenForChatMessages,
     chatMessageCallback,
     createChatDOM,
-    addNewChat,
     clientJoinChat
     ) where
 
