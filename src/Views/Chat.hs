@@ -95,6 +95,19 @@ addNewChat chatName = do
   addNewTabToTabsHeader chatName
   addNewChatToChatsContainer chatName
 
+setActiveChat :: String -> Client ()
+setActiveChat chatName = "chats-container" `withElem` \chatContainer -> do
+  children <- getChildren chatContainer
+  liftIO $ print $ length children
+  mapM_ (\c -> setAttr c "class" "hide") children
+  activeChat <- elemById $ "chat-container-" ++ chatName
+  case activeChat of
+    Nothing   -> return ()
+    Just chat -> do
+      setAttr chat "class" ""
+      scrollToBottom chat
+  return ()
+
 addNewTabToTabsHeader :: String -> Client ()
 addNewTabToTabsHeader chatName =
   "chat-tabs" `withElem` \chatTabsHeader -> do
@@ -120,9 +133,17 @@ addNewChatToChatsContainer chatName =
 -- | Client joins the named chat and starts listen to it's messages
 clientJoinChat :: LobbyAPI -> String -> Client ()
 clientJoinChat api chatName = do
-  onServer $ joinChat api <.> chatName
-  addNewChat chatName
-  fork $ listenForChatMessages api chatName $ chatMessageCallback chatName
+  maybeChatContainer <- elemById $ "chat-container-" ++ chatName
+  case maybeChatContainer of
+    Nothing -> do
+      onServer $ joinChat api <.> chatName
+      addNewChat chatName
+      fork $ listenForChatMessages api chatName $ chatMessageCallback chatName
+      setActiveChat chatName
+    Just _ ->
+      setActiveChat chatName
+  return ()
+
 
 -- | Called when a ChatMessage is received
 chatMessageCallback :: String -> ChatMessage -> Client ()
