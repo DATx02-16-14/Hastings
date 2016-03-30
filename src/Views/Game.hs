@@ -169,12 +169,11 @@ addGame api gapi gameID = do
 
       clickEventString gameName $ do
         bool <- onServer $ joinGame api <.> gameID
-        case bool of
-          False -> return ()
-          True  -> do
-            players <- onServer $ findPlayersInGame api
+        if bool then do
             deleteLobbyDOM
             createGameDOM api gapi
+        else
+          return ()
       return ()
 
 -- |Updates the list of players in a game on the client
