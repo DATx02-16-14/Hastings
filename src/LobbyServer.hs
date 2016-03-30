@@ -141,7 +141,7 @@ playerJoinGame remoteClientList remoteGameList gameID = do
 -- |Adds a player to a lobby game with the game ID
 addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]
 addPlayerToGame client gameID =
-  updateListElem (\(gID, gameData) -> (gID, gameData {players = nub $ client:players gameData})) (\g -> gameID == fst g)
+  updateListElem (\(gID, gameData) -> (gID, gameData {players = nub $ client : players gameData})) ((gameID ==) .fst)
 
 -- |Finds the name of a game given it's identifier
 findGameNameWithID :: Server GamesList -> String -> Server String
@@ -210,7 +210,7 @@ kickPlayerWithGameID remoteGames gameID clientName = do
   liftIO $ CC.modifyMVar_ mVarGamesList $ \lst -> do
     let (h,t) = break ((gameID ==) . fst) lst
     case t of
-      ((_, gameData):gt) -> return $ h ++ newGame:gt
+      ((_, gameData):gt) -> return $ h ++ newGame : gt
         where
           newGame = (gameID, gameData {players = filter ((clientName /=) . name) $ players gameData})
       _              -> return $ h ++ t
