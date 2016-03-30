@@ -79,13 +79,13 @@ disconnectPlayerFromGame remoteGames remoteClientList sid = do
     Nothing -> return ()
     Just clientEntry -> liftIO $ CC.modifyMVar_ mVarGames $ \games -> mapM removePlayer games
       where
-        removePlayer (uuid, GameData ps gameName) =
-          let newClientList = filter ((name clientEntry /=) . name) ps in
-          return (uuid, GameData newClientList gameName)
+        removePlayer (uuid, gameData) =
+          let newClientList = filter ((name clientEntry /=) . name) $ players gameData in
+          return (uuid, gameData {players = newClientList})
 
--- |Creates a new game on the server
-createGame :: Server GamesList -> Server ConcurrentClientList -> Server (Maybe String)
-createGame remoteGames remoteClientList = do
+-- |Creates a new game on the server. The 'Int' represents the max number of players.
+createGame :: Server GamesList -> Server ConcurrentClientList -> Int -> Server (Maybe String)
+createGame remoteGames remoteClientList maxPlayers = do
   concurrentClientList <- remoteClientList
   clientList <- liftIO $ CC.readMVar concurrentClientList
   games <- remoteGames
@@ -97,7 +97,7 @@ createGame remoteGames remoteClientList = do
 
   liftIO $ CC.modifyMVar_ games $ \gs ->
     case maybeClientEntry of
-        Just c  -> return $ (uuidStr,GameData [c] "GameName") : gs
+        Just c  -> return $ (uuidStr, GameData [c] "GameName" maxPlayers) : gs
         Nothing -> return gs
   liftIO $ messageClients GameAdded clientList
   case maybeClientEntry of
@@ -110,27 +110,30 @@ getGamesList remoteGames = do
   gameList <- remoteGames >>= liftIO . CC.readMVar
   return $ map fst gameList
 
--- |Lets a player join a 'LobbyGame'
-playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> Server ()
+-- |Lets a player join a 'LobbyGame'. The 'String' represents the UUID for the game.
+playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> Server Bool
 playerJoinGame remoteClientList remoteGameList gameID = do
   clientList <- remoteClientList >>= liftIO . CC.readMVar
   gameList <- remoteGameList
   sid <- getSessionID
-  case lookupClientEntry sid clientList of
-    Just player -> liftIO $ CC.modifyMVar_ gameList $
-      \gList -> return $ addPlayerToGame player gameID gList
-
-    _ -> return ()
-
-  maybeGame <- findGameWithSid gameList
+  maybeGame <- liftIO $ findGameWithID gameID gameList
   case maybeGame of
-    Just (_,gameData) -> liftIO $ messageClients PlayerJoinedGame (players gameData)
-    nothing           -> return ()
+    Nothing           -> return False
+    Just (_,gameData) ->
+      if maxAmountOfPlayers gameData > length (players gameData) then do
+          case lookupClientEntry sid clientList of
+            Nothing     -> liftIO $ putStrLn "playerJoinGame: Client not registered"
+            Just player -> liftIO $ CC.modifyMVar_ gameList $
+              \gList -> return $ addPlayerToGame player gameID gList
+
+          liftIO $ messageClients PlayerJoinedGame (players gameData)
+          return True
+        else return False
 
 -- |Adds a player to a lobby game with the game ID
 addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]
 addPlayerToGame client gameID =
-  updateListElem (\(gID, GameData ps gameName) -> (gID, GameData (nub $ client:ps) gameName)) (\g -> gameID == fst g)
+  updateListElem (\(gID, gameData) -> (gID, gameData {players = nub $ client : players gameData})) ((gameID ==) .fst)
 
 -- |Finds the name of a game given it's identifier
 findGameNameWithID :: Server GamesList -> String -> Server String
@@ -138,8 +141,8 @@ findGameNameWithID remoteGames gid = do
   mVarGamesList <- remoteGames
   maybeGame <- liftIO $ findGameWithID gid mVarGamesList
   case maybeGame of
-    Just (_, GameData _ name) -> return name
-    Nothing                   -> return ""
+    Just (_, gameData) -> return $ gameName gameData
+    Nothing            -> return ""
 
 -- |Finds the name of the game the client is currently in
 findGameNameWithSid :: Server GamesList -> Server String
@@ -147,8 +150,8 @@ findGameNameWithSid remoteGames = do
   mVarGamesList <- remoteGames
   maybeGame <- findGameWithSid mVarGamesList
   case maybeGame of
-    Just (_, GameData _ name) -> return name
-    Nothing                   -> return ""
+    Just (_, gameData) -> return $ gameName gameData
+    Nothing            -> return ""
 
 -- |Finds the name of the players of a game given it's identifier
 playerNamesInGameWithID :: Server GamesList -> String -> Server [String]
@@ -156,8 +159,8 @@ playerNamesInGameWithID remoteGameList gid = do
   mVarGamesList <- remoteGameList
   maybeGame <- liftIO $ findGameWithID gid mVarGamesList
   case maybeGame of
-    Just (gid, GameData ps gameName)   -> return $ map name ps
-    Nothing                            -> return []
+    Just (gid, gameData)   -> return $ map name $ players gameData
+    Nothing                -> return []
 
 -- |Finds the name of the players of the game the current client is in
 playerNamesInGameWithSid :: Server GamesList -> Server [String]
@@ -199,9 +202,7 @@ kickPlayerWithGameID remoteGames gameID clientName = do
   liftIO $ CC.modifyMVar_ mVarGamesList $ \lst -> do
     let (h,t) = break ((gameID ==) . fst) lst
     case t of
-      ((_, GameData ps gameName):gt) -> return $ h ++ newGame:gt
-        where
-          newGame = (gameID, GameData (filter ((clientName /=) . name) ps) gameName)
+      (game : gt)    -> return $ h ++ (deletePlayerFromGame clientName game) : gt
       _              -> return $ h ++ t
 
 -- |Kicks the player with 'Name' from the game that the current client is in.
@@ -213,14 +214,10 @@ kickPlayerWithSid remoteGames clientName = do
     Nothing   -> return ()
     Just game@(_,gameData) -> do
       liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
-        return $ updateListElem newGame (== game) games
+        return $ updateListElem (deletePlayerFromGame clientName) (== game) games
       case findClient clientName (players gameData) of
         Just c  -> liftIO $ messageClients KickedFromGame [c]
         Nothing -> return ()
-      where
-        newGame (guuid, GameData ps gameName) =
-          (guuid, GameData (filter ((clientName /=) . name) ps) gameName)
-
 
 -- |Change the nick name of the current player to that given.
 changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()
@@ -231,7 +228,7 @@ changeNickName remoteClientList remoteGames newName = do
     return $ updateNick sid cs
   mVarGamesList <- remoteGames
   liftIO $ CC.modifyMVar_ mVarGamesList $ \gs ->
-    return $ map (\(uuid, GameData ps gameName) -> (uuid, GameData (updateNick sid ps) gameName)) gs
+    return $ map (\(uuid, gameData) -> (uuid, gameData {players = updateNick sid $ players gameData})) gs
 
   -- Update the clients with this new information
   liftIO $ do
@@ -295,6 +292,11 @@ findClient clientName = find ((clientName ==).name)
 -- |Maps over the clients and writes the message to their channel
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m = mapM_ (\c -> CC.writeChan (lobbyChannel c) m)
+
+-- |Deletes the player with 'Name' from the game.
+deletePlayerFromGame :: Name -> LobbyGame -> LobbyGame
+deletePlayerFromGame clientName (gameID, gameData)  =
+  (gameID, gameData {players = filter ((clientName /=) . name) $ players gameData})
 
 -- |Called by client to join a chat
 joinChat :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()
