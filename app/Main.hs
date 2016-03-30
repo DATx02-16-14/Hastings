@@ -13,7 +13,6 @@ import Hastings.Utils
 import Data.Maybe
 import LobbyAPI
 import LobbyTypes
-import qualified Chat as Chat
 
 #ifdef __HASTE__
 import LobbyClient
@@ -28,11 +27,10 @@ main :: IO ()
 main = runStandaloneApp $ do
   playersList <- liftServerIO $ CC.newMVar []
   gamesList <- liftServerIO $ CC.newMVar []
-  chatList <- liftServerIO $ CC.newMVar $ (Chat.createNewChatRoom "main") : []
+  chatList <- liftServerIO $ CC.newMVar []
 
   let serverState = (playersList, gamesList, chatList)
 
   onSessionEnd $ disconnect(serverState)
   api <- newLobbyAPI (playersList, gamesList, chatList)
   runClient $ clientMain api
-

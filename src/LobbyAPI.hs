@@ -34,6 +34,14 @@ data LobbyAPI = LobbyAPI
   , changeGameName :: Remote (Name -> Server())
     -- |Reads the value from the lobby channel
   , readLobbyChannel :: Remote (Server LobbyMessage)
+    -- |Get clients name based on sid
+  , getClientName :: Remote (Server String)
+    -- |Join named chat
+  , joinChat :: Remote (Name -> Server ())
+    -- |Send ChatMessage over Named channel
+  , sendChatMessage :: Remote (Name -> ChatMessage -> Server ())
+    -- |Reads next ChatMessage from named chat channel.
+  , readChatChannel :: Remote (Name -> Server ChatMessage)
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -51,3 +59,7 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.changeNickName playersList gamesList))
             <*> REMOTE((Server.changeGameNameWithSid gamesList playersList))
             <*> REMOTE((Server.readLobbyChannel playersList))
+            <*> REMOTE((Server.getClientName playersList))
+            <*> REMOTE((Server.joinChat playersList chatList))
+            <*> REMOTE((Server.sendChatMessage playersList chatList))
+            <*> REMOTE((Server.readChatChannel playersList))

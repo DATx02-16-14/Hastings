@@ -11,7 +11,7 @@ type Name = String
 -- |A client entry is a player with a SessionID as key.
 data ClientEntry = ClientEntry {sessionID    :: SessionID
                                ,name         :: Name
-                               ,chatChannel  :: CC.Chan ChatMessage
+                               ,chats        :: [Chat]
                                ,lobbyChannel :: CC.Chan LobbyMessage}
 instance Eq ClientEntry where
   c1 == c2 = sessionID c1 == sessionID c2
@@ -38,10 +38,51 @@ type GamesList = CC.MVar [LobbyGame]
 type LobbyState = (Server ConcurrentClientList, Server GamesList, Server ConcurrentChatList)
 
 -- |A chat message sent on a channel.
-data ChatMessage = ChatMessage {from    :: SessionID
-                               ,content :: String}
+data ChatMessage = ChatMessage       {from    :: Name
+                                     ,content :: String}
+                 | ChatJoin
+                 | ChatAnnounceJoin  {from :: Name}
+                 | ChatLeave
+                 | ChatAnnounceLeave {from :: Name}
+                 | ChatError {errorMessage :: String}
+
 -- |A chat has a name and all sessionIDs currently in the chat.
-type Chat = (Name,[SessionID])
+type Chat = (Name, CC.Chan ChatMessage)
+
+instance Binary ChatMessage where
+  put (ChatMessage from content) = do
+    put (0 :: Word8)
+    put from
+    put content
+  put  ChatJoin =
+    put (1 :: Word8)
+  put (ChatAnnounceJoin from) = do
+    put (2 :: Word8)
+    put from
+  put  ChatLeave =
+    put (3 :: Word8)
+  put (ChatAnnounceLeave from) = do
+    put (4 :: Word8)
+    put from
+
+  get = do
+    tag <- get :: Get Word8
+    case tag of
+      0 -> do
+        from <- get :: Get String
+        content <- get :: Get String
+        return $ ChatMessage from content
+      1 ->
+        return ChatJoin
+      2 -> do
+        from <- get :: Get String
+        return $ ChatAnnounceJoin from
+      3 ->
+        return ChatLeave
+      4 -> do
+        from <- get :: Get String
+        return $ ChatAnnounceLeave from
+
 -- |A list of all the chats in the lobby.
 type ConcurrentChatList = CC.MVar [Chat]
 
