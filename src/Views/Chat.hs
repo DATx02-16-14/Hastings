@@ -92,11 +92,11 @@ createChatDOM api parentDiv = do
 
 addNewChat :: String -> Client ()
 addNewChat chatName = do
-  addNewTabTotabsHeader chatName
+  addNewTabToTabsHeader chatName
   addNewChatToChatsContainer chatName
 
-addNewTabTotabsHeader :: String -> Client ()
-addNewTabTotabsHeader chatName =
+addNewTabToTabsHeader :: String -> Client ()
+addNewTabToTabsHeader chatName =
   "chat-tabs" `withElem` \chatTabsHeader -> do
     chatTab <- newElem "li" `with`
       [
