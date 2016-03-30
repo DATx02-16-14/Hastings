@@ -118,7 +118,7 @@ getGamesList remoteGames = do
   gameList <- remoteGames >>= liftIO . CC.readMVar
   return $ map fst gameList
 
--- |Lets a player join a 'LobbyGame'
+-- |Lets a player join a 'LobbyGame'. The 'String' represents the UUID for the game.
 playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> Server Bool
 playerJoinGame remoteClientList remoteGameList gameID = do
   clientList <- remoteClientList >>= liftIO . CC.readMVar
