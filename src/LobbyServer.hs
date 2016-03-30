@@ -17,14 +17,17 @@ module LobbyServer(
   findGameNameWithID,
   findGameNameWithSid,
   readLobbyChannel,
-  changeMaxNumberOfPlayers) where
+  changeMaxNumberOfPlayers,
+  readChatChannel,
+  sendChatMessage,
+  joinChat,
+  getClientName) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
 import Data.List
 import Data.Maybe
 import LobbyTypes
-import Chat
 import Hastings.Utils
 #ifndef __HASTE__
 import Data.UUID
@@ -41,12 +44,8 @@ connect remoteClientList remoteChats name = do
 
   liftIO $ do
     CC.modifyMVar_ concurrentClientList  $ \clients -> do
-      chatChannel <- CC.newChan
       lobbyChannel <- CC.newChan
-      return $ ClientEntry sid name chatChannel lobbyChannel : clients
-
-    CC.modifyMVar_ chats $ \cs ->
-      return $ addPlayerToChat sid "main" cs
+      return $ ClientEntry sid name [] lobbyChannel : clients
 
     clientList <- CC.readMVar concurrentClientList
     messageClients ClientJoined clientList
@@ -56,7 +55,6 @@ connect remoteClientList remoteChats name = do
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
 disconnect (clientList, games, chats) sid = do
-  disconnectPlayerFromChats chats sid
   disconnectPlayerFromGame games clientList sid
   disconnectPlayerFromLobby clientList sid
 
@@ -64,12 +62,6 @@ disconnect (clientList, games, chats) sid = do
   liftIO $ do
     clients <- CC.readMVar mVarClients
     messageClients ClientLeft clients
-
-disconnectPlayerFromChats :: Server ConcurrentChatList -> SessionID -> Server()
-disconnectPlayerFromChats remoteChats sid = do
-  chats <- remoteChats
-  liftIO $ CC.modifyMVar_ chats $ \cs ->
-    return $ removePlayerFromChats sid cs
 
 -- |Removes a player that has disconnected from player list
 disconnectPlayerFromLobby :: Server ConcurrentClientList -> SessionID -> Server ()
@@ -110,7 +102,7 @@ createGame remoteGames remoteClientList maxPlayers = do
         Nothing -> return gs
   liftIO $ messageClients GameAdded clientList
   case maybeClientEntry of
-    Just p  -> return $ Just (uuidStr)
+    Just p  -> return $ Just uuidStr
     Nothing -> return Nothing
 
 -- |Returns a list of the each game's uuid as a String
@@ -225,7 +217,7 @@ kickPlayerWithSid remoteGames clientName = do
     Nothing   -> return ()
     Just game@(_,gameData) -> do
       liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
-        return $ updateListElem newGame (\g -> g == game) games
+        return $ updateListElem newGame (== game) games
       case findClient clientName (players gameData) of
         Just c  -> liftIO $ messageClients KickedFromGame [c]
         Nothing -> return ()
@@ -260,15 +252,15 @@ changeGameNameWithID remoteGames remoteClients uuid newName = do
   maybeGame <- liftIO $ findGameWithID uuid gamesList
   case maybeGame of
     Nothing           -> return ()
-    Just game@(_,gameData) -> liftIO $ do
-      CC.modifyMVar_ gamesList $ \games ->
+    Just game@(_,gameData) ->
+      liftIO $ CC.modifyMVar_ gamesList $ \games ->
         return $ updateListElem
           (\(guuid, gData) -> (guuid, gData {gameName = newName}))
-          (\g -> g == game)
+          (== game)
           games
   liftIO $ do
     clientsList <- CC.readMVar mVarClientList
-    messageClients GameNameChange (clientsList)
+    messageClients GameNameChange clientsList
 
 -- |Change the name of a 'LobbyGame' that the connected client is in
 changeGameNameWithSid :: Server GamesList -> Server ConcurrentClientList -> Name -> Server ()
@@ -278,15 +270,15 @@ changeGameNameWithSid remoteGames remoteClients newName = do
   maybeGame <- findGameWithSid gamesList
   case maybeGame of
     Nothing           -> return ()
-    Just game@(_,gameData) -> liftIO $ do
-      CC.modifyMVar_ gamesList $ \games ->
+    Just game@(_,gameData) ->
+      liftIO $ CC.modifyMVar_ gamesList $ \games ->
         return $ updateListElem
           (\(guuid, gData) -> (guuid, gData {gameName = newName}))
-          (\g -> g == game)
+          (== game)
           games
   liftIO $ do
     clientsList <- CC.readMVar mVarClientList
-    messageClients GameNameChange (clientsList)
+    messageClients GameNameChange clientsList
 
 -- |Reads the lobby channel of the current client and returns the message.
 -- |Blocking method if the channel is empty
@@ -302,11 +294,11 @@ readLobbyChannel remoteClientList = do
 
 -- |Finds the client with 'Name' from the list of 'ClientEntry'
 findClient :: Name -> [ClientEntry] -> Maybe ClientEntry
-findClient clientName clientList = find ((clientName ==).name) clientList
+findClient clientName = find ((clientName ==).name)
 
 -- |Maps over the clients and writes the message to their channel
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
-messageClients m cs = mapM_ (\c -> CC.writeChan (lobbyChannel c) m) cs
+messageClients m = mapM_ (\c -> CC.writeChan (lobbyChannel c) m)
 
 -- |Changes the maximum number of players for a game
 -- Requires that the player is the last in the player list (i.e. the owner)
@@ -336,3 +328,81 @@ isOwnerOfGame remoteGames = do
   case maybeGame of
     Nothing         -> return False
     Just (_, gData) -> return $ sessionID (last $ players gData) == sid
+
+-- |Called by client to join a chat
+joinChat :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()
+joinChat remoteClientList remoteChatList chatName = do
+  sid <- getSessionID
+  concurrentClientList <- remoteClientList
+  concurrentChatList <- remoteChatList
+
+  cs <- liftIO $ CC.readMVar concurrentChatList
+  if isNothing $ chatName `lookup` cs
+    then do
+      newChatChannel <- liftIO CC.newChan
+      liftIO $ CC.modifyMVar_ concurrentChatList $ \chatList ->
+        return $ (chatName, newChatChannel) : chatList
+      addChannelToClient sid concurrentChatList concurrentClientList
+    else
+      addChannelToClient sid concurrentChatList concurrentClientList
+
+
+    where
+      addChannelToClient sid concurrentChatList concurrentClientList = do
+        cs <- liftIO $ CC.readMVar concurrentChatList
+        let chan = fromJust $ chatName `lookup` cs
+        clientChan <- liftIO $ CC.dupChan chan
+        let newChat = (chatName, clientChan)
+        liftIO $ CC.modifyMVar_ concurrentClientList $ \clients -> do
+          return $ updateListElem (addChatToClient newChat) ((sid ==) . sessionID) clients
+
+      addChatToClient :: Chat -> ClientEntry -> ClientEntry
+      addChatToClient chat client | chatName `elem` map fst (chats client) = client
+                       | otherwise = client {chats = chat : chats client}
+
+-- |Called by a client to read its various chat channels
+readChatChannel :: Server ConcurrentClientList -> String ->  Server ChatMessage
+readChatChannel remoteClientList chatName = do
+  sid <- getSessionID
+  concurrentClientList <- remoteClientList
+  clients <- liftIO $ CC.readMVar concurrentClientList
+  case sid `lookupClientEntry` clients of
+    Nothing     -> return $ ChatError "Couldn't find clients sessionID in remotes client list, try reconnecting."
+    Just client -> do
+      case chatName `lookup` (chats client) of
+        Nothing          -> return $ ChatError "Couldn't find chat in clients currently joined chats. join chat before trying to read from it"
+        Just chatChannel -> liftIO $ CC.readChan chatChannel
+
+-- | Called by the client to send a chat message
+sendChatMessage :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> ChatMessage -> Server ()
+sendChatMessage remoteClientList remoteChatList chatName chatMessage = do
+  sid <- getSessionID
+  concurrentClientList <- remoteClientList
+  concurrentChatList <- remoteChatList
+  clientList <- liftIO $ CC.readMVar concurrentClientList
+  chatList <- liftIO $ CC.readMVar concurrentChatList
+
+  case chatName `lookup` chatList of
+    Nothing   -> return ()
+    Just chatChannel -> do
+      case sid `lookupClientEntry` clientList of
+        Nothing     -> return()
+        Just client -> do
+          let msg = chatMessage {from = name client}
+          liftIO $ CC.writeChan chatChannel $ mapMessage msg client
+
+  return ()
+    where
+      mapMessage msg1 client = case msg1 of
+        (ChatMessage from content) -> msg1
+        ChatJoin                   -> ChatAnnounceJoin  (name client)
+        ChatLeave                  -> ChatAnnounceLeave (name client)
+
+-- |Called by a client to get its name based on sessionID
+getClientName :: Server ConcurrentClientList -> Server String
+getClientName remoteClientList = do
+  sid <- getSessionID
+  concurrentClientList <- remoteClientList
+  clientList <- liftIO $ CC.readMVar concurrentClientList
+  let client = find ((sid ==) . sessionID) clientList
+  return $ name $ fromJust client

@@ -10,6 +10,7 @@ import Haste.Concurrent
 import Data.Maybe
 import GameAPI
 import LobbyTypes
+import Views.Chat
 
 -- |Main mehtod for the client.
 clientMain :: LobbyAPI -> Client ()
@@ -21,7 +22,8 @@ clientMain api = do
   createLobbyDOM api newGameAPI
 
   fork $ listenForLobbyChanges api newGameAPI
-
+  onServer $ joinChat api <.> "main"
+  fork $ listenForChatMessages api "main" chatMessageCallback
   return ()
 
 listenForLobbyChanges :: LobbyAPI -> GameAPI -> Client ()

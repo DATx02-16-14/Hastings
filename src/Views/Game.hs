@@ -185,6 +185,9 @@ updatePlayerListGame api = do
     Just parent -> do
       players <- onServer $ findPlayersInGame api
       clearChildren parent
+      br <- newElem "br"
+      text <- newTextElem "Players:"
+      addChildrenToParent "gamePlayerList" [text, br]
       mapM_ (addPlayerWithKickToPlayerlist api parent) players
     Nothing     -> return ()
 
