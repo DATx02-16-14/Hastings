@@ -48,15 +48,17 @@ createDiv as = newElem "div" `with` attributes
 
 -- |Deletes the DOM created for the intial lobby view
 deleteLobbyDOM :: Client ()
-deleteLobbyDOM = deleteDOM "container-fluid"
+deleteLobbyDOM = deleteDOM "lobby" "centerContent"
 
 -- |Deletes the DOM created for a game in the lobby
 deleteGameDOM :: Client ()
-deleteGameDOM = deleteDOM "container-fluid"
+deleteGameDOM = do
+  deleteDOM "lobbyGame" "centerContent"
+  deleteDOM "changeGameName" "rightContent"
 
--- |Helper function that deletes DOM given an identifier from documentBody
-deleteDOM :: String -> Client ()
-deleteDOM s = withElem s $ \element -> deleteChild documentBody element
+-- |Helper function that deletes DOM given an identifier from that element and the parent element
+deleteDOM :: String -> String -> Client ()
+deleteDOM s parent = withElems [s, parent] $ \[element, parentElem] -> deleteChild parentElem element
 
 -- |Creates a listener for a click event with the Elem with the given String and a function.
 clickEventString :: String -> Client () -> Client HandlerInfo
@@ -85,4 +87,7 @@ addChildrenToRightColumn = addChildrenToParent "rightContent"
 addChildrenToParent :: String -> [Elem] -> Client ()
 addChildrenToParent parent children = do
   parentElem <- elemById parent
-  mapM_ (appendChild $ fromJust parentElem) children
+  addChildrenToParent' (fromJust parentElem) children
+
+addChildrenToParent' :: Elem -> [Elem] -> Client ()
+addChildrenToParent' parent children = mapM_ (appendChild parent) children

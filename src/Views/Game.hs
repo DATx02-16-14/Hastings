@@ -14,7 +14,9 @@ import Views.Common
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
 createGameDOM :: LobbyAPI -> Client ()
 createGameDOM api = do
-  parentDiv <- createBootstrapTemplate "lobbyGame"
+  createGameChangeNameDOM api
+
+  parentDiv <- createDiv [("id","lobbyGame")]
   gameName <- onServer $ findGameName api
   players <- onServer $ findPlayersInGame api
   nameOfGame <- newTextElem gameName
@@ -45,7 +47,14 @@ createGameDOM api = do
 
   mapM_ (addPlayerWithKickToPlayerlist api list) players
 
-  gameNameDiv <- newElem "div"
+  addChildrenToParent' parentDiv [header, list, createStartGameBtn]
+  addChildrenToCenterColumn [parentDiv]
+
+-- |Creates the DOM for chaning the name of a game.
+-- |It includes an input field and a button.
+createGameChangeNameDOM :: LobbyAPI -> Client ()
+createGameChangeNameDOM api = do
+  gameNameDiv <- createDiv [("id", "changeGameName")]
   gameNameText <- newTextElem "Change game name"
   gameNameField <- newElem "input" `with`
     [
@@ -59,13 +68,9 @@ createGameDOM api = do
   gameNameBtnText <- newTextElem "Change"
   appendChild gameNameButton gameNameBtnText
 
-  appendChild gameNameDiv gameNameText
-  appendChild gameNameDiv gameNameField
-  appendChild gameNameDiv gameNameButton
+  addChildrenToParent' gameNameDiv [gameNameText, gameNameField, gameNameButton]
 
-  addChildrenToLeftColumn [createStartGameBtn, list]
   addChildrenToRightColumn [gameNameDiv]
-  addChildrenToCenterColumn [header]
 
   onEvent gameNameField KeyPress $ \13 -> gameUpdateFunction
 

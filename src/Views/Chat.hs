@@ -12,10 +12,17 @@ import Haste.DOM
 import LobbyTypes
 import LobbyAPI
 import Control.Monad (unless)
+import Data.Maybe
 
--- | Chat dom creation.
-createChatDOM :: LobbyAPI -> Elem -> Client ()
-createChatDOM api parentDiv = do
+-- | Create chat DOM in the left column
+createChatDOM :: LobbyAPI -> Client ()
+createChatDOM api = do
+  leftContent <- elemById "leftContent"
+  createChatDOMInParent api $ fromJust leftContent
+
+-- | Create chat DOM and append it to the specified parent element.
+createChatDOMInParent :: LobbyAPI -> Elem -> Client ()
+createChatDOMInParent api parentDiv = do
 
   br <- newElem "br"
 
