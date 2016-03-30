@@ -2,13 +2,16 @@ module Views.Chat
     (
     listenForChatMessages,
     chatMessageCallback,
-    createChatDOM
+    createChatDOM,
+    addNewChat,
+    clientJoinChat
     ) where
 
 import Haste.App
 import Haste
 import Haste.Events
 import Haste.DOM
+import Haste.App.Concurrent
 import LobbyTypes
 import LobbyAPI
 import Control.Monad (unless)
@@ -24,12 +27,13 @@ createChatDOM api parentDiv = do
       attr "id" =: "chatDiv"
     ]
 
-  chatBox <- newElem "textarea" `with`
+
+  chatsContainer <- newElem "div" `with`
     [
-      attr "id"       =: "chatBox",
-      attr "rows"     =: "10",
-      attr "cols"     =: "18",
-      attr "readonly" =: "True"
+      attr "id"       =: "chats-container"
+      --attr "rows"     =: "10",
+      --attr "cols"     =: "18",
+      --attr "readonly" =: "True"
     ]
 
   messageBox <- newElem "input" `with`
@@ -41,8 +45,11 @@ createChatDOM api parentDiv = do
 
   onEvent messageBox KeyPress $ \13 -> handleChatInput
 
+  chatTabsHeader <- createChatTabsHeader
+
   appendChild parentDiv chatDiv
-  appendChild chatDiv chatBox
+  appendChild chatDiv chatTabsHeader
+  appendChild chatDiv chatsContainer
   appendChild chatDiv br
   appendChild chatDiv messageBox
 
@@ -64,9 +71,8 @@ createChatDOM api parentDiv = do
     handleChatCommand :: String -> [String] -> Client ()
     handleChatCommand c args
       | c == "join"  = let chatName = head args in do
-        liftIO $ print $ "handleCatCommand > joining chat: " ++ chatName
-        onServer $ joinChat api <.> chatName
-        listenForChatMessages api chatName chatMessageCallback
+        liftIO $ print $ "handleChatCommand > joining chat: " ++ chatName
+        clientJoinChat api chatName
       | c == "msg"  =
         let chatName = head args
             chatMessage = unwords $ tail args
@@ -74,30 +80,75 @@ createChatDOM api parentDiv = do
         liftIO $ print $ "handleCatCommand > msg chat: " ++ chatName ++ ": " ++ chatMessage
         onServer $ sendChatMessage api <.> chatName <.> ChatMessage "" chatMessage
 
+    -- |Add the header container for chat tabs
+    createChatTabsHeader :: Client Elem
+    createChatTabsHeader = do
+      chatTabsHeader <- newElem "ul" `with`
+        [
+          attr "id" =: "chat-tabs",
+          attr "class" =: "nav nav-tabs",
+          attr "role" =: "tablist"
+        ]
+      return chatTabsHeader
+
+addNewChat :: String -> Client ()
+addNewChat chatName = do
+  addNewTabTotabsHeader chatName
+  addNewChatToChatsContainer chatName
+
+addNewTabTotabsHeader :: String -> Client ()
+addNewTabTotabsHeader chatName =
+  "chat-tabs" `withElem` \chatTabsHeader -> do
+    chatTab <- newElem "li" `with`
+      [
+        attr "id"   =: ("chat-tab-" ++ chatName),
+        attr "role" =: "presentation"
+      ]
+    textElem <- newTextElem chatName
+    appendChild chatTab textElem
+    appendChild chatTabsHeader chatTab
+
+addNewChatToChatsContainer :: String -> Client ()
+addNewChatToChatsContainer chatName =
+  "chats-container" `withElem` \chatsContainer -> do
+    chatContainer <- newElem "div" `with`
+      [
+        attr "id" =: ("chat-container-" ++ chatName),
+        attr "class" =: "tab-pane"
+      ]
+    appendChild chatsContainer chatContainer
+
+-- | Client joins the named chat and starts listen to it's messages
+clientJoinChat :: LobbyAPI -> String -> Client ()
+clientJoinChat api chatName = do
+  onServer $ joinChat api <.> chatName
+  addNewChat chatName
+  fork $ listenForChatMessages api chatName $ chatMessageCallback chatName
+
 -- | Called when a ChatMessage is received
-chatMessageCallback :: ChatMessage -> Client ()
-chatMessageCallback (ChatMessage from content) = do
+chatMessageCallback :: String -> ChatMessage -> Client ()
+chatMessageCallback chatName (ChatMessage from content) = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ ": " ++ content
   pushToChatBox $ from ++ ": " ++ content
-chatMessageCallback (ChatAnnounceJoin from)    = do
+chatMessageCallback chatName (ChatAnnounceJoin from)    = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has joined"
   pushToChatBox $ from ++ "has joined"
-chatMessageCallback (ChatAnnounceLeave from)   = do
+chatMessageCallback chatName (ChatAnnounceLeave from)   = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has left"
   pushToChatBox $ from ++ "has left"
-chatMessageCallback (ChatError errorMessage)   = do
+chatMessageCallback chatName (ChatError errorMessage)   = do
   liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
   pushToChatBox $ "ChatError" ++ errorMessage
-chatMessageCallback _ =
-  liftIO $ print "chatMessageCallback > Bad ChatMessage"
+chatMessageCallback chatName _ =
+  liftIO $ print $ "chatMessageCallback > Bad ChatMessage on chat " ++ chatName
 
 -- |Pushes the String arguments to the "chatBox" textarea
 pushToChatBox :: String -> Client ()
-pushToChatBox str = "chatBox" `withElem` \chatBox -> do
-  prevValue <- getProp chatBox "value"
-  setProp chatBox "value" $ prevValue ++ "\n" ++ str
-  scrollHeight <- getProp chatBox "scrollHeight"
-  setProp chatBox "scrollTop" scrollHeight
+pushToChatBox str = "chat-container-main" `withElem` \chatContainer -> do
+  br <- newElem "br"
+  appendChild chatContainer br
+  textElem <- newTextElem str
+  appendChild chatContainer textElem
   return ()
 
 -- |Listen for chat messages on a chatChannel until the chat announces that the client leaves

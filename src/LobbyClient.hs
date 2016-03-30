@@ -22,8 +22,9 @@ clientMain api = do
   createLobbyDOM api
 
   fork $ listenForLobbyChanges api
-  onServer $ joinChat api <.> "main"
-  fork $ listenForChatMessages api "main" chatMessageCallback
+
+  clientJoinChat api "main"
+
   return ()
 
 listenForLobbyChanges :: LobbyAPI -> Client ()
