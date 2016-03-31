@@ -35,9 +35,9 @@ createChatDOMInParent api parentDiv = do
     ]
 
 
-  chatsContainer <- newElem "div" `with`
+  chatContainer <- newElem "div" `with`
     [
-      attr "id"       =: "chat-containers"
+      attr "id"       =: "chat-container"
       --attr "rows"     =: "10",
       --attr "cols"     =: "18",
       --attr "readonly" =: "True"
@@ -45,14 +45,14 @@ createChatDOMInParent api parentDiv = do
 
   inputContainer <- newElem "div" `with`
     [
-      attr "id" =: "input-containers"
+      attr "id" =: "input-container"
     ]
 
   chatTabsHeader <- createChatTabsHeader
 
   appendChild parentDiv chatDiv
   appendChild chatDiv chatTabsHeader
-  appendChild chatDiv chatsContainer
+  appendChild chatDiv chatContainer
   appendChild chatDiv br
   appendChild chatDiv inputContainer
 
@@ -105,14 +105,14 @@ createChatTabsHeader = do
 
 addNewChat :: LobbyAPI -> String -> Client ()
 addNewChat api chatName = do
-  addTabToTabsHeader chatName
-  addChatToChatsContainer chatName
-  addInputFieldToInputsContainer api chatName
+  addTabToTabHeader chatName
+  addChatToChatContainer chatName
+  addInputFieldToInputFieldsContainer api chatName
 
 -- | Adds a new named tab to the tabs header.
 -- | Clicks on this tabs changes changes to only show its respective chat window and input field
-addTabToTabsHeader :: String -> Client ()
-addTabToTabsHeader chatName =
+addTabToTabHeader :: String -> Client ()
+addTabToTabHeader chatName =
   "chat-tabs" `withElem` \chatTabsHeader -> do
     chatTab <- newElem "li" `with`
       [
@@ -127,21 +127,21 @@ addTabToTabsHeader chatName =
 
 -- | Adds a new chat window to the chat container.
 -- | The given string is used to set an id attribute.
-addChatToChatsContainer :: String -> Client ()
-addChatToChatsContainer chatName =
-  "chat-containers" `withElem` \chatsContainer -> do
-    chatContainer <- newElem "div" `with`
+addChatToChatContainer :: String -> Client ()
+addChatToChatContainer chatName =
+  "chat-container" `withElem` \chatContainer -> do
+    chatDiv <- newElem "div" `with`
       [
         attr "id" =: ("chat-container-" ++ chatName),
         attr "style" =: "overflow: auto; height: 200px; word-wrap: break-word;"
       ]
-    appendChild chatsContainer chatContainer
+    appendChild chatContainer chatDiv
 
 -- | Adds a new input field to the inputs container.
 -- | The input field forwards the message to the handleChatInput function when 'enter' is pressed.
-addInputFieldToInputsContainer :: LobbyAPI -> String -> Client ()
-addInputFieldToInputsContainer api chatName =
-  "input-containers" `withElem` \inputsContainer -> do
+addInputFieldToInputFieldsContainer :: LobbyAPI -> String -> Client ()
+addInputFieldToInputFieldsContainer api chatName =
+  "input-container" `withElem` \inputFieldContainer -> do
     inputField <- newElem "input" `with`
       [
         attr "id" =: ("input-field-" ++ chatName),
@@ -150,7 +150,7 @@ addInputFieldToInputsContainer api chatName =
 
       ]
     onEvent inputField KeyPress $ \13 -> handleChatInput api chatName
-    appendChild inputsContainer inputField
+    appendChild inputFieldContainer inputField
     return ()
 
 deleteChat :: String -> Client ()
@@ -159,19 +159,19 @@ deleteChat chatName = do
   liftIO $ print $ ("chat-container-" ++ chatName)
   liftIO $ print $ ("input-field-"    ++ chatName)
   deleteDOM ("chat-tab-"       ++ chatName) "chat-tabs"
-  deleteDOM ("chat-container-" ++ chatName) "chat-containers"
-  deleteDOM ("input-field-"    ++ chatName) "input-containers"
+  deleteDOM ("chat-container-" ++ chatName) "chat-container"
+  deleteDOM ("input-field-"    ++ chatName) "input-container"
   return ()
 
 -- | Show the proper DOM elements for a named chat.
 -- | All other chat elements are hidden.
 setActiveChat :: String -> Client ()
 setActiveChat chatName = do
-  "chat-containers" `withElem` \chatsContainer -> do
-    setHideClassOnChildren chatsContainer
+  "chat-container" `withElem` \chatContainer -> do
+    setHideClassOnChildren chatContainer
     maybeDOMElem <- elemById $ "chat-container-" ++ chatName
     clearClassAttrOnMaybeDomElem maybeDOMElem
-  "input-containers" `withElem` \inputs -> do
+  "input-container" `withElem` \inputs -> do
     setHideClassOnChildren inputs
     maybeDOMElem <- elemById $ "input-field-" ++ chatName
     clearClassAttrOnMaybeDomElem maybeDOMElem
@@ -248,7 +248,7 @@ listenForChatMessages api chatName callBack = do
   msg <- onServer $ readChatChannel api <.> chatName
   callBack msg
   -- Handle leave messages
-  -- If this client that's leaving. then stop listening for new ChatMessages
+  -- If its this client that's leaving. then stop listening for new ChatMessages
   case msg of
     ChatAnnounceLeave from -> do
       clientName <- onServer $ getClientName api
