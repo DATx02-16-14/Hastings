@@ -90,12 +90,14 @@ createChatTabsHeader = do
 
 addNewChat :: LobbyAPI -> String -> Client ()
 addNewChat api chatName = do
-  addNewTabToTabsHeader chatName
-  addNewChatToChatsContainer chatName
+  addTabToTabsHeader chatName
+  addChatToChatsContainer chatName
   addInputFieldToInputsContainer api chatName
 
-addNewTabToTabsHeader :: String -> Client ()
-addNewTabToTabsHeader chatName =
+-- | Adds a new named tab to the tabs header.
+-- | Clicks on this tabs changes changes to only show its respective chat window and input field
+addTabToTabsHeader :: String -> Client ()
+addTabToTabsHeader chatName =
   "chat-tabs" `withElem` \chatTabsHeader -> do
     chatTab <- newElem "li" `with`
       [
@@ -108,8 +110,10 @@ addNewTabToTabsHeader chatName =
     appendChild chatTab textElem
     appendChild chatTabsHeader chatTab
 
-addNewChatToChatsContainer :: String -> Client ()
-addNewChatToChatsContainer chatName =
+-- | Adds a new chat window to the chat container.
+-- | The given string is used to set an id attribute.
+addChatToChatsContainer :: String -> Client ()
+addChatToChatsContainer chatName =
   "chats-container" `withElem` \chatsContainer -> do
     chatContainer <- newElem "div" `with`
       [
@@ -118,6 +122,8 @@ addNewChatToChatsContainer chatName =
       ]
     appendChild chatsContainer chatContainer
 
+-- | Adds a new input field to the inputs container.
+-- | The input field forwards the message to the handleChatInput function when 'enter' is pressed.
 addInputFieldToInputsContainer :: LobbyAPI -> String -> Client ()
 addInputFieldToInputsContainer api chatName =
   "inputs-container" `withElem` \inputsContainer -> do
@@ -199,6 +205,7 @@ pushToChatBox chatName str = ("chat-container-" ++ chatName) `withElem` \chatCon
   scrollToBottom chatContainer
   return ()
 
+-- | Set set the scrollTop property equal to the scrollHeight property.
 scrollToBottom :: Elem -> Client()
 scrollToBottom scrollableElem = do
   scrollHeight <- getProp scrollableElem "scrollHeight"
