@@ -170,25 +170,29 @@ deleteChat chatName = do
 -- | All other chat elements are hidden.
 setActiveChat :: String -> Client ()
 setActiveChat chatName = do
+  "chat-tabs" `withElem` \chatTabs -> do
+    setClassOnChildren chatTabs ""
+    maybeDOMElem <- elemById $ "chat-tab-" ++ chatName
+    setClassOnMaybeDOMElem maybeDOMElem "active"
   "chat-container" `withElem` \chatContainer -> do
-    setHideClassOnChildren chatContainer
+    setClassOnChildren chatContainer "hide"
     maybeDOMElem <- elemById $ "chat-container-" ++ chatName
-    clearClassAttrOnMaybeDomElem maybeDOMElem
+    setClassOnMaybeDOMElem maybeDOMElem ""
   "input-container" `withElem` \inputs -> do
-    setHideClassOnChildren inputs
+    setClassOnChildren inputs "hide"
     maybeDOMElem <- elemById $ "input-field-" ++ chatName
-    clearClassAttrOnMaybeDomElem maybeDOMElem
+    setClassOnMaybeDOMElem maybeDOMElem ""
   return ()
     where
-      setHideClassOnChildren parent = do
+      setClassOnChildren parent value = do
         children <- getChildren parent
-        mapM_ (\c -> setAttr c "class" "hide") children
+        mapM_ (\c -> setAttr c "class" value) children
 
-      clearClassAttrOnMaybeDomElem maybeDOMElem = do
+      setClassOnMaybeDOMElem maybeDOMElem attr = do
         case maybeDOMElem of
           Nothing   -> return ()
           Just chat -> do
-            setAttr chat "class" ""
+            setAttr chat "class" attr
             scrollToBottom chat
 
 -- | Client joins the named chat and starts listen to it's messages
