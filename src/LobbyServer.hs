@@ -310,8 +310,10 @@ joinChat remoteClientList remoteChatList chatName = do
       liftIO $ CC.modifyMVar_ concurrentChatList $ \chatList ->
         return $ (chatName, newChatChannel) : chatList
       addChannelToClient sid concurrentChatList concurrentClientList
-    else
+      announceChatJoin remoteClientList remoteChatList chatName
+    else do
       addChannelToClient sid concurrentChatList concurrentClientList
+      announceChatJoin remoteClientList remoteChatList chatName
 
 
     where
@@ -326,6 +328,18 @@ joinChat remoteClientList remoteChatList chatName = do
       addChatToClient :: Chat -> ClientEntry -> ClientEntry
       addChatToClient chat client | chatName `elem` map fst (chats client) = client
                        | otherwise = client {chats = chat : chats client}
+
+announceChatJoin :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()
+announceChatJoin remoteClientList remoteChatList chatName = do
+  clientList <- remoteClientList >>= liftIO . CC.readMVar
+  chatList <- remoteChatList >>= liftIO . CC.readMVar
+  case chatName `lookup` chatList of
+    Nothing      -> return ()
+    Just channel -> do
+      sid <- getSessionID
+      case sid `lookupClientEntry` clientList of
+        Nothing     -> return ()
+        Just client -> liftIO $ CC.writeChan channel $ ChatAnnounceJoin $ name client
 
 -- |Called by a client to read its various chat channels
 readChatChannel :: Server ConcurrentClientList -> String ->  Server ChatMessage
