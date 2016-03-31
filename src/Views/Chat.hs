@@ -172,16 +172,16 @@ setActiveChat :: String -> Client ()
 setActiveChat chatName = do
   "chat-tabs" `withElem` \chatTabs -> do
     setClassOnChildren chatTabs ""
-    maybeDOMElem <- elemById $ "chat-tab-" ++ chatName
-    setClassOnMaybeDOMElem maybeDOMElem "active"
+    maybeChatTab <- elemById $ "chat-tab-" ++ chatName
+    setClassOnMaybeDOMElem maybeChatTab "active"
   "chat-container" `withElem` \chatContainer -> do
     setClassOnChildren chatContainer "hide"
-    maybeDOMElem <- elemById $ "chat-container-" ++ chatName
-    setClassOnMaybeDOMElem maybeDOMElem ""
+    maybeChatContainer <- elemById $ "chat-container-" ++ chatName
+    setClassOnMaybeDOMElem maybeChatContainer ""
   "input-container" `withElem` \inputs -> do
     setClassOnChildren inputs "hide"
-    maybeDOMElem <- elemById $ "input-field-" ++ chatName
-    setClassOnMaybeDOMElem maybeDOMElem ""
+    maybeInputField <- elemById $ "input-field-" ++ chatName
+    setClassOnMaybeDOMElem maybeInputField ""
   return ()
     where
       setClassOnChildren parent value = do
