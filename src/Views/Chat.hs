@@ -118,7 +118,7 @@ addChatToChatsContainer chatName =
     chatContainer <- newElem "div" `with`
       [
         attr "id" =: ("chat-container-" ++ chatName),
-        attr "style" =: "overflow: auto; height: 200px"
+        attr "style" =: "overflow: auto; height: 200px; word-wrap: break-word;"
       ]
     appendChild chatsContainer chatContainer
 
