@@ -11,10 +11,11 @@ import Haste
 import Haste.Events
 import Haste.DOM
 import Haste.App.Concurrent
+import Data.Maybe
+import Control.Monad (unless)
+
 import LobbyTypes
 import LobbyAPI
-import Control.Monad (unless)
-import Data.Maybe
 import Views.Common
 
 -- | Create chat DOM in the left column
