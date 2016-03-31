@@ -1,6 +1,8 @@
 module Table where
 import Haste.Graphics.Canvas
 import Control.Concurrent
+import Haste.Binary
+import Data.Word
 
 type Table = [Square]
 --data Color = blue | red | purple | green | orange | yellow | white
@@ -31,6 +33,31 @@ instance Eq Color where
 
 instance Show Color where
     show (RGB a b c) = "RGB " ++ show a ++ " " ++ show b ++ " " ++ show c
+
+instance Binary GameAction where
+    put StartGame = put (0 :: Word8)
+    put RotatePlayer = put (1 :: Word8)
+    put (Move (x1,y1) (x2,y2)) = do
+                         put (2 :: Word8) 
+                         put (fromIntegral x1 :: Word8)
+                         put (fromIntegral y1 :: Word8)
+                         put (fromIntegral x2 :: Word8)
+                         put (fromIntegral y2 :: Word8)
+
+
+    get = do
+        inp <-  get :: Get Word8
+        case inp of
+            0 -> return StartGame
+            1 -> return RotatePlayer
+            2 -> do 
+                  x1 <- get :: Get Word8
+                  y1 <- get :: Get Word8
+                  x2 <- get :: Get Word8
+                  y2 <- get :: Get Word8
+                  return $ Move (f x1, f y1) (f x2, f y2)
+                   where f = fromIntegral
+
 
 -- | Colors used for checkers and squares
 red = RGB 255 0 0
