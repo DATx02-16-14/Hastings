@@ -299,8 +299,8 @@ messageClients m = mapM_ (\c -> CC.writeChan (lobbyChannel c) m)
 changeMaxNumberOfPlayers :: Server GamesList -> Int -> Server ()
 changeMaxNumberOfPlayers remoteGames newMax = do
   mVarGames <- remoteGames
-  bool <- isOwnerOfGame remoteGames
-  if bool then do
+  isOwnerOfGame <- isOwnerOfGame remoteGames
+  if isOwnerOfGame then do
     maybeGame <- findGameWithSid mVarGames
     case maybeGame of
       Nothing   -> return ()
