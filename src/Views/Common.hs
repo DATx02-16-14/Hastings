@@ -92,6 +92,18 @@ addChildrenToParent parent children = do
 addChildrenToParent' :: Elem -> [Elem] -> Client ()
 addChildrenToParent' parent children = mapM_ (appendChild parent) children
 
+-- |Displays the error message in 'String'. Fades in the message and then out.
+showError :: String -> Client ()
+showError string = do
+  stringDiv <- newElem "h3" `with`
+    [
+      style "text-align" =: "center",
+      style "color"      =: "red"
+    ]
+  stringElem <- newTextElem string
+  addChildrenToParent' stringDiv [stringElem]
+  addChildrenToCenterColumn [stringDiv]
+  fadeInOutElem stringDiv
 
 -- |Fades in and then out a message after displaying it for 5 seconds
 fadeInOutElem :: Elem -> Client ()
