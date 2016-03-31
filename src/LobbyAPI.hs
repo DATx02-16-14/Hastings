@@ -34,6 +34,8 @@ data LobbyAPI = LobbyAPI
   , changeGameName :: Remote (Name -> Server())
     -- |Reads the value from the lobby channel
   , readLobbyChannel :: Remote (Server LobbyMessage)
+   -- |Changes the maximum amount of players
+   , changeMaxNumberOfPlayers :: Remote (Int -> Server ())
     -- |Get clients name based on sid
   , getClientName :: Remote (Server String)
     -- |Join named chat
@@ -59,6 +61,7 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.changeNickName playersList gamesList))
             <*> REMOTE((Server.changeGameNameWithSid gamesList playersList))
             <*> REMOTE((Server.readLobbyChannel playersList))
+            <*> REMOTE((Server.changeMaxNumberOfPlayers gamesList))
             <*> REMOTE((Server.getClientName playersList))
             <*> REMOTE((Server.joinChat playersList chatList))
             <*> REMOTE((Server.sendChatMessage playersList chatList))
