@@ -92,6 +92,21 @@ addChildrenToParent parent children = do
 addChildrenToParent' :: Elem -> [Elem] -> Client ()
 addChildrenToParent' parent children = mapM_ (appendChild parent) children
 
+
+-- |Fades in an element (can not be a text element)
+fadeInElem :: Elem -> Client ()
+fadeInElem e = do
+  setStyle e "display" "block"
+  fadeInElem' 0.1
+  where
+    fadeInElem' :: Float -> Client ()
+    fadeInElem' op | op > 1   = return ()
+                   | otherwise = do
+      setStyle e "opacity" $ show op
+      setStyle e "filter" $ "alpha(opacity=" ++ show (op * 100) ++ ")"
+      setTimer (Once 10) $ fadeInElem' (op + op * 0.1)
+      return ()
+
 -- |Fades out an element (can not be a text element)
 fadeOutElem :: Elem -> Client ()
 fadeOutElem e = fadeOutElem' 1
