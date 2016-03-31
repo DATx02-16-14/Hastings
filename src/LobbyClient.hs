@@ -48,4 +48,5 @@ listenForLobbyChanges api = do
       updatePlayerList api
       updatePlayerListGame api
     PlayerJoinedGame -> updatePlayerListGame api
+    (LobbyError msg) -> liftIO $ print msg -- Update with some way to show error to client
   listenForLobbyChanges api
