@@ -62,14 +62,21 @@ handleChatInput api currentChatName =
         let splitStr = words s
         let command = head splitStr
         let args = tail splitStr
-        handleChatCommand command args
+        handleChatCommand command args currentChatName
       Just s -> onServer $ sendChatMessage api <.> currentChatName <.> ChatMessage "" s
   where
-    handleChatCommand :: String -> [String] -> Client ()
-    handleChatCommand c args
-      | c == "join"  = let chatName = head args in do
-        liftIO $ print $ "handleChatCommand > joining chat: " ++ chatName
-        clientJoinChat api chatName
+    handleChatCommand :: String -> [String] -> String -> Client ()
+    handleChatCommand c args chatName
+      | c == "join"  = let chatName' = head args in do
+        liftIO $ print $ "handleChatCommand > joining chat: " ++ chatName'
+        clientJoinChat api chatName'
+      | c == "leave"  = do
+        liftIO $ print $ "handleChatCommand > leaving chat: " ++ chatName
+        if null args
+          then
+            clientLeaveChat api chatName
+          else let chatName' = head args in
+            clientLeaveChat api chatName'
       | c == "msg"  =
         let chatName = head args
             chatMessage = unwords $ tail args
@@ -176,6 +183,10 @@ clientJoinChat api chatName = do
     Just _ ->
       setActiveChat chatName
   return ()
+
+clientLeaveChat :: LobbyAPI -> String -> Client ()
+clientLeaveChat api chatName = do
+  onServer $ leaveChat api <.> chatName
 
 
 -- | Called when a ChatMessage is received

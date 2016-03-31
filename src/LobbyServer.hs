@@ -20,6 +20,7 @@ module LobbyServer(
   readChatChannel,
   sendChatMessage,
   joinChat,
+  leaveChat,
   getClientName) where
 
 import Haste.App
@@ -340,6 +341,28 @@ announceChatJoin remoteClientList remoteChatList chatName = do
       case sid `lookupClientEntry` clientList of
         Nothing     -> return ()
         Just client -> liftIO $ CC.writeChan channel $ ChatAnnounceJoin $ name client
+
+-- | Called by client to leave the named Chat
+leaveChat :: Server ConcurrentClientList -> String -> Server ()
+leaveChat remoteClientList chatName = do
+  sid <- getSessionID
+  concurrentClientList <- remoteClientList
+  cs <- liftIO $ CC.readMVar concurrentClientList
+  case sid `lookupClientEntry` cs of
+    Nothing     -> return ()
+    Just client -> do
+      case chatName `lookup` (chats client) of
+        Nothing      -> return ()
+        Just channel -> do
+          liftIO $ do
+            CC.writeChan channel $ ChatAnnounceLeave $ name client
+            CC.modifyMVar_ concurrentClientList $ \clientList ->
+              return $ updateListElem (\c -> c {chats =
+                deleteBy (\(cName1,_) (cName2,_) -> cName1 == cName2) (chatName, channel) $ chats client -- ((chatName ==).). fst) ??
+                }) ((sessionID client ==) . sessionID) clientList
+          return ()
+
+
 
 -- |Called by a client to read its various chat channels
 readChatChannel :: Server ConcurrentClientList -> String ->  Server ChatMessage

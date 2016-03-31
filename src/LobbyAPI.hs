@@ -34,6 +34,8 @@ data LobbyAPI = LobbyAPI
   , getClientName :: Remote (Server String)
     -- |Join named chat
   , joinChat :: Remote (Name -> Server ())
+    -- |Leave named chat
+  , leaveChat :: Remote (Name -> Server ())
     -- |Send ChatMessage over Named channel
   , sendChatMessage :: Remote (Name -> ChatMessage -> Server ())
     -- |Reads next ChatMessage from named chat channel.
@@ -57,5 +59,6 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.readLobbyChannel playersList))
             <*> REMOTE((Server.getClientName playersList))
             <*> REMOTE((Server.joinChat playersList chatList))
+            <*> REMOTE((Server.leaveChat playersList))
             <*> REMOTE((Server.sendChatMessage playersList chatList))
             <*> REMOTE((Server.readChatChannel playersList))
