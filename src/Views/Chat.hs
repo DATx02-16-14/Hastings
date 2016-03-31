@@ -35,14 +35,10 @@ createChatDOM api parentDiv = do
       --attr "readonly" =: "True"
     ]
 
-  messageBox <- newElem "input" `with`
+  inputContainer <- newElem "div" `with`
     [
-      attr "type" =: "text",
-      attr "id"   =: "messageBox",
-      attr "cols" =: "60"
+      attr "id" =: "inputs-container"
     ]
-
-  onEvent messageBox KeyPress $ \13 -> handleChatInput
 
   chatTabsHeader <- createChatTabsHeader
 
@@ -50,23 +46,25 @@ createChatDOM api parentDiv = do
   appendChild chatDiv chatTabsHeader
   appendChild chatDiv chatsContainer
   appendChild chatDiv br
-  appendChild chatDiv messageBox
+  appendChild chatDiv inputContainer
 
+-- | Given a message, forward it to server if it's an ordinary chat message.
+-- | Also handle commands. commands begin with a "/"
+handleChatInput :: LobbyAPI -> String -> Client ()
+handleChatInput api currentChatName =
+  ("input-field-" ++ currentChatName) `withElem` \inputField -> do
+    message <- getValue inputField
+    setProp inputField "value" ""
+    case message of
+      Just ""   -> return ()
+      Nothing   -> return ()
+      Just ('/':s) -> do
+        let splitStr = words s
+        let command = head splitStr
+        let args = tail splitStr
+        handleChatCommand command args
+      Just s -> onServer $ sendChatMessage api <.> currentChatName <.> ChatMessage "" s
   where
-    handleChatInput :: Client ()
-    handleChatInput = withElem "messageBox" $ \messageBox -> do
-      message <- getValue messageBox
-      setProp messageBox "value" ""
-      case message of
-        Just ""   -> return ()
-        Nothing   -> return ()
-        Just ('/':s) -> do
-          let splitStr = words s
-          let command = head splitStr
-          let args = tail splitStr
-          handleChatCommand command args
-        Just s -> onServer $ sendChatMessage api <.> "main" <.> ChatMessage "" s
-
     handleChatCommand :: String -> [String] -> Client ()
     handleChatCommand c args
       | c == "join"  = let chatName = head args in do
@@ -79,21 +77,22 @@ createChatDOM api parentDiv = do
         liftIO $ print $ "handleCatCommand > msg chat: " ++ chatName ++ ": " ++ chatMessage
         onServer $ sendChatMessage api <.> chatName <.> ChatMessage "" chatMessage
 
-    -- |Add the header container for chat tabs
-    createChatTabsHeader :: Client Elem
-    createChatTabsHeader = do
-      chatTabsHeader <- newElem "ul" `with`
-        [
-          attr "id" =: "chat-tabs",
-          attr "class" =: "nav nav-tabs",
-          attr "role" =: "tablist"
-        ]
-      return chatTabsHeader
+-- |Add the header container for chat tabs
+createChatTabsHeader :: Client Elem
+createChatTabsHeader = do
+  chatTabsHeader <- newElem "ul" `with`
+    [
+      attr "id" =: "chat-tabs",
+      attr "class" =: "nav nav-tabs",
+      attr "role" =: "tablist"
+    ]
+  return chatTabsHeader
 
-addNewChat :: String -> Client ()
-addNewChat chatName = do
+addNewChat :: LobbyAPI -> String -> Client ()
+addNewChat api chatName = do
   addNewTabToTabsHeader chatName
   addNewChatToChatsContainer chatName
+  addInputFieldToInputsContainer api chatName
 
 addNewTabToTabsHeader :: String -> Client ()
 addNewTabToTabsHeader chatName =
@@ -119,18 +118,44 @@ addNewChatToChatsContainer chatName =
       ]
     appendChild chatsContainer chatContainer
 
+addInputFieldToInputsContainer :: LobbyAPI -> String -> Client ()
+addInputFieldToInputsContainer api chatName =
+  "inputs-container" `withElem` \inputsContainer -> do
+    inputField <- newElem "input" `with`
+      [
+        attr "id" =: ("input-field-" ++ chatName),
+        attr "type" =: "text",
+        attr "cols" =: "60"
+
+      ]
+    onEvent inputField KeyPress $ \13 -> handleChatInput api chatName
+    appendChild inputsContainer inputField
+    return ()
+
+-- | Show the proper DOM elements for a named chat.
+-- | All other chat elements are hidden.
 setActiveChat :: String -> Client ()
-setActiveChat chatName = "chats-container" `withElem` \chatContainer -> do
-  children <- getChildren chatContainer
-  liftIO $ print $ length children
-  mapM_ (\c -> setAttr c "class" "hide") children
-  activeChat <- elemById $ "chat-container-" ++ chatName
-  case activeChat of
-    Nothing   -> return ()
-    Just chat -> do
-      setAttr chat "class" ""
-      scrollToBottom chat
+setActiveChat chatName = do
+  "chats-container" `withElem` \chatsContainer -> do
+    setHideClassOnChildren chatsContainer
+    maybeDOMElem <- elemById $ "chat-container-" ++ chatName
+    clearClassAttrOnMaybeDomElem maybeDOMElem
+  "inputs-container" `withElem` \inputs -> do
+    setHideClassOnChildren inputs
+    maybeDOMElem <- elemById $ "input-field-" ++ chatName
+    clearClassAttrOnMaybeDomElem maybeDOMElem
   return ()
+    where
+      setHideClassOnChildren parent = do
+        children <- getChildren parent
+        mapM_ (\c -> setAttr c "class" "hide") children
+
+      clearClassAttrOnMaybeDomElem maybeDOMElem = do
+        case maybeDOMElem of
+          Nothing   -> return ()
+          Just chat -> do
+            setAttr chat "class" ""
+            scrollToBottom chat
 
 -- | Client joins the named chat and starts listen to it's messages
 clientJoinChat :: LobbyAPI -> String -> Client ()
@@ -139,7 +164,7 @@ clientJoinChat api chatName = do
   case maybeChatContainer of
     Nothing -> do
       onServer $ joinChat api <.> chatName
-      addNewChat chatName
+      addNewChat api chatName
       fork $ listenForChatMessages api chatName $ chatMessageCallback chatName
       setActiveChat chatName
     Just _ ->
@@ -151,22 +176,22 @@ clientJoinChat api chatName = do
 chatMessageCallback :: String -> ChatMessage -> Client ()
 chatMessageCallback chatName (ChatMessage from content) = do
   liftIO $ print $ "chatMessageCallback > Chat:{" ++ chatName ++ "} from:{" ++ from ++ "] message:{" ++ content ++ "}"
-  pushToChatBox $ from ++ ": " ++ content
+  pushToChatBox chatName $from ++ ": " ++ content
 chatMessageCallback chatName (ChatAnnounceJoin from)    = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has joined"
-  pushToChatBox $ from ++ "has joined"
+  pushToChatBox chatName $from ++ "has joined"
 chatMessageCallback chatName (ChatAnnounceLeave from)   = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has left"
-  pushToChatBox $ from ++ "has left"
+  pushToChatBox chatName $from ++ "has left"
 chatMessageCallback chatName (ChatError errorMessage)   = do
   liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
-  pushToChatBox $ "ChatError" ++ errorMessage
+  pushToChatBox chatName $"ChatError" ++ errorMessage
 chatMessageCallback chatName _ =
   liftIO $ print $ "chatMessageCallback > Bad ChatMessage on chat " ++ chatName
 
 -- |Pushes the String arguments to the "chatBox" textarea
-pushToChatBox :: String -> Client ()
-pushToChatBox str = "chat-container-main" `withElem` \chatContainer -> do
+pushToChatBox :: String -> String -> Client ()
+pushToChatBox chatName str = ("chat-container-" ++ chatName) `withElem` \chatContainer -> do
   br <- newElem "br"
   appendChild chatContainer br
   textElem <- newTextElem str
