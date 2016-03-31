@@ -123,7 +123,9 @@ addTabToTabHeader chatName =
     onEvent chatTab Click $ \_ -> setActiveChat chatName
 
     textElem <- newTextElem chatName
-    appendChild chatTab textElem
+    linkWrapper <- newElem "a"
+    appendChild linkWrapper textElem
+    appendChild chatTab linkWrapper
     appendChild chatTabsHeader chatTab
 
 -- | Adds a new chat window to the chat container.
