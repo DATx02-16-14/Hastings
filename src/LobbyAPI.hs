@@ -13,9 +13,13 @@ import LobbyServer as Server
 -- |The api provided by the server.
 data LobbyAPI = LobbyAPI
   { connect :: Remote (String -> Server ())
-  , createGame :: Remote (Server (Maybe (String)))
+    -- |Creates a game on the server with the current client as host.
+    -- |The 'Int' represents the default max number of players
+  , createGame :: Remote (Int -> Server (Maybe (String)))
   , getGamesList :: Remote (Server [String])
-  , joinGame :: Remote (String -> Server ())
+    -- |Joins a game with the 'UUID' representetd by the 'String'.
+    -- |Returns if the client successfully joined or not.
+  , joinGame :: Remote (String -> Server Bool)
   , findPlayersInGame :: Remote (Server [String])
     -- |Finds the name of the game with String as identifier
   , findGameNameWithID :: Remote (String -> Server String)
@@ -30,6 +34,8 @@ data LobbyAPI = LobbyAPI
   , changeGameName :: Remote (Name -> Server())
     -- |Reads the value from the lobby channel
   , readLobbyChannel :: Remote (Server LobbyMessage)
+   -- |Changes the maximum amount of players
+   , changeMaxNumberOfPlayers :: Remote (Int -> Server ())
     -- |Get clients name based on sid
   , getClientName :: Remote (Server String)
     -- |Join named chat
@@ -57,6 +63,7 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.changeNickName playersList gamesList))
             <*> REMOTE((Server.changeGameNameWithSid gamesList playersList))
             <*> REMOTE((Server.readLobbyChannel playersList))
+            <*> REMOTE((Server.changeMaxNumberOfPlayers gamesList))
             <*> REMOTE((Server.getClientName playersList))
             <*> REMOTE((Server.joinChat playersList chatList))
             <*> REMOTE((Server.leaveChat playersList))

@@ -22,9 +22,13 @@ type ConcurrentClientList = CC.MVar [ClientEntry]
 -- |A game inside of the lobby.
 type LobbyGame = (String, GameData)
 
-
-data GameData = GameData {players     :: [ClientEntry],
-                          gameName    :: Name}
+-- |Data relevant to a game. Currently includes:
+-- |The players who are in the game (where the last one is the owner)
+-- |The name of the game
+-- |The maximum allowed players, can be changed by the owner
+data GameData = GameData {players            :: [ClientEntry],
+                          gameName           :: Name,
+                          maxAmountOfPlayers :: Int}
   deriving (Eq)
 
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
@@ -108,3 +112,13 @@ instance Binary LobbyMessage where
       4 -> return ClientJoined
       5 -> return ClientLeft
       6 -> return PlayerJoinedGame
+
+instance Binary Bool where
+  put True  = put (0 :: Word8)
+  put False = put (1 :: Word8)
+
+  get = do
+    tag <- get :: Get Word8
+    case tag of
+      0 -> return True
+      1 -> return False

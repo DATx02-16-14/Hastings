@@ -9,12 +9,19 @@ import Haste.App.Concurrent
 import LobbyTypes
 import LobbyAPI
 import Views.Common
+import GameAPI
+
+import Text.Read
 
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
-createGameDOM :: LobbyAPI -> Client ()
-createGameDOM api = do
-  parentDiv <- createBootstrapTemplate "lobbyGame"
+createGameDOM :: LobbyAPI -> GameAPI -> Client ()
+createGameDOM api gapi = do
+  parentDiv <- createDiv [("id","lobbyGame")]
+
+  createGameChangeNameDOM api
+  createUpdateMaxNumberPlayersDOM api gapi
+
   gameName <- onServer $ findGameName api
   players <- onServer $ findPlayersInGame api
   nameOfGame <- newTextElem gameName
@@ -45,7 +52,14 @@ createGameDOM api = do
 
   mapM_ (addPlayerWithKickToPlayerlist api list) players
 
-  gameNameDiv <- newElem "div"
+  addChildrenToParent' parentDiv [header, list, createStartGameBtn]
+  addChildrenToCenterColumn [parentDiv]
+
+-- |Creates the DOM for chaning the name of a game.
+-- |It includes an input field and a button.
+createGameChangeNameDOM :: LobbyAPI -> Client ()
+createGameChangeNameDOM api = do
+  gameNameDiv <- createDiv [("id", "changeGameName")]
   gameNameText <- newTextElem "Change game name"
   gameNameField <- newElem "input" `with`
     [
@@ -59,13 +73,9 @@ createGameDOM api = do
   gameNameBtnText <- newTextElem "Change"
   appendChild gameNameButton gameNameBtnText
 
-  appendChild gameNameDiv gameNameText
-  appendChild gameNameDiv gameNameField
-  appendChild gameNameDiv gameNameButton
+  addChildrenToParent' gameNameDiv [gameNameText, gameNameField, gameNameButton]
 
-  addChildrenToLeftColumn [createStartGameBtn, list]
   addChildrenToRightColumn [gameNameDiv]
-  addChildrenToCenterColumn [header]
 
   onEvent gameNameField KeyPress $ \13 -> gameUpdateFunction
 
@@ -82,6 +92,50 @@ createGameDOM api = do
           Just name -> do
             setProp field "value" ""
             onServer $ changeGameName api <.> name
+          Nothing   -> return ()
+
+-- |Creates DOM for the updatin the maximum number of players in a game
+-- |Contains an input field and a button. Is placed in the right sidebar
+createUpdateMaxNumberPlayersDOM :: LobbyAPI -> GameAPI-> Client ()
+createUpdateMaxNumberPlayersDOM api gapi = do
+  maxNumberDiv <- createDiv [("id","maxNumberDiv")]
+
+  maxNumberText <- newTextElem "Change maximum number of players"
+  maxNumberField <- newElem "input" `with`
+    [
+      attr "type" =: "text",
+      attr "id" =: "maxNumberField"
+    ]
+  maxNumberButton <- newElem "button" `with`
+    [
+      attr "id" =: "maxNumberBtn"
+    ]
+  maxNumberBtnText <- newTextElem "Change"
+
+  appendChild maxNumberButton maxNumberBtnText
+  appendChild maxNumberDiv maxNumberText
+  appendChild maxNumberDiv maxNumberField
+  appendChild maxNumberDiv maxNumberButton
+  addChildrenToRightColumn [maxNumberDiv]
+
+  onEvent maxNumberField KeyPress $ \13 -> maxNumberUpdateFunction
+
+  clickEventString "maxNumberBtn" maxNumberUpdateFunction
+  return ()
+
+  where
+    maxNumberUpdateFunction =
+      withElem "maxNumberField" $ \field -> do
+        newNumber <- getValue field
+        case newNumber of
+          Just ""   -> return ()
+          Just numberString ->
+            case readMaybe numberString of
+              Nothing -> return ()
+              Just number | number <= getMaxNumberOfPlayers gapi -> do
+                setProp field "value" ""
+                onServer $ changeMaxNumberOfPlayers api <.> number
+                          | otherwise -> return ()
           Nothing   -> return ()
 
 -- |Convenience function for calling on the kick function.
@@ -102,8 +156,8 @@ addPlayerWithKickToPlayerlist api parent name = do
   appendChild parent br
 
 -- |Adds DOM for a game
-addGame :: LobbyAPI -> String -> Client ()
-addGame api gameID = do
+addGame :: LobbyAPI -> GameAPI -> String -> Client ()
+addGame api gapi gameID = do
   maybeGameListDiv <- elemById "gamesList"
   case maybeGameListDiv of
     Nothing -> return ()
@@ -120,10 +174,12 @@ addGame api gameID = do
       appendChild gameListDiv gameDiv
 
       clickEventString gameName $ do
-        onServer $ joinGame api <.> gameID
-        players <- onServer $ findPlayersInGame api
-        deleteLobbyDOM
-        createGameDOM api
+        bool <- onServer $ joinGame api <.> gameID
+        if bool then do
+            deleteLobbyDOM
+            createGameDOM api gapi
+        else
+          return ()
       return ()
 
 -- |Updates the list of players in a game on the client

@@ -21,30 +21,12 @@ import Views.Common
 import Views.Chat
 
 
--- |Creates the initial DOM upon entering the lobby
-createLobbyDOM :: LobbyAPI -> Client ()
-createLobbyDOM api = do
+-- |Creates DOM for chaning nick name
+-- |Includes an input field and a button.
+createChangeNickNameDOM :: LobbyAPI -> Client ()
+createChangeNickNameDOM api = do
+  nickDiv <- createDiv [("id","nickNameDiv")]
 
-  lobbyDiv <- createBootstrapTemplate "lobby"
-
-  createGamebtn <- newElem "button" `with`
-    [
-      prop "id" =: "createGamebtn"
-    ]
-  crGamebtnText <- newTextElem "Create new game"
-
-  header <- newElem "h1" `with`
-    [
-      attr "class" =: "text-center"
-    ]
-
-  headerText <- newTextElem "Hastings Lobby"
-  appendChild header headerText
-
-  nickDiv <- newElem "div" `with`
-    [
-      prop "id" =: "nickNameDiv"
-    ]
   nickNameText <- newTextElem "Change nick name"
   nickNameField <- newElem "input" `with`
     [
@@ -63,33 +45,10 @@ createLobbyDOM api = do
   appendChild nickDiv nickNameButton
   addChildrenToRightColumn [nickDiv]
 
-  appendChild createGamebtn crGamebtnText
-
-  playerList <- newElem "div" `with`
-    [
-      prop "id" =: "playerList"
-    ]
-
-  gamesListDiv <- newElem "div" `with`
-    [
-      attr "id" =: "gamesList"
-    ]
-
-  leftContent <- elemById "leftContent"
-  createChatDOM api $ fromJust leftContent
-
-  addChildrenToLeftColumn [playerList]
-  addChildrenToCenterColumn [header, gamesListDiv, createGamebtn]
-
   onEvent nickNameField KeyPress $ \13 -> nickUpdateFunction
 
-
   clickEventString "nickNameBtn" nickUpdateFunction
-
-  createGameBtn api newGameAPI
-
-  gameList <- onServer $ getGamesList api
-  mapM_ (addGame api) gameList
+  return ()
 
   where
     nickUpdateFunction =
@@ -102,6 +61,48 @@ createLobbyDOM api = do
             onServer $ changeNickName api <.> name
           Nothing   -> return ()
 
+-- |Creates the initial DOM upon entering the lobby
+createLobbyDOM :: LobbyAPI -> GameAPI -> Client ()
+createLobbyDOM api gapi = do
+
+  lobbyDiv <- createDiv [("id","lobby")]
+
+  createGamebtn <- newElem "button" `with`
+    [
+      prop "id" =: "createGamebtn"
+    ]
+  crGamebtnText <- newTextElem "Create new game"
+
+  header <- newElem "h1" `with`
+    [
+      attr "class" =: "text-center"
+    ]
+
+  headerText <- newTextElem "Hastings Lobby"
+  appendChild header headerText
+
+
+  appendChild createGamebtn crGamebtnText
+
+  playerList <- newElem "div" `with`
+    [
+      prop "id" =: "playerList"
+    ]
+
+  gamesListDiv <- newElem "div" `with`
+    [
+      attr "id" =: "gamesList"
+    ]
+
+  addChildrenToLeftColumn [playerList]
+  addChildrenToParent' lobbyDiv [header, gamesListDiv, createGamebtn]
+  addChildrenToCenterColumn [lobbyDiv]
+
+  createGameBtn api newGameAPI
+
+  gameList <- onServer $ getGamesList api
+  mapM_ (addGame api gapi) gameList
+
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: LobbyAPI -> GameAPI-> Client ()
 createGameBtn lapi gapi = do
@@ -109,7 +110,7 @@ createGameBtn lapi gapi = do
   return ()
   where
     onCreateBtnMouseClick = do
-      maybeUuid <- onServer (createGame lapi)
+      maybeUuid <- onServer $ createGame lapi <.> getMaxNumberOfPlayers gapi
       case maybeUuid of
         Nothing          -> return ()
         Just gameUuid -> do
@@ -125,7 +126,7 @@ createGameBtn lapi gapi = do
 
     switchToGameDOM guid = do
       deleteLobbyDOM
-      createGameDOM lapi
+      createGameDOM lapi gapi
 
 -- |Updates the list of players on the client
 updatePlayerList :: LobbyAPI -> Client ()
@@ -161,16 +162,18 @@ addGameToDOM api gameName = do
   appendChild gameDiv gameEntry
   appendChild documentBody gameDiv
 
-  clickEventString gameName $ onServer $ joinGame api <.> gameName
+  clickEventString gameName $ do
+    bool <- onServer $ joinGame api <.> gameName
+    return ()
   return ()
 
 -- |Updates the list of games that a player can join
-updateGamesList :: LobbyAPI -> Client ()
-updateGamesList api = do
+updateGamesList :: LobbyAPI -> GameAPI -> Client ()
+updateGamesList api gapi = do
   gamesListDiv <- elemById "gamesList"
   case gamesListDiv of
     Just listDiv -> do
       clearChildren listDiv
       gameList <- onServer $ getGamesList api
-      mapM_ (addGame api) gameList
+      mapM_ (addGame api gapi) gameList
     _ -> return ()
