@@ -19,7 +19,11 @@ clientMain api = do
   onServer $ connect api <.> name
 
   initDOM
+  createBootstrapTemplate "Hastings"
+  createChangeNickNameDOM api
+  createChatDOM api
   createLobbyDOM api newGameAPI
+
 
   fork $ listenForLobbyChanges api newGameAPI
   onServer $ joinChat api <.> "main"

@@ -17,7 +17,11 @@ import Text.Read
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
 createGameDOM :: LobbyAPI -> GameAPI -> Client ()
 createGameDOM api gapi = do
-  parentDiv <- createBootstrapTemplate "lobbyGame"
+  parentDiv <- createDiv [("id","lobbyGame")]
+
+  createGameChangeNameDOM api
+  createUpdateMaxNumberPlayersDOM api gapi
+
   gameName <- onServer $ findGameName api
   players <- onServer $ findPlayersInGame api
   nameOfGame <- newTextElem gameName
@@ -48,7 +52,14 @@ createGameDOM api gapi = do
 
   mapM_ (addPlayerWithKickToPlayerlist api list) players
 
-  gameNameDiv <- newElem "div"
+  addChildrenToParent' parentDiv [header, list, createStartGameBtn]
+  addChildrenToCenterColumn [parentDiv]
+
+-- |Creates the DOM for chaning the name of a game.
+-- |It includes an input field and a button.
+createGameChangeNameDOM :: LobbyAPI -> Client ()
+createGameChangeNameDOM api = do
+  gameNameDiv <- createDiv [("id", "changeGameName")]
   gameNameText <- newTextElem "Change game name"
   gameNameField <- newElem "input" `with`
     [
@@ -62,19 +73,14 @@ createGameDOM api gapi = do
   gameNameBtnText <- newTextElem "Change"
   appendChild gameNameButton gameNameBtnText
 
-  appendChild gameNameDiv gameNameText
-  appendChild gameNameDiv gameNameField
-  appendChild gameNameDiv gameNameButton
+  addChildrenToParent' gameNameDiv [gameNameText, gameNameField, gameNameButton]
 
-  addChildrenToLeftColumn [createStartGameBtn, list]
   addChildrenToRightColumn [gameNameDiv]
-  addChildrenToCenterColumn [header]
 
   onEvent gameNameField KeyPress $ \13 -> gameUpdateFunction
 
   clickEventString "gameNameBtn" gameUpdateFunction
 
-  createUpdateMaxNumberPlayersDOM api gapi
   return ()
 
   where
