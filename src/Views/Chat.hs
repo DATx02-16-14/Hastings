@@ -185,10 +185,10 @@ chatMessageCallback chatName (ChatMessage from content) = do
   pushToChatBox chatName $ from ++ ": " ++ content
 chatMessageCallback chatName (ChatAnnounceJoin from)    = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has joined"
-  pushToChatBox chatName $ from ++ "has joined"
+  pushToChatBox chatName $ from ++ " has joined " ++ chatName
 chatMessageCallback chatName (ChatAnnounceLeave from)   = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has left"
-  pushToChatBox chatName $ from ++ "has left"
+  pushToChatBox chatName $ from ++ " has left " ++ chatName
 chatMessageCallback chatName (ChatError errorMessage)   = do
   liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
   pushToChatBox chatName $ "ChatError" ++ errorMessage
