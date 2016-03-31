@@ -103,6 +103,8 @@ addNewTabToTabsHeader chatName =
         attr "id"   =: ("chat-tab-" ++ chatName),
         attr "role" =: "presentation"
       ]
+    onEvent chatTab Click $ \_ -> setActiveChat chatName
+
     textElem <- newTextElem chatName
     appendChild chatTab textElem
     appendChild chatTabsHeader chatTab
