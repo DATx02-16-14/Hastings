@@ -93,6 +93,13 @@ addChildrenToParent' :: Elem -> [Elem] -> Client ()
 addChildrenToParent' parent children = mapM_ (appendChild parent) children
 
 
+-- |Fades in and then out a message after displaying it for 5 seconds
+fadeInOutElem :: Elem -> Client ()
+fadeInOutElem e = do
+  fadeInElem e
+  setTimer (Once 5000) $ fadeOutElem e
+  return ()
+
 -- |Fades in an element (can not be a text element)
 fadeInElem :: Elem -> Client ()
 fadeInElem e = do
