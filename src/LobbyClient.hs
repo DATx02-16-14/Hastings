@@ -13,21 +13,21 @@ import LobbyTypes
 import Views.Chat
 
 -- |Main mehtod for the client.
-clientMain :: LobbyAPI -> Client ()
-clientMain api = do
+clientMain :: LobbyAPI -> GameAPI -> Client ()
+clientMain lapi gapi = do
   name <- prompt "Hello! Please enter your name:"
-  onServer $ connect api <.> name
+  onServer $ connect lapi <.> name
 
   initDOM
   createBootstrapTemplate "Hastings"
-  createChangeNickNameDOM api
-  createChatDOM api
-  createLobbyDOM api newGameAPI
+  createChangeNickNameDOM lapi
+  createChatDOM lapi
+  createLobbyDOM lapi gapi
 
 
-  fork $ listenForLobbyChanges api newGameAPI
-  onServer $ joinChat api <.> "main"
-  fork $ listenForChatMessages api "main" chatMessageCallback
+  fork $ listenForLobbyChanges lapi gapi
+  onServer $ joinChat lapi <.> "main"
+  fork $ listenForChatMessages lapi "main" chatMessageCallback
   return ()
 
 listenForLobbyChanges :: LobbyAPI -> GameAPI -> Client ()
