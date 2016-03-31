@@ -182,16 +182,16 @@ clientJoinChat api chatName = do
 chatMessageCallback :: String -> ChatMessage -> Client ()
 chatMessageCallback chatName (ChatMessage from content) = do
   liftIO $ print $ "chatMessageCallback > Chat:{" ++ chatName ++ "} from:{" ++ from ++ "] message:{" ++ content ++ "}"
-  pushToChatBox chatName $from ++ ": " ++ content
+  pushToChatBox chatName $ from ++ ": " ++ content
 chatMessageCallback chatName (ChatAnnounceJoin from)    = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has joined"
-  pushToChatBox chatName $from ++ "has joined"
+  pushToChatBox chatName $ from ++ "has joined"
 chatMessageCallback chatName (ChatAnnounceLeave from)   = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has left"
-  pushToChatBox chatName $from ++ "has left"
+  pushToChatBox chatName $ from ++ "has left"
 chatMessageCallback chatName (ChatError errorMessage)   = do
   liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
-  pushToChatBox chatName $"ChatError" ++ errorMessage
+  pushToChatBox chatName $ "ChatError" ++ errorMessage
 chatMessageCallback chatName _ =
   liftIO $ print $ "chatMessageCallback > Bad ChatMessage on chat " ++ chatName
 
