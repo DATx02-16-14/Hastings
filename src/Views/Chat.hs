@@ -95,19 +95,6 @@ addNewChat chatName = do
   addNewTabToTabsHeader chatName
   addNewChatToChatsContainer chatName
 
-setActiveChat :: String -> Client ()
-setActiveChat chatName = "chats-container" `withElem` \chatContainer -> do
-  children <- getChildren chatContainer
-  liftIO $ print $ length children
-  mapM_ (\c -> setAttr c "class" "hide") children
-  activeChat <- elemById $ "chat-container-" ++ chatName
-  case activeChat of
-    Nothing   -> return ()
-    Just chat -> do
-      setAttr chat "class" ""
-      scrollToBottom chat
-  return ()
-
 addNewTabToTabsHeader :: String -> Client ()
 addNewTabToTabsHeader chatName =
   "chat-tabs" `withElem` \chatTabsHeader -> do
@@ -129,6 +116,19 @@ addNewChatToChatsContainer chatName =
         attr "style" =: "overflow: auto; height: 200px"
       ]
     appendChild chatsContainer chatContainer
+
+setActiveChat :: String -> Client ()
+setActiveChat chatName = "chats-container" `withElem` \chatContainer -> do
+  children <- getChildren chatContainer
+  liftIO $ print $ length children
+  mapM_ (\c -> setAttr c "class" "hide") children
+  activeChat <- elemById $ "chat-container-" ++ chatName
+  case activeChat of
+    Nothing   -> return ()
+    Just chat -> do
+      setAttr chat "class" ""
+      scrollToBottom chat
+  return ()
 
 -- | Client joins the named chat and starts listen to it's messages
 clientJoinChat :: LobbyAPI -> String -> Client ()
