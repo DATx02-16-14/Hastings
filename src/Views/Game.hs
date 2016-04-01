@@ -142,13 +142,21 @@ addGame api gapi gameID = do
       appendChild gameListDiv gameDiv
 
       clickEventString gameName $ do
-        bool <- onServer $ joinGame api <.> gameID
-        if bool then do
-            deleteLobbyDOM
-            createGameDOM api gapi
+        hasPassword <- onServer $ isGamePasswordProtected api <.> gameID
+        if hasPassword then do
+          password <- prompt "Enter password"
+          joinGameClient password
         else
-          return ()
+          joinGameClient ""
       return ()
+  where
+    joinGameClient password = do
+      allowedToJoin <- onServer $ joinGame api <.> gameID <.> password
+      if allowedToJoin then do
+          deleteLobbyDOM
+          createGameDOM api gapi
+      else
+        return ()
 
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()

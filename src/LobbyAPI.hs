@@ -18,8 +18,9 @@ data LobbyAPI = LobbyAPI
   , createGame :: Remote (Int -> Server (Maybe (String)))
   , getGamesList :: Remote (Server [String])
     -- |Joins a game with the 'UUID' representetd by the 'String'.
+    -- |The second 'String' is the password for the game, can be left as "" if there is no password.
     -- |Returns if the client successfully joined or not.
-  , joinGame :: Remote (String -> Server Bool)
+  , joinGame :: Remote (String -> String -> Server Bool)
   , findPlayersInGame :: Remote (Server [String])
     -- |Finds the name of the game with String as identifier
   , findGameNameWithID :: Remote (String -> Server String)

@@ -119,16 +119,19 @@ getGamesList remoteGames = do
   return $ map fst gameList
 
 -- |Lets a player join a 'LobbyGame'. The 'String' represents the UUID for the game.
-playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> Server Bool
-playerJoinGame remoteClientList remoteGameList gameID = do
+-- |The second 'String' is the password for the game, if there is no password it can be left empty.
+playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> String -> Server Bool
+playerJoinGame remoteClientList remoteGameList gameID passwordString = do
   clientList <- remoteClientList >>= liftIO . CC.readMVar
   gameList <- remoteGameList
   sid <- getSessionID
   maybeGame <- liftIO $ findGameWithID gameID gameList
   case maybeGame of
     Nothing           -> return False
-    Just (_,gameData) ->
+    Just (_,gameData) -> do
       if maxAmountOfPlayers gameData > length (players gameData) then do
+        let passwordOfGame = gamePassword gameData
+        if passwordOfGame == empty || verifyPassword (pack passwordString) passwordOfGame then do
           case lookupClientEntry sid clientList of
             Nothing     -> liftIO $ putStrLn "playerJoinGame: Client not registered"
             Just player -> liftIO $ CC.modifyMVar_ gameList $
@@ -136,7 +139,8 @@ playerJoinGame remoteClientList remoteGameList gameID = do
 
           liftIO $ messageClients PlayerJoinedGame (players gameData)
           return True
-        else return False
+        else return False -- Send message when possible as (LobbyError "Wrong password")
+      else return False
 
 -- |Adds a player to a lobby game with the game ID
 addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]

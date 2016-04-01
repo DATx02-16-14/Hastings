@@ -163,7 +163,7 @@ addGameToDOM api gameName = do
   appendChild documentBody gameDiv
 
   clickEventString gameName $ do
-    bool <- onServer $ joinGame api <.> gameName
+    bool <- onServer $ joinGame api <.> gameName <.> ""
     return ()
   return ()
 
