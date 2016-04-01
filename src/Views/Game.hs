@@ -61,7 +61,7 @@ createGameDOM api gapi = do
 -- |Creates the DOM for chaning the name of a game.
 -- |It includes an input field and a button.
 createGameChangeNameDOM :: LobbyAPI -> Client ()
-createGameChangeNameDOM api = createInputFieldWithButton "gameName" "Change game name" gameUpdateFunction
+createGameChangeNameDOM api = createInputFieldWithButton "gameName" "Game name" gameUpdateFunction
   where
     gameUpdateFunction =
       withElem "gameNameField" $ \field -> do
@@ -77,7 +77,7 @@ createGameChangeNameDOM api = createInputFieldWithButton "gameName" "Change game
 -- |Contains an input field and a button. Is placed in the right sidebar
 createUpdateMaxNumberPlayersDOM :: LobbyAPI -> GameAPI-> Client ()
 createUpdateMaxNumberPlayersDOM api gapi =
-  createInputFieldWithButton "maxNumber" "Change maximum number of players" maxNumberUpdateFunction
+  createInputFieldWithButton "maxNumber" "Maximum number of players" maxNumberUpdateFunction
   where
     maxNumberUpdateFunction =
       withElem "maxNumberField" $ \field -> do
@@ -96,7 +96,7 @@ createUpdateMaxNumberPlayersDOM api gapi =
 -- |Creates an input field for setting the password of a game.
 -- |Contains an input field and a button. Is placed in right sidebar.
 createSetPasswordDOM :: LobbyAPI -> Client ()
-createSetPasswordDOM api = createInputFieldWithButton "setPassword" "Set password for this game" setPasswordFunction
+createSetPasswordDOM api = createInputFieldWithButton "setPassword" "Set password" setPasswordFunction
   where
     setPasswordFunction =
       withElem "setPasswordField" $ \field -> do

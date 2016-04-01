@@ -102,23 +102,32 @@ addChildrenToParent' parent children = mapM_ (appendChild parent) children
 createInputFieldWithButton :: String -> String -> Client () -> Client ()
 createInputFieldWithButton identifier text function = do
   parentDiv <- createDiv [("id", identifier ++ "Div")]
+  setClass parentDiv "input-group" True
 
-  textElement <- newTextElem text
   inputField <- newElem "input" `with`
     [
       attr "type" =: "text",
-      attr "id" =: (identifier ++ "Field")
+      attr "id" =: (identifier ++ "Field"),
+      attr "placeholder" =: text
     ]
+  setClass inputField "form-control" True
+
+  buttonSpan <- newElem "span"
+  setClass buttonSpan "input-group-btn" True
   button <- newElem "button" `with`
     [
-      attr "id" =: (identifier ++ "Btn")
+      attr "id" =: (identifier ++ "Btn"),
+      attr "type" =: "button"
     ]
+
+  setClass button "btn" True
+  setClass button "btn-default" True
   buttonText <- newTextElem "Change"
 
   appendChild button buttonText
-  appendChild parentDiv textElement
+  appendChild buttonSpan button
   appendChild parentDiv inputField
-  appendChild parentDiv button
+  appendChild parentDiv buttonSpan
   addChildrenToRightColumn [parentDiv]
 
   onEvent inputField KeyPress $ \13 -> function
