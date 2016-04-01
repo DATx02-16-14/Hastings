@@ -24,32 +24,7 @@ import Views.Chat
 -- |Creates DOM for chaning nick name
 -- |Includes an input field and a button.
 createChangeNickNameDOM :: LobbyAPI -> Client ()
-createChangeNickNameDOM api = do
-  nickDiv <- createDiv [("id","nickNameDiv")]
-
-  nickNameText <- newTextElem "Change nick name"
-  nickNameField <- newElem "input" `with`
-    [
-      attr "type" =: "text",
-      attr "id" =: "nickNameField"
-    ]
-  nickNameButton <- newElem "button" `with`
-    [
-      attr "id" =: "nickNameBtn"
-    ]
-  nickNameBtnText <- newTextElem "Change"
-
-  appendChild nickNameButton nickNameBtnText
-  appendChild nickDiv nickNameText
-  appendChild nickDiv nickNameField
-  appendChild nickDiv nickNameButton
-  addChildrenToRightColumn [nickDiv]
-
-  onEvent nickNameField KeyPress $ \13 -> nickUpdateFunction
-
-  clickEventString "nickNameBtn" nickUpdateFunction
-  return ()
-
+createChangeNickNameDOM api = createInputFieldWithButton "nickName" "Nick name" nickUpdateFunction
   where
     nickUpdateFunction =
       withElem "nickNameField" $ \field -> do
