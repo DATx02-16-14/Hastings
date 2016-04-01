@@ -21,7 +21,9 @@ module LobbyServer(
   readChatChannel,
   sendChatMessage,
   joinChat,
-  getClientName) where
+  getClientName,
+  setPasswordToGame,
+  isGamePasswordProtected) where
 
 import Haste.App
 import qualified Control.Concurrent as CC

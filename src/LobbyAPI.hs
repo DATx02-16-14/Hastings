@@ -7,7 +7,7 @@ import LobbyTypes
 #ifdef __HASTE__
 #define REMOTE(x) (remote undefined)
 #else
-import LobbyServer as Server
+import qualified LobbyServer as Server
 #define REMOTE(x) (remote x)
 #endif
 -- |The api provided by the server.
@@ -44,6 +44,11 @@ data LobbyAPI = LobbyAPI
   , sendChatMessage :: Remote (Name -> ChatMessage -> Server ())
     -- |Reads next ChatMessage from named chat channel.
   , readChatChannel :: Remote (Name -> Server ChatMessage)
+    -- |Sets a password to the game the client is in as 'ByteString'
+    -- |Only allowed if the current player is owner of it's game
+  , setPassword :: Remote (String -> Server ())
+    -- |Returns if the game is protected by a password or not. 'String' is the Game ID
+  , isGamePasswordProtected :: Remote (String -> Server Bool)
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -66,3 +71,5 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.joinChat playersList chatList))
             <*> REMOTE((Server.sendChatMessage playersList chatList))
             <*> REMOTE((Server.readChatChannel playersList))
+            <*> REMOTE((Server.setPasswordToGame gamesList))
+            <*> REMOTE((Server.isGamePasswordProtected gamesList))
