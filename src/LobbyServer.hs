@@ -23,7 +23,8 @@ module LobbyServer(
   joinChat,
   getClientName,
   setPasswordToGame,
-  isGamePasswordProtected) where
+  isGamePasswordProtected,
+  isOwnerOfGame) where
 
 import Haste.App
 
