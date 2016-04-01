@@ -49,5 +49,5 @@ listenForLobbyChanges api gapi = do
       updatePlayerList api
       updatePlayerListGame api
     PlayerJoinedGame -> updatePlayerListGame api
-    (LobbyError msg) -> liftIO $ print msg -- Update with some way to show error to client
+    (LobbyError msg) -> showError msg
   listenForLobbyChanges api gapi
