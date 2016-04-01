@@ -180,29 +180,32 @@ deleteChatDOM chatName = do
 setActiveChat :: String -> Client ()
 setActiveChat chatName = do
   chatTabId `withElem` \chatTabs -> do
-    setClassOnChildren chatTabs ""
+    setClassOnChildren chatTabs "active" False
     maybeChatTab <- elemById $ chatTabIdPrefix ++ chatName
-    setClassOnMaybeDOMElem maybeChatTab "active"
+    setClassOnMaybeDOMElem maybeChatTab "active" True
+
   chatContainerId `withElem` \chatContainer -> do
-    setClassOnChildren chatContainer "hide"
+    setClassOnChildren chatContainer "hide" True
     maybeChatContainer <- elemById $ chatContainerIdPrefix ++ chatName
-    setClassOnMaybeDOMElem maybeChatContainer ""
+    setClassOnMaybeDOMElem maybeChatContainer "hide" False
+
   inputContainerId `withElem` \inputs -> do
-    setClassOnChildren inputs "hide"
+    setClassOnChildren inputs "hide" True
     maybeInputField <- elemById $ inputFieldIdPrefix ++ chatName
-    setClassOnMaybeDOMElem maybeInputField "form-control"
+    setClassOnMaybeDOMElem maybeInputField "hide" False
+
     maybe  (return ()) focus maybeInputField
   return ()
     where
-      setClassOnChildren parent value = do
+      setClassOnChildren parent value doSet = do
         children <- getChildren parent
-        mapM_ (\c -> setAttr c "class" value) children
+        mapM_ (\c -> setClass c value doSet) children
 
-      setClassOnMaybeDOMElem maybeDOMElem attr =
+      setClassOnMaybeDOMElem maybeDOMElem value doSet =
         case maybeDOMElem of
           Nothing   -> return ()
           Just chat -> do
-            setAttr chat "class" attr
+            setClass chat value doSet
             scrollToBottom chat
 
 -- | Client joins the named chat and starts listen to it's messages
