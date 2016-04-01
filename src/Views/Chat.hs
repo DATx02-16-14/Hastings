@@ -219,6 +219,8 @@ clientJoinChat api chatName = do
       setActiveChat chatName
   return ()
 
+-- | Tells the server that the client wants to leave the named chat.
+-- | Special case. You can't leave the chat named "main".
 clientLeaveChat :: LobbyAPI -> String -> Client ()
 clientLeaveChat api chatName =
   if chatName == "main"
