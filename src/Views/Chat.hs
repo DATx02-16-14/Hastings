@@ -238,7 +238,7 @@ chatMessageCallback api chatName (ChatAnnounceLeave from)   = do
     else return ()
 chatMessageCallback api chatName (ChatError errorMessage)   = do
   liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
-  pushToChatBox chatName $ "ChatError" ++ errorMessage
+  pushToChatBox "main" $ "ChatError" ++ errorMessage
 chatMessageCallback api chatName _ =
   liftIO $ print $ "chatMessageCallback > Bad ChatMessage on chat " ++ chatName
 
