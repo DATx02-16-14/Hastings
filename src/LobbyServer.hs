@@ -23,7 +23,7 @@ module LobbyServer(
   joinChat,
   leaveChat,
   getClientName,
-  getChats) where
+  getJoinedChats) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -445,7 +445,13 @@ getClientName remoteClientList = do
   let client = find ((sid ==) . sessionID) clientList
   return $ name $ fromJust client
 
-getChats :: Server ConcurrentChatList -> Server [String]
-getChats remoteChatList = do
-  chatList <- remoteChatList >>= liftIO . CC.readMVar
-  return $ map fst chatList
+getJoinedChats :: Server ConcurrentClientList -> Server [String]
+getJoinedChats remoteClientList = do
+  sid <- getSessionID
+  clientList <- remoteClientList >>= liftIO . CC.readMVar
+  case sid `lookupClientEntry` clientList of
+    Nothing     -> do
+      liftIO $ print $ "getJoinedChats > Error: expected client not found."
+      return []
+    Just client ->
+      return $ map fst $ chats client

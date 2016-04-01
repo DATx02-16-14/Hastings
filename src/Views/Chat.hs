@@ -209,7 +209,7 @@ setActiveChat chatName = do
 -- | Client joins the named chat and starts listen to it's messages
 clientJoinChat :: LobbyAPI -> String -> Client ()
 clientJoinChat api chatName = do
-  chats <- onServer $ getChats api
+  chats <- onServer $ getJoinedChats api
   if chatName `elem` chats
     then
       setActiveChat chatName
