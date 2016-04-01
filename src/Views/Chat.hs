@@ -216,8 +216,10 @@ clientJoinChat api chatName = do
   return ()
 
 clientLeaveChat :: LobbyAPI -> String -> Client ()
-clientLeaveChat api chatName = do
-  onServer $ leaveChat api <.> chatName
+clientLeaveChat api chatName =
+  if chatName == "main"
+    then pushToChatBox chatName "You can't leave the main chat"
+    else onServer $ leaveChat api <.> chatName
 
 
 -- | Called when a ChatMessage is received
