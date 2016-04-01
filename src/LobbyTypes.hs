@@ -92,7 +92,8 @@ lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry
 lookupClientEntry sid = find ((sid ==) . sessionID)
 
 -- |LobbyMessage is a message to a client idicating some udate to the state that the cliet has to adapt to.
-data LobbyMessage = NickChange | GameNameChange | KickedFromGame | GameAdded | ClientJoined | ClientLeft | PlayerJoinedGame
+data LobbyMessage = NickChange | GameNameChange | KickedFromGame | GameAdded | ClientJoined
+      | ClientLeft | PlayerJoinedGame | LobbyError {lobbyErrorMessage :: String}
   deriving (Eq)
 
 instance Binary LobbyMessage where
@@ -103,6 +104,9 @@ instance Binary LobbyMessage where
   put ClientJoined     = put (4 :: Word8)
   put ClientLeft       = put (5 :: Word8)
   put PlayerJoinedGame = put (6 :: Word8)
+  put (LobbyError msg) = do
+    put (7 :: Word8)
+    put msg
 
   get = do
     tag <- get :: Get Word8
@@ -114,6 +118,9 @@ instance Binary LobbyMessage where
       4 -> return ClientJoined
       5 -> return ClientLeft
       6 -> return PlayerJoinedGame
+      7 -> do
+        msg <- get :: Get String
+        return $ LobbyError msg
 
 instance Binary Bool where
   put True  = put (0 :: Word8)

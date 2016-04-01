@@ -66,8 +66,32 @@ createLobbyDOM api gapi = do
 
   gamesListDiv <- newElem "div" `with`
     [
-      attr "id" =: "gamesList"
+      attr "id" =: "gamesList",
+      style "height" =: "500px",
+      style "overflow" =: "auto"
     ]
+  gameListTable <- newElem "table"
+  thead <- newElem "thead"
+  tr <- newElem "tr"
+  thName <- newElem "th"
+  thNameText <- newTextElem "Name"
+  thJoin <- newElem "th"
+  thJoinText <- newTextElem ""
+  tbody <- newElem "tbody" `with`
+    [
+      prop "id" =: "gamesListTableBody"
+    ]
+  setClass gameListTable "table" True
+  setClass gameListTable "table-striped" True
+
+  appendChild thJoin thJoinText
+  appendChild thName thNameText
+  addChildrenToParent' tr [thName, thJoin]
+  appendChild thead tr
+  addChildrenToParent' gameListTable [thead, tbody]
+  appendChild gamesListDiv gameListTable
+
+
 
   addChildrenToLeftColumn [playerList]
   addChildrenToParent' lobbyDiv [header, gamesListDiv, createGamebtn]
@@ -145,7 +169,7 @@ addGameToDOM api gameName = do
 -- |Updates the list of games that a player can join
 updateGamesList :: LobbyAPI -> GameAPI -> Client ()
 updateGamesList api gapi = do
-  gamesListDiv <- elemById "gamesList"
+  gamesListDiv <- elemById "gamesListTableBody"
   case gamesListDiv of
     Just listDiv -> do
       clearChildren listDiv

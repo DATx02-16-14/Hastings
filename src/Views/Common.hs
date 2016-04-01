@@ -92,7 +92,7 @@ addChildrenToParent parent children = do
   addChildrenToParent' (fromJust parentElem) children
 
 addChildrenToParent' :: Elem -> [Elem] -> Client ()
-addChildrenToParent' parent children = mapM_ (appendChild parent) children
+addChildrenToParent' parent = mapM_ (appendChild parent)
 
 -- |Creates an input field and button. Has 'String' as id and '(Client ())' is the function
 -- |That activates when clicking button or pressing enter. Descriptive text is second 'String'
@@ -134,3 +134,51 @@ createInputFieldWithButton identifier text function = do
 
   clickEventString (identifier ++ "Btn") function
   return ()
+
+-- |Displays the error message in 'String'. Fades in the message and then out.
+showError :: String -> Client ()
+showError string = do
+  stringDiv <- newElem "h3" `with`
+    [
+      style "text-align" =: "center",
+      style "color"      =: "red"
+    ]
+  stringElem <- newTextElem string
+  addChildrenToParent' stringDiv [stringElem]
+  addChildrenToCenterColumn [stringDiv]
+  fadeInOutElem stringDiv
+
+-- |Fades in and then out a message after displaying it for 5 seconds
+fadeInOutElem :: Elem -> Client ()
+fadeInOutElem e = do
+  fadeInElem e
+  setTimer (Once 5000) $ fadeOutElem e
+  return ()
+
+-- |Fades in an element (can not be a text element)
+fadeInElem :: Elem -> Client ()
+fadeInElem e = do
+  setStyle e "display" "block"
+  fadeInElem' 0.1
+  where
+    fadeInElem' :: Float -> Client ()
+    fadeInElem' op | op > 1   = return ()
+                   | otherwise = do
+      setStyle e "opacity" $ show op
+      setStyle e "filter" $ "alpha(opacity=" ++ show (op * 100) ++ ")"
+      setTimer (Once 10) $ fadeInElem' (op + op * 0.1)
+      return ()
+
+-- |Fades out an element (can not be a text element)
+fadeOutElem :: Elem -> Client ()
+fadeOutElem e = fadeOutElem' 1
+  where
+    fadeOutElem' :: Float -> Client ()
+    fadeOutElem' op | op <= 0.1 = do
+      setStyle e "display" "none"
+      return ()
+                    | otherwise = do
+      setStyle e "opacity" $ show op
+      setStyle e "filter" $ "alpha(opacity=" ++ show (op * 100) ++ ")"
+      setTimer (Once 10) $ fadeOutElem' (op - op * 0.1)
+      return ()
