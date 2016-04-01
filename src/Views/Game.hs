@@ -13,6 +13,8 @@ import GameAPI
 
 import Text.Read
 
+import Control.Monad
+
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
 createGameDOM :: LobbyAPI -> GameAPI -> Client ()
@@ -152,11 +154,9 @@ addGame api gapi gameID = do
   where
     joinGameClient password = do
       allowedToJoin <- onServer $ joinGame api <.> gameID <.> password
-      if allowedToJoin then do
+      when allowedToJoin $ do
           deleteLobbyDOM
           createGameDOM api gapi
-      else
-        return ()
 
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()

@@ -15,7 +15,7 @@ data LobbyAPI = LobbyAPI
   { connect :: Remote (String -> Server ())
     -- |Creates a game on the server with the current client as host.
     -- |The 'Int' represents the default max number of players
-  , createGame :: Remote (Int -> Server (Maybe (String)))
+  , createGame :: Remote (Int -> Server (Maybe String))
   , getGamesList :: Remote (Server [String])
     -- |Joins a game with the 'UUID' representetd by the 'String'.
     -- |The second 'String' is the password for the game, can be left as "" if there is no password.

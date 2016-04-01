@@ -35,6 +35,8 @@ import Hastings.Utils
 import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
 import Crypto.PasswordStore
 
+import Control.Monad
+
 #ifndef __HASTE__
 import Data.UUID
 import System.Random
@@ -128,7 +130,7 @@ playerJoinGame remoteClientList remoteGameList gameID passwordString = do
   maybeGame <- liftIO $ findGameWithID gameID gameList
   case maybeGame of
     Nothing           -> return False
-    Just (_,gameData) -> do
+    Just (_,gameData) ->
       if maxAmountOfPlayers gameData > length (players gameData) then do
         let passwordOfGame = gamePassword gameData
         if passwordOfGame == empty || verifyPassword (pack passwordString) passwordOfGame then do
@@ -314,7 +316,7 @@ changeMaxNumberOfPlayers :: Server GamesList -> Int -> Server ()
 changeMaxNumberOfPlayers remoteGames newMax = do
   mVarGames <- remoteGames
   isOwnerOfGame <- isOwnerOfGame remoteGames
-  if isOwnerOfGame then do
+  when isOwnerOfGame $ do
     maybeGame <- findGameWithSid mVarGames
     case maybeGame of
       Nothing   -> return ()
@@ -324,8 +326,6 @@ changeMaxNumberOfPlayers remoteGames newMax = do
             (\(guuid, gData) -> (guuid, gData {maxAmountOfPlayers = newMax}))
             (== game)
             games
-  else
-    return ()
 
 -- |Returns if the current player is owner of the game it's in
 isOwnerOfGame :: Server GamesList -> Server Bool
