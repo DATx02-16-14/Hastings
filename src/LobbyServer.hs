@@ -301,9 +301,6 @@ readLobbyChannel remoteClientList = do
 findClient :: Name -> [ClientEntry] -> Maybe ClientEntry
 findClient clientName = find ((clientName ==).name)
 
-findClientSid :: SessionID -> [ClientEntry] -> Maybe ClientEntry
-findClientSid sid = find ((sid ==).sessionID)
-
 -- |Maps over the clients and writes the message to their channel
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m = mapM_ (\c -> CC.writeChan (lobbyChannel c) m)
@@ -437,7 +434,7 @@ setPasswordToGame remoteGames passwordString = do
           games
     (Just (_,gameData), False) -> do
       sid <- getSessionID
-      case findClientSid sid (players gameData) of
+      case lookupClientEntry sid (players gameData) of
         Nothing     -> return ()
         Just client -> return () -- Message client with error when available
                                  -- messageClients (LobbyError "Not owner of the game") client
