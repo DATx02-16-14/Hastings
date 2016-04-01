@@ -295,6 +295,9 @@ readLobbyChannel remoteClientList = do
 findClient :: Name -> [ClientEntry] -> Maybe ClientEntry
 findClient clientName = find ((clientName ==).name)
 
+findClientSid :: SessionID -> [ClientEntry] -> Maybe ClientEntry
+findClientSid sid = find ((sid ==).sessionID)
+
 -- |Maps over the clients and writes the message to their channel
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m = mapM_ (\c -> CC.writeChan (lobbyChannel c) m)
