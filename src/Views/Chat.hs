@@ -85,10 +85,15 @@ handleChatInput api currentChatName =
       | c == "leave"  = do
         liftIO $ print $ "handleChatCommand > leaving chat: " ++ chatName
         if null args
-          then
+          then do
             clientLeaveChat api chatName
-          else let chatName' = head args in
+            setActiveChat "main"
+          else do
+            let chatName' = head args
             clientLeaveChat api chatName'
+            if chatName == chatName'
+              then setActiveChat "main"
+              else return ()
       | c == "msg"  =
         let chatName = head args
             chatMessage = unwords $ tail args
