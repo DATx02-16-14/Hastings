@@ -22,7 +22,8 @@ module LobbyServer(
   sendChatMessage,
   joinChat,
   leaveChat,
-  getClientName) where
+  getClientName,
+  getChats) where
 
 import Haste.App
 import qualified Control.Concurrent as CC
@@ -443,3 +444,8 @@ getClientName remoteClientList = do
   clientList <- liftIO $ CC.readMVar concurrentClientList
   let client = find ((sid ==) . sessionID) clientList
   return $ name $ fromJust client
+
+getChats :: Server ConcurrentChatList -> Server [String]
+getChats remoteChatList = do
+  chatList <- remoteChatList >>= liftIO . CC.readMVar
+  return $ map fst chatList

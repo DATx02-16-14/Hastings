@@ -198,14 +198,14 @@ setActiveChat chatName = do
 -- | Client joins the named chat and starts listen to it's messages
 clientJoinChat :: LobbyAPI -> String -> Client ()
 clientJoinChat api chatName = do
-  maybeChatContainer <- elemById $ "chat-container-" ++ chatName
-  case maybeChatContainer of
-    Nothing -> do
+  chats <- onServer $ getChats api
+  if chatName `elem` chats
+    then
+      setActiveChat chatName
+    else do
       onServer $ joinChat api <.> chatName
       addNewChat api chatName
       fork $ listenForChatMessages api chatName $ chatMessageCallback chatName
-      setActiveChat chatName
-    Just _ ->
       setActiveChat chatName
   return ()
 

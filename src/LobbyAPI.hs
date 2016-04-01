@@ -46,6 +46,8 @@ data LobbyAPI = LobbyAPI
   , sendChatMessage :: Remote (Name -> ChatMessage -> Server ())
     -- |Reads next ChatMessage from named chat channel.
   , readChatChannel :: Remote (Name -> Server ChatMessage)
+    -- |Get list of chats the client is in
+  , getChats :: Remote (Server [String])
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -69,3 +71,4 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.leaveChat playersList))
             <*> REMOTE((Server.sendChatMessage playersList chatList))
             <*> REMOTE((Server.readChatChannel playersList))
+            <*> REMOTE((Server.getChats chatList))
