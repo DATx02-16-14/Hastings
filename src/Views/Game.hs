@@ -21,6 +21,7 @@ createGameDOM api gapi = do
 
   createGameChangeNameDOM api
   createUpdateMaxNumberPlayersDOM api gapi
+  createSetPasswordDOM api
 
   gameName <- onServer $ findGameName api
   players <- onServer $ findPlayersInGame api
@@ -90,6 +91,20 @@ createUpdateMaxNumberPlayersDOM api gapi =
                           | otherwise -> return ()
           Nothing   -> return ()
 
+-- |Creates an input field for setting the password of a game.
+-- |Contains an input field and a button. Is placed in right sidebar.
+createSetPasswordDOM :: LobbyAPI -> Client ()
+createSetPasswordDOM api = createInputFieldWithButton "setPassword" "Set password for this game" setPasswordFunction
+  where
+    setPasswordFunction =
+      withElem "setPasswordField" $ \field -> do
+        maybePassword <- getValue field
+        case maybePassword of
+          Nothing             -> return ()
+          Just ""             -> return ()
+          Just passwordString -> do
+            setProp field "value" ""
+            onServer $ setPassword api <.> passwordString
 
 -- |Convenience function for calling on the kick function.
 kickFunction :: Name -> LobbyAPI -> Client ()
