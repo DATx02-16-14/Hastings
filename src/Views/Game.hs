@@ -91,36 +91,6 @@ createUpdateMaxNumberPlayersDOM api gapi =
           Nothing   -> return ()
 
 
--- |Creates an input field and button. Has 'String' as id and '(Client ())' is the function
--- |That activates when clicking button or pressing enter. Descriptive text is second 'String'
-createInputFieldWithButton :: String -> String -> (Client ()) -> Client ()
-createInputFieldWithButton identifier text function = do
-  parentDiv <- createDiv [("id", identifier ++ "Div")]
-
-  textElement <- newTextElem text
-  inputField <- newElem "input" `with`
-    [
-      attr "type" =: "text",
-      attr "id" =: (identifier ++ "Field")
-    ]
-  button <- newElem "button" `with`
-    [
-      attr "id" =: (identifier ++ "Btn")
-    ]
-  buttonText <- newTextElem "Change"
-
-  appendChild button buttonText
-  appendChild parentDiv textElement
-  appendChild parentDiv inputField
-  appendChild parentDiv button
-  addChildrenToRightColumn [parentDiv]
-
-  onEvent inputField KeyPress $ \13 -> function
-
-  clickEventString (identifier ++ "Btn") function
-  return ()
-
-
 -- |Convenience function for calling on the kick function.
 kickFunction :: Name -> LobbyAPI -> Client ()
 kickFunction name api = onServer $ kickPlayer api <.> name
