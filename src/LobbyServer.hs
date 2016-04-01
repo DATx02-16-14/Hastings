@@ -108,13 +108,9 @@ createGame remoteGames remoteClientList maxPlayers = do
   let uuidStr = Data.UUID.toString uuid
 
   liftIO $ CC.modifyMVar_ games $ \gs ->
-    case maybeClientEntry of
-        Just c  -> return $ (uuidStr, GameData [c] "GameName" maxPlayers empty) : gs
-        Nothing -> return gs
+    return $ maybe gs (\c -> (uuidStr, GameData [c] "GameName" maxPlayers empty) : gs) maybeClientEntry
   liftIO $ messageClients GameAdded clientList
-  case maybeClientEntry of
-    Just p  -> return $ Just uuidStr
-    Nothing -> return Nothing
+  return $ maybe Nothing (\_ -> Just uuidStr) maybeClientEntry
 
 -- |Returns a list of the each game's uuid as a String
 getGamesList :: Server GamesList -> Server [String]
