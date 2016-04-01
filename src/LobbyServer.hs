@@ -228,9 +228,11 @@ kickPlayerWithSid remoteGames clientName = do
     Just game@(_,gameData) -> do
       liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
         return $ updateListElem (deletePlayerFromGame clientName) (== game) games
-      case findClient clientName (players gameData) of
-        Just c  -> liftIO $ messageClients KickedFromGame [c]
-        Nothing -> return ()
+      maybe
+        (return ())
+        (\c -> liftIO $ messageClients KickedFromGame [c])
+        (findClient clientName (players gameData))
+      liftIO $ messageClients PlayerLeftGame $ players gameData
 
 -- |Change the nick name of the current player to that given.
 changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()
