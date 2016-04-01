@@ -28,7 +28,8 @@ type LobbyGame = (String, GameData)
 -- |The maximum allowed players, can be changed by the owner
 data GameData = GameData {players            :: [ClientEntry],
                           gameName           :: Name,
-                          maxAmountOfPlayers :: Int}
+                          maxAmountOfPlayers :: Int,
+                          gamePassword       :: String}
   deriving (Eq)
 
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.

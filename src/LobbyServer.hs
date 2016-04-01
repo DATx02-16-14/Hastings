@@ -98,7 +98,7 @@ createGame remoteGames remoteClientList maxPlayers = do
 
   liftIO $ CC.modifyMVar_ games $ \gs ->
     case maybeClientEntry of
-        Just c  -> return $ (uuidStr, GameData [c] "GameName" maxPlayers) : gs
+        Just c  -> return $ (uuidStr, GameData [c] "GameName" maxPlayers "") : gs
         Nothing -> return gs
   liftIO $ messageClients GameAdded clientList
   case maybeClientEntry of
