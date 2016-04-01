@@ -5,6 +5,7 @@ import Haste.App
 import Haste.DOM
 import Haste.Events
 import Haste.App.Concurrent
+import Control.Monad (when)
 
 import LobbyTypes
 import LobbyAPI
@@ -158,28 +159,33 @@ addPlayerWithKickToPlayerlist api parent name = do
 -- |Adds DOM for a game
 addGame :: LobbyAPI -> GameAPI -> String -> Client ()
 addGame api gapi gameID = do
-  maybeGameListDiv <- elemById "gamesList"
+  maybeGameListDiv <- elemById "gamesListTableBody"
   case maybeGameListDiv of
     Nothing -> return ()
     Just gameListDiv -> do
-      gameDiv <- newElem "div"
       gameName <- onServer $ findGameNameWithID api <.> gameID
+      tr <- newElem "tr"
+      tdBtn <- newElem "td"
       gameEntry <- newElem "button" `with`
         [
           prop "id" =: gameName
         ]
-      textElem <- newTextElem gameName
-      appendChild gameEntry textElem
-      appendChild gameDiv gameEntry
-      appendChild gameListDiv gameDiv
+      textElemBtn <- newTextElem "Join"
+
+      textElemName <- newTextElem gameName
+      tdName <- newElem "td"
+
+      appendChild gameEntry textElemBtn
+      appendChild tdBtn gameEntry
+      appendChild tdName textElemName
+      addChildrenToParent' tr [tdName, tdBtn]
+      appendChild gameListDiv tr
 
       clickEventString gameName $ do
-        bool <- onServer $ joinGame api <.> gameID
-        if bool then do
+        didJoinGame <- onServer $ joinGame api <.> gameID
+        when didJoinGame $ do
             deleteLobbyDOM
             createGameDOM api gapi
-        else
-          return ()
       return ()
 
 -- |Updates the list of players in a game on the client
