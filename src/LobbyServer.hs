@@ -26,16 +26,18 @@ module LobbyServer(
   isGamePasswordProtected) where
 
 import Haste.App
+
 import qualified Control.Concurrent as CC
+import Control.Monad (when)
+
 import Data.List
 import Data.Maybe
+import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
+
+import Crypto.PasswordStore (makePassword, verifyPassword)
+
 import LobbyTypes
 import Hastings.Utils
-
-import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
-import Crypto.PasswordStore
-
-import Control.Monad
 
 #ifndef __HASTE__
 import Data.UUID
