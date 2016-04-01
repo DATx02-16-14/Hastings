@@ -76,9 +76,12 @@ handleChatInput api currentChatName =
   where
     handleChatCommand :: String -> [String] -> String -> Client ()
     handleChatCommand c args chatName
-      | c == "join"  = let chatName' = head args in do
-        liftIO $ print $ "handleChatCommand > joining chat: " ++ chatName'
-        clientJoinChat api chatName'
+      | c == "join"  = if null args
+        then
+          pushToChatBox chatName "Missing chatname, use: /join [CHATNAME]"
+        else let chatName' = head args in do
+          liftIO $ print $ "handleChatCommand > joining chat: " ++ chatName'
+          clientJoinChat api chatName'
       | c == "leave"  = do
         liftIO $ print $ "handleChatCommand > leaving chat: " ++ chatName
         if null args
