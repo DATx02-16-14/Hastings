@@ -181,7 +181,10 @@ setActiveChat chatName = do
   "input-container" `withElem` \inputs -> do
     setClassOnChildren inputs "hide"
     maybeInputField <- elemById $ "input-field-" ++ chatName
-    setClassOnMaybeDOMElem maybeInputField ""
+    setClassOnMaybeDOMElem maybeInputField "form-control"
+    if isJust maybeInputField
+      then focus $ fromJust maybeInputField
+      else return ()
   return ()
     where
       setClassOnChildren parent value = do
