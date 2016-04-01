@@ -424,8 +424,8 @@ getClientName remoteClientList = do
 -- |Sets the password (as a 'ByteString') of the game the client is in.
 -- |Only possible if the client is the owner of the game.
 setPasswordToGame :: Server GamesList -> String -> Server ()
-setPasswordToGame remoteGames unPackedPassword = do
-  let password = pack unPackedPassword
+setPasswordToGame remoteGames passwordString = do
+  let password = pack passwordString
   hashedPassword <- liftIO $ makePassword password 17
   mVarGames <- remoteGames
   maybeGame <- findGameWithSid mVarGames
