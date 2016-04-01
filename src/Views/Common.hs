@@ -90,7 +90,7 @@ addChildrenToParent parent children = do
   addChildrenToParent' (fromJust parentElem) children
 
 addChildrenToParent' :: Elem -> [Elem] -> Client ()
-addChildrenToParent' parent children = mapM_ (appendChild parent) children
+addChildrenToParent' parent = mapM_ (appendChild parent)
 
 -- |Displays the error message in 'String'. Fades in the message and then out.
 showError :: String -> Client ()
