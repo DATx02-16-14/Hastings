@@ -80,10 +80,8 @@ handleChatInput api currentChatName =
         then
           pushToChatBox chatName "Missing chatname, use: /join [CHATNAME]"
         else let chatName' = head args in do
-          liftIO $ print $ "handleChatCommand > joining chat: " ++ chatName'
           clientJoinChat api chatName'
       | c == "leave"  = do
-        liftIO $ print $ "handleChatCommand > leaving chat: " ++ chatName
         if null args
           then do
             clientLeaveChat api chatName
@@ -98,7 +96,6 @@ handleChatInput api currentChatName =
         let chatName = head args
             chatMessage = unwords $ tail args
         in do
-        liftIO $ print $ "handleCatCommand > msg chat: " ++ chatName ++ ": " ++ chatMessage
         onServer $ sendChatMessage api <.> chatName <.> ChatMessage "" chatMessage
 
 -- |Add the header container for chat tabs
@@ -229,14 +226,11 @@ clientLeaveChat api chatName =
 
 -- | Called when a ChatMessage is received
 chatMessageCallback :: LobbyAPI -> String -> ChatMessage -> Client ()
-chatMessageCallback api chatName (ChatMessage from content) = do
-  liftIO $ print $ "chatMessageCallback > Chat:{" ++ chatName ++ "} from:{" ++ from ++ "] message:{" ++ content ++ "}"
+chatMessageCallback api chatName (ChatMessage from content) =
   pushToChatBox chatName $ from ++ ": " ++ content
-chatMessageCallback api chatName (ChatAnnounceJoin from)    = do
-  liftIO $ print $ "chatMessageCallback > " ++ from ++ " has joined"
+chatMessageCallback api chatName (ChatAnnounceJoin from)    =
   pushToChatBox chatName $ from ++ " has joined " ++ chatName
 chatMessageCallback api chatName (ChatAnnounceLeave from)   = do
-  liftIO $ print $ "chatMessageCallback > " ++ from ++ " has left"
   pushToChatBox chatName $ from ++ " has left " ++ chatName
   thisClientName <- onServer $ getClientName api
   if from == thisClientName
