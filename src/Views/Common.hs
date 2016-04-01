@@ -53,10 +53,10 @@ deleteLobbyDOM = deleteDOM "lobby" "centerContent"
 -- |Deletes the DOM created for a game in the lobby
 deleteGameDOM :: Client ()
 deleteGameDOM = do
-  deleteDOM "lobbyGame" "centerContent"
-  deleteDOM "gameNameDiv" "rightContent"
-  deleteDOM "maxNumberDiv" "rightContent"
-  deleteDOM "setPasswordDiv" "rightContent"
+  deleteDOM "lobby-game" "centerContent"
+  deleteDOM "game-name-div" "rightContent"
+  deleteDOM "max-number-div" "rightContent"
+  deleteDOM "set-password-div" "rightContent"
 
 -- |Helper function that deletes DOM given an identifier from that element and the parent element
 deleteDOM :: String -> String -> Client ()
@@ -101,13 +101,13 @@ addChildrenToParent' parent = mapM_ (appendChild parent)
 -- |The field and button is then placed in the right sidebar.
 createInputFieldWithButton :: String -> String -> Client () -> Client ()
 createInputFieldWithButton identifier text function = do
-  parentDiv <- createDiv [("id", identifier ++ "Div")]
+  parentDiv <- createDiv [("id", identifier ++ "-div")]
   setClass parentDiv "input-group" True
 
   inputField <- newElem "input" `with`
     [
       attr "type" =: "text",
-      attr "id" =: (identifier ++ "Field"),
+      attr "id" =: (identifier ++ "-field"),
       attr "placeholder" =: text
     ]
   setClass inputField "form-control" True
@@ -116,7 +116,7 @@ createInputFieldWithButton identifier text function = do
   setClass buttonSpan "input-group-btn" True
   button <- newElem "button" `with`
     [
-      attr "id" =: (identifier ++ "Btn"),
+      attr "id" =: (identifier ++ "-btn"),
       attr "type" =: "button"
     ]
 
@@ -132,7 +132,7 @@ createInputFieldWithButton identifier text function = do
 
   onEvent inputField KeyPress $ \13 -> function
 
-  clickEventString (identifier ++ "Btn") function
+  clickEventString (identifier ++ "-btn") function
   return ()
 
 -- |Displays the error message in 'String'. Fades in the message and then out.

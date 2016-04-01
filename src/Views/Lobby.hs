@@ -24,10 +24,10 @@ import Views.Chat
 -- |Creates DOM for chaning nick name
 -- |Includes an input field and a button.
 createChangeNickNameDOM :: LobbyAPI -> Client ()
-createChangeNickNameDOM api = createInputFieldWithButton "nickName" "Nick name" nickUpdateFunction
+createChangeNickNameDOM api = createInputFieldWithButton "nick-name" "Nick name" nickUpdateFunction
   where
     nickUpdateFunction =
-      withElem "nickNameField" $ \field -> do
+      withElem "nick-name-field" $ \field -> do
         newName <- getValue field
         case newName of
           Just ""   -> return ()
@@ -44,7 +44,7 @@ createLobbyDOM api gapi = do
 
   createGamebtn <- newElem "button" `with`
     [
-      prop "id" =: "createGamebtn"
+      prop "id" =: "create-game-btn"
     ]
   crGamebtnText <- newTextElem "Create new game"
 
@@ -61,12 +61,12 @@ createLobbyDOM api gapi = do
 
   playerList <- newElem "div" `with`
     [
-      prop "id" =: "playerList"
+      prop "id" =: "player-list"
     ]
 
   gamesListDiv <- newElem "div" `with`
     [
-      attr "id" =: "gamesList",
+      attr "id" =: "games-list",
       style "height" =: "500px",
       style "overflow" =: "auto"
     ]
@@ -79,7 +79,7 @@ createLobbyDOM api gapi = do
   thJoinText <- newTextElem ""
   tbody <- newElem "tbody" `with`
     [
-      prop "id" =: "gamesListTableBody"
+      prop "id" =: "games-list-table-body"
     ]
   setClass gameListTable "table" True
   setClass gameListTable "table-striped" True
@@ -105,7 +105,7 @@ createLobbyDOM api gapi = do
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: LobbyAPI -> GameAPI-> Client ()
 createGameBtn lapi gapi = do
-  clickEventString "createGamebtn" onCreateBtnMouseClick
+  clickEventString "create-game-btn" onCreateBtnMouseClick
   return ()
   where
     onCreateBtnMouseClick = do
@@ -114,10 +114,10 @@ createGameBtn lapi gapi = do
         Nothing          -> return ()
         Just gameUuid -> do
           switchToGameDOM gameUuid
-          clickEventString "startGameButton" $ do
+          clickEventString "start-game-button" $ do
               gameDiv <- newElem "div" `with`
                 [
-                  prop "id" =: "gameDiv"
+                  prop "id" =: "game-div"
                 ]
               names <- onServer (findPlayersInGame lapi)
               startGame gapi names gameDiv
@@ -131,7 +131,7 @@ createGameBtn lapi gapi = do
 updatePlayerList :: LobbyAPI -> Client ()
 updatePlayerList api = do
   players <- onServer $ getPlayerNameList api
-  playerDiv <- elemById "playerList"
+  playerDiv <- elemById "player-list"
 
   case playerDiv of
     Just parent -> do
@@ -154,7 +154,7 @@ addGameToDOM api gameName = do
   gameDiv <- newElem "div"
   gameEntry <- newElem "button" `with`
     [
-      prop "id" =: "gameName"
+      prop "id" =: "game-name"
     ]
   textElem <- newTextElem gameName
   appendChild gameEntry textElem
@@ -169,7 +169,7 @@ addGameToDOM api gameName = do
 -- |Updates the list of games that a player can join
 updateGamesList :: LobbyAPI -> GameAPI -> Client ()
 updateGamesList api gapi = do
-  gamesListDiv <- elemById "gamesListTableBody"
+  gamesListDiv <- elemById "games-list-table-body"
   case gamesListDiv of
     Just listDiv -> do
       clearChildren listDiv

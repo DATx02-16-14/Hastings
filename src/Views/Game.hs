@@ -20,7 +20,7 @@ import Control.Monad
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
 createGameDOM :: LobbyAPI -> GameAPI -> Client ()
 createGameDOM api gapi = do
-  parentDiv <- createDiv [("id","lobbyGame")]
+  parentDiv <- createDiv [("id","lobby-game")]
 
   createGameChangeNameDOM api
   createUpdateMaxNumberPlayersDOM api gapi
@@ -31,7 +31,7 @@ createGameDOM api gapi = do
   nameOfGame <- newTextElem gameName
   header <- newElem "h1" `with`
     [
-      attr "id" =: "gameHeader",
+      attr "id" =: "game-header",
       style "text-align" =: "center",
       style "margin-left" =: "auto",
       style "margin-right" =: "auto"
@@ -40,14 +40,14 @@ createGameDOM api gapi = do
 
   createStartGameBtn <- newElem "button" `with`
     [
-      prop "id" =: "startGameButton"
+      prop "id" =: "start-game-button"
     ]
   createStartGameBtnText <- newTextElem "Start game"
   appendChild createStartGameBtn createStartGameBtnText
 
   list <- newElem "div" `with`
     [
-      prop "id" =: "gamePlayerList"
+      prop "id" =: "game-player-list"
     ]
   listhead <- newTextElem "Players: "
   br <- newElem "br"
@@ -62,10 +62,10 @@ createGameDOM api gapi = do
 -- |Creates the DOM for chaning the name of a game.
 -- |It includes an input field and a button.
 createGameChangeNameDOM :: LobbyAPI -> Client ()
-createGameChangeNameDOM api = createInputFieldWithButton "gameName" "Game name" gameUpdateFunction
+createGameChangeNameDOM api = createInputFieldWithButton "game-name" "Game name" gameUpdateFunction
   where
     gameUpdateFunction =
-      withElem "gameNameField" $ \field -> do
+      withElem "game-name-field" $ \field -> do
         newName <- getValue field
         case newName of
           Just ""   -> return ()
@@ -78,10 +78,10 @@ createGameChangeNameDOM api = createInputFieldWithButton "gameName" "Game name" 
 -- |Contains an input field and a button. Is placed in the right sidebar
 createUpdateMaxNumberPlayersDOM :: LobbyAPI -> GameAPI-> Client ()
 createUpdateMaxNumberPlayersDOM api gapi =
-  createInputFieldWithButton "maxNumber" "Maximum number of players" maxNumberUpdateFunction
+  createInputFieldWithButton "max-number" "Maximum number of players" maxNumberUpdateFunction
   where
     maxNumberUpdateFunction =
-      withElem "maxNumberField" $ \field -> do
+      withElem "max-number-field" $ \field -> do
         newNumber <- getValue field
         case newNumber of
           Just ""   -> return ()
@@ -97,10 +97,10 @@ createUpdateMaxNumberPlayersDOM api gapi =
 -- |Creates an input field for setting the password of a game.
 -- |Contains an input field and a button. Is placed in right sidebar.
 createSetPasswordDOM :: LobbyAPI -> Client ()
-createSetPasswordDOM api = createInputFieldWithButton "setPassword" "Set password" setPasswordFunction
+createSetPasswordDOM api = createInputFieldWithButton "set-password" "Set password" setPasswordFunction
   where
     setPasswordFunction =
-      withElem "setPasswordField" $ \field -> do
+      withElem "set-password-field" $ \field -> do
         maybePassword <- getValue field
         case maybePassword of
           Nothing             -> return ()
@@ -129,7 +129,7 @@ addPlayerWithKickToPlayerlist api parent name = do
 -- |Adds DOM for a game
 addGame :: LobbyAPI -> GameAPI -> String -> Client ()
 addGame api gapi gameID = do
-  maybeGameListDiv <- elemById "gamesListTableBody"
+  maybeGameListDiv <- elemById "games-list-table-body"
   case maybeGameListDiv of
     Nothing -> return ()
     Just gameListDiv -> do
@@ -169,21 +169,21 @@ addGame api gapi gameID = do
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()
 updatePlayerListGame api = do
-  playerDiv <- elemById "gamePlayerList"
+  playerDiv <- elemById "game-player-list"
   case playerDiv of
     Just parent -> do
       players <- onServer $ findPlayersInGame api
       clearChildren parent
       br <- newElem "br"
       text <- newTextElem "Players:"
-      addChildrenToParent "gamePlayerList" [text, br]
+      addChildrenToParent "game-player-list" [text, br]
       mapM_ (addPlayerWithKickToPlayerlist api parent) players
     Nothing     -> return ()
 
 -- |Updates the game header with the value at the server
 updateGameHeader :: LobbyAPI -> Client ()
 updateGameHeader api = do
-  maybeHeader <- elemById "gameHeader"
+  maybeHeader <- elemById "game-header"
   case maybeHeader of
     Nothing     -> return ()
     Just parent -> do
