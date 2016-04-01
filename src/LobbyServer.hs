@@ -396,7 +396,7 @@ leaveChat remoteClientList chatName = do
             CC.writeChan channel $ ChatAnnounceLeave $ name client
             CC.modifyMVar_ concurrentClientList $ \clientList ->
               return $ updateListElem (\c -> c {chats =
-                deleteBy (\(cName1,_) (cName2,_) -> cName1 == cName2) (chatName, channel) $ chats client -- ((chatName ==).). fst) ??
+                deleteBy (\(cName1,_) (cName2,_) -> cName1 == cName2) (chatName, channel) $ chats client
                 }) ((sessionID client ==) . sessionID) clientList
           return ()
 
