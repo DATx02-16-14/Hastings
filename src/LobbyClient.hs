@@ -47,7 +47,13 @@ listenForLobbyChanges api gapi = do
     ClientJoined     -> updatePlayerList api
     ClientLeft       -> do
       updatePlayerList api
-      updatePlayerListGame api
+      playerLeftGameFun
     PlayerJoinedGame -> updatePlayerListGame api
+    PlayerLeftGame   -> playerLeftGameFun
     (LobbyError msg) -> liftIO $ print msg -- Update with some way to show error to client
   listenForLobbyChanges api gapi
+  where
+    playerLeftGameFun = do
+      updatePlayerListGame api
+      isOwner <- onServer $ isOwnerOfCurrentGame api
+      when isOwner $ createGameOwnerDOM api gapi

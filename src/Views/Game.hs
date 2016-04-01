@@ -20,9 +20,8 @@ createGameDOM :: LobbyAPI -> GameAPI -> Client ()
 createGameDOM api gapi = do
   parentDiv <- createDiv [("id","lobby-game")]
 
-  createGameChangeNameDOM api
-  createUpdateMaxNumberPlayersDOM api gapi
-  createSetPasswordDOM api
+  isOwner <- onServer $ isOwnerOfCurrentGame api
+  when isOwner $ createGameOwnerDOM api gapi
 
   gameName <- onServer $ findGameName api
   players <- onServer $ findPlayersInGame api
@@ -56,6 +55,13 @@ createGameDOM api gapi = do
 
   addChildrenToParent' parentDiv [header, list, createStartGameBtn]
   addChildrenToCenterColumn [parentDiv]
+
+
+createGameOwnerDOM :: LobbyAPI -> GameAPI -> Client ()
+createGameOwnerDOM api gapi= do
+  createGameChangeNameDOM api
+  createUpdateMaxNumberPlayersDOM api gapi
+  createSetPasswordDOM api
 
 -- |Creates the DOM for chaning the name of a game.
 -- |It includes an input field and a button.
