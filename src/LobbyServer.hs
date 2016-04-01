@@ -437,3 +437,12 @@ setPasswordToGame remoteGames unPackedPassword = do
         Nothing     -> return ()
         Just client -> return () -- Message client with error when available
                                  -- messageClients (LobbyError "Not owner of the game") client
+
+-- |Returns True if game is password protected, False otherwise. 'String' is the UUID of the game
+isGamePasswordProtected :: Server GamesList -> String -> Server Bool
+isGamePasswordProtected remoteGames guuid = do
+  mVarGames <- remoteGames
+  maybeGame <- liftIO $ findGameWithID guuid mVarGames
+  case maybeGame of
+    Nothing           -> return False
+    Just (_,gameData) -> return $ gamePassword gameData /= empty
