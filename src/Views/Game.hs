@@ -5,6 +5,7 @@ import Haste.App
 import Haste.DOM
 import Haste.Events
 import Haste.App.Concurrent
+import Control.Monad (when)
 
 import LobbyTypes
 import LobbyAPI
@@ -181,12 +182,10 @@ addGame api gapi gameID = do
       appendChild gameListDiv tr
 
       clickEventString gameName $ do
-        bool <- onServer $ joinGame api <.> gameID
-        if bool then do
+        didJoinGame <- onServer $ joinGame api <.> gameID
+        when didJoinGame $ do
             deleteLobbyDOM
             createGameDOM api gapi
-        else
-          return ()
       return ()
 
 -- |Updates the list of players in a game on the client
