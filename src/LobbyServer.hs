@@ -357,7 +357,7 @@ joinChat remoteClientList remoteChatList chatName = do
         let chan = fromJust $ chatName `lookup` cs
         clientChan <- liftIO $ CC.dupChan chan
         let newChat = (chatName, clientChan)
-        liftIO $ CC.modifyMVar_ concurrentClientList $ \clients -> do
+        liftIO $ CC.modifyMVar_ concurrentClientList $ \clients ->
           return $ updateListElem (addChatToClient newChat) ((sid ==) . sessionID) clients
 
       addChatToClient :: Chat -> ClientEntry -> ClientEntry
@@ -384,8 +384,8 @@ leaveChat remoteClientList chatName = do
   cs <- liftIO $ CC.readMVar concurrentClientList
   case sid `lookupClientEntry` cs of
     Nothing     -> return ()
-    Just client -> do
-      case chatName `lookup` (chats client) of
+    Just client ->
+      case chatName `lookup` chats client of
         Nothing      -> return ()
         Just channel -> do
           liftIO $ do
@@ -406,8 +406,8 @@ readChatChannel remoteClientList chatName = do
   clients <- liftIO $ CC.readMVar concurrentClientList
   case sid `lookupClientEntry` clients of
     Nothing     -> return $ ChatError "Couldn't find clients sessionID in remotes client list, try reconnecting."
-    Just client -> do
-      case chatName `lookup` (chats client) of
+    Just client ->
+      case chatName `lookup` chats client of
         Nothing          -> return $ ChatError "Couldn't find chat in clients currently joined chats. join chat before trying to read from it"
         Just chatChannel -> liftIO $ CC.readChan chatChannel
 
@@ -422,7 +422,7 @@ sendChatMessage remoteClientList remoteChatList chatName chatMessage = do
 
   case chatName `lookup` chatList of
     Nothing   -> return ()
-    Just chatChannel -> do
+    Just chatChannel ->
       case sid `lookupClientEntry` clientList of
         Nothing     -> return()
         Just client -> do
@@ -451,7 +451,7 @@ getJoinedChats remoteClientList = do
   clientList <- remoteClientList >>= liftIO . CC.readMVar
   case sid `lookupClientEntry` clientList of
     Nothing     -> do
-      liftIO $ print $ "getJoinedChats > Error: expected client not found."
+      liftIO $ print "getJoinedChats > Error: expected client not found."
       return []
     Just client ->
       return $ map fst $ chats client
