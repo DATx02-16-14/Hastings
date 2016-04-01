@@ -14,8 +14,6 @@ import GameAPI
 
 import Text.Read
 
-import Control.Monad (when)
-
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
 createGameDOM :: LobbyAPI -> GameAPI -> Client ()
@@ -125,46 +123,6 @@ addPlayerWithKickToPlayerlist api parent name = do
   appendChild parent textElem
   appendChild parent kickBtn
   appendChild parent br
-
--- |Adds DOM for a game
-addGame :: LobbyAPI -> GameAPI -> String -> Client ()
-addGame api gapi gameID = do
-  maybeGameListDiv <- elemById "games-list-table-body"
-  case maybeGameListDiv of
-    Nothing -> return ()
-    Just gameListDiv -> do
-      gameName <- onServer $ findGameNameWithID api <.> gameID
-      tr <- newElem "tr"
-      tdBtn <- newElem "td"
-      gameEntry <- newElem "button" `with`
-        [
-          prop "id" =: gameName
-        ]
-      textElemBtn <- newTextElem "Join"
-
-      textElemName <- newTextElem gameName
-      tdName <- newElem "td"
-
-      appendChild gameEntry textElemBtn
-      appendChild tdBtn gameEntry
-      appendChild tdName textElemName
-      addChildrenToParent' tr [tdName, tdBtn]
-      appendChild gameListDiv tr
-
-      clickEventString gameName $ do
-        hasPassword <- onServer $ isGamePasswordProtected api <.> gameID
-        if hasPassword then do
-          password <- prompt "Enter password"
-          joinGameClient password
-        else
-          joinGameClient ""
-      return ()
-  where
-    joinGameClient password = do
-      allowedToJoin <- onServer $ joinGame api <.> gameID <.> password
-      when allowedToJoin $ do
-          deleteLobbyDOM
-          createGameDOM api gapi
 
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()

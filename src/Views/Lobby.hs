@@ -15,6 +15,7 @@ import LobbyAPI
 import GameAPI
 import Haste.App.Concurrent
 import qualified Control.Concurrent as CC
+import Control.Monad (when)
 
 import Views.Game
 import Views.Common
@@ -100,7 +101,7 @@ createLobbyDOM api gapi = do
   createGameBtn api newGameAPI
 
   gameList <- onServer $ getGamesList api
-  mapM_ (addGame api gapi) gameList
+  mapM_ (addGameDOM api gapi) gameList
 
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: LobbyAPI -> GameAPI-> Client ()
@@ -139,6 +140,45 @@ updatePlayerList api = do
       mapM_ (addPlayerToPlayerlist parent) players
     Nothing     -> return ()
 
+-- |Adds DOM for a game
+addGameDOM :: LobbyAPI -> GameAPI -> String -> Client ()
+addGameDOM api gapi gameID = do
+  maybeGameListDiv <- elemById "games-list-table-body"
+  case maybeGameListDiv of
+    Nothing -> return ()
+    Just gameListDiv -> do
+      gameName <- onServer $ findGameNameWithID api <.> gameID
+      tr <- newElem "tr"
+      tdBtn <- newElem "td"
+      gameEntry <- newElem "button" `with`
+        [
+          prop "id" =: gameName
+        ]
+      textElemBtn <- newTextElem "Join"
+
+      textElemName <- newTextElem gameName
+      tdName <- newElem "td"
+
+      appendChild gameEntry textElemBtn
+      appendChild tdBtn gameEntry
+      appendChild tdName textElemName
+      addChildrenToParent' tr [tdName, tdBtn]
+      appendChild gameListDiv tr
+
+      clickEventString gameName $ do
+        hasPassword <- onServer $ isGamePasswordProtected api <.> gameID
+        if hasPassword then do
+          password <- prompt "Enter password"
+          joinGameClient password
+        else
+          joinGameClient ""
+      return ()
+  where
+    joinGameClient password = do
+      allowedToJoin <- onServer $ joinGame api <.> gameID <.> password
+      when allowedToJoin $ do
+          deleteLobbyDOM
+          createGameDOM api gapi
 
 -- |Adds the playername followed by a <br> tag to the given parent.
 addPlayerToPlayerlist :: Elem -> String -> Client ()
@@ -148,24 +188,6 @@ addPlayerToPlayerlist parent name = do
   appendChild parent textElem
   appendChild parent br
 
--- |Adds the DOM for a list of games
-addGameToDOM :: LobbyAPI -> String -> Client ()
-addGameToDOM api gameName = do
-  gameDiv <- newElem "div"
-  gameEntry <- newElem "button" `with`
-    [
-      prop "id" =: "game-name"
-    ]
-  textElem <- newTextElem gameName
-  appendChild gameEntry textElem
-  appendChild gameDiv gameEntry
-  appendChild documentBody gameDiv
-
-  clickEventString gameName $ do
-    bool <- onServer $ joinGame api <.> gameName <.> ""
-    return ()
-  return ()
-
 -- |Updates the list of games that a player can join
 updateGamesList :: LobbyAPI -> GameAPI -> Client ()
 updateGamesList api gapi = do
@@ -174,5 +196,5 @@ updateGamesList api gapi = do
     Just listDiv -> do
       clearChildren listDiv
       gameList <- onServer $ getGamesList api
-      mapM_ (addGame api gapi) gameList
+      mapM_ (addGameDOM api gapi) gameList
     _ -> return ()
