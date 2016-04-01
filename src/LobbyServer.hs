@@ -364,6 +364,8 @@ joinChat remoteClientList remoteChatList chatName = do
       addChatToClient chat client | chatName `elem` map fst (chats client) = client
                        | otherwise = client {chats = chat : chats client}
 
+-- | Sends a ChatAnnounceJoin to all clients present in the channel.
+-- | String is the name of the channel joined
 announceChatJoin :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()
 announceChatJoin remoteClientList remoteChatList chatName = do
   clientList <- remoteClientList >>= liftIO . CC.readMVar
@@ -377,6 +379,7 @@ announceChatJoin remoteClientList remoteChatList chatName = do
         Just client -> liftIO $ CC.writeChan channel $ ChatAnnounceJoin $ name client
 
 -- | Called by client to leave the named Chat
+-- | String is the name of the chat to be left
 leaveChat :: Server ConcurrentClientList -> String -> Server ()
 leaveChat remoteClientList chatName = do
   sid <- getSessionID
@@ -445,6 +448,7 @@ getClientName remoteClientList = do
   let client = find ((sid ==) . sessionID) clientList
   return $ name $ fromJust client
 
+-- | Return list of chatnames which the client have joined
 getJoinedChats :: Server ConcurrentClientList -> Server [String]
 getJoinedChats remoteClientList = do
   sid <- getSessionID
