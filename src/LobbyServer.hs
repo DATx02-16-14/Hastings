@@ -17,6 +17,7 @@ module LobbyServer(
   findGameNameWithID,
   findGameNameWithSid,
   readLobbyChannel,
+  changeMaxNumberOfPlayers,
   readChatChannel,
   sendChatMessage,
   joinChat,
@@ -293,10 +294,40 @@ findClient clientName = find ((clientName ==).name)
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m = mapM_ (\c -> CC.writeChan (lobbyChannel c) m)
 
+-- |Changes the maximum number of players for a game
+-- Requires that the player is the last in the player list (i.e. the owner)
+changeMaxNumberOfPlayers :: Server GamesList -> Int -> Server ()
+changeMaxNumberOfPlayers remoteGames newMax = do
+  mVarGames <- remoteGames
+  isOwnerOfGame <- isOwnerOfGame remoteGames
+  if isOwnerOfGame then do
+    maybeGame <- findGameWithSid mVarGames
+    case maybeGame of
+      Nothing   -> return ()
+      Just game ->
+        liftIO $ CC.modifyMVar_ mVarGames $ \games ->
+          return $ updateListElem
+            (\(guuid, gData) -> (guuid, gData {maxAmountOfPlayers = newMax}))
+            (== game)
+            games
+  else
+    return ()
+
+-- |Returns if the current player is owner of the game it's in
+isOwnerOfGame :: Server GamesList -> Server Bool
+isOwnerOfGame remoteGames = do
+  mVarGames <- remoteGames
+  maybeGame <- findGameWithSid mVarGames
+  sid <- getSessionID
+  case maybeGame of
+    Nothing         -> return False
+    Just (_, gData) -> return $ sessionID (last $ players gData) == sid
+
 -- |Deletes the player with 'Name' from the game.
 deletePlayerFromGame :: Name -> LobbyGame -> LobbyGame
 deletePlayerFromGame clientName (gameID, gameData)  =
   (gameID, gameData {players = filter ((clientName /=) . name) $ players gameData})
+
 
 -- |Called by client to join a chat
 joinChat :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()
