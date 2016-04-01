@@ -414,3 +414,26 @@ getClientName remoteClientList = do
   clientList <- liftIO $ CC.readMVar concurrentClientList
   let client = find ((sid ==) . sessionID) clientList
   return $ name $ fromJust client
+
+-- |Sets the password (as a 'ByteString') of the game the client is in.
+-- |Only possible if the client is the owner of the game.
+setPasswordToGame :: Server GamesList -> String -> Server ()
+setPasswordToGame remoteGames unPackedPassword = do
+  let password = pack unPackedPassword
+  hashedPassword <- liftIO $ makePassword password 17
+  mVarGames <- remoteGames
+  maybeGame <- findGameWithSid mVarGames
+  ownerOfGame <- isOwnerOfGame remoteGames
+  case (maybeGame, ownerOfGame) of
+    (Just game, True)          -> liftIO $
+      CC.modifyMVar_ mVarGames $ \games ->
+        return $ updateListElem
+          (\(guuid, gData) -> (guuid, gData {gamePassword = hashedPassword}))
+          (== game)
+          games
+    (Just (_,gameData), False) -> do
+      sid <- getSessionID
+      case findClientSid sid (players gameData) of
+        Nothing     -> return ()
+        Just client -> return () -- Message client with error when available
+                                 -- messageClients (LobbyError "Not owner of the game") client
