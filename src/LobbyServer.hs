@@ -374,9 +374,10 @@ announceChatJoin remoteClientList remoteChatList chatName = do
     Nothing      -> return ()
     Just channel -> do
       sid <- getSessionID
-      case sid `lookupClientEntry` clientList of
-        Nothing     -> return ()
-        Just client -> liftIO $ CC.writeChan channel $ ChatAnnounceJoin $ name client
+      maybe
+        (return ())
+        (liftIO . (CC.writeChan channel) . (ChatAnnounceJoin . name))
+        $ sid `lookupClientEntry` clientList
 
 -- | Called by client to leave the named Chat
 -- | String is the name of the chat to be left
