@@ -216,7 +216,7 @@ clientJoinChat api chatName = do
     else do
       onServer $ joinChat api <.> chatName
       addNewChat api chatName
-      fork $ listenForChatMessages api chatName $ chatMessageCallback chatName
+      fork $ listenForChatMessages api chatName $ chatMessageCallback api chatName
       setActiveChat chatName
   return ()
 
@@ -228,21 +228,24 @@ clientLeaveChat api chatName =
 
 
 -- | Called when a ChatMessage is received
-chatMessageCallback :: String -> ChatMessage -> Client ()
-chatMessageCallback chatName (ChatMessage from content) = do
+chatMessageCallback :: LobbyAPI -> String -> ChatMessage -> Client ()
+chatMessageCallback api chatName (ChatMessage from content) = do
   liftIO $ print $ "chatMessageCallback > Chat:{" ++ chatName ++ "} from:{" ++ from ++ "] message:{" ++ content ++ "}"
   pushToChatBox chatName $ from ++ ": " ++ content
-chatMessageCallback chatName (ChatAnnounceJoin from)    = do
+chatMessageCallback api chatName (ChatAnnounceJoin from)    = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has joined"
   pushToChatBox chatName $ from ++ " has joined " ++ chatName
-chatMessageCallback chatName (ChatAnnounceLeave from)   = do
+chatMessageCallback api chatName (ChatAnnounceLeave from)   = do
   liftIO $ print $ "chatMessageCallback > " ++ from ++ " has left"
   pushToChatBox chatName $ from ++ " has left " ++ chatName
-  deleteChat chatName
-chatMessageCallback chatName (ChatError errorMessage)   = do
+  thisClientName <- onServer $ getClientName api
+  if from == thisClientName
+    then deleteChat chatName
+    else return ()
+chatMessageCallback api chatName (ChatError errorMessage)   = do
   liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
   pushToChatBox chatName $ "ChatError" ++ errorMessage
-chatMessageCallback chatName _ =
+chatMessageCallback api chatName _ =
   liftIO $ print $ "chatMessageCallback > Bad ChatMessage on chat " ++ chatName
 
 -- |Pushes the String arguments to the "chatBox" textarea
