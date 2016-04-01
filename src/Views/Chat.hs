@@ -12,7 +12,7 @@ import Haste.Events
 import Haste.DOM
 import Haste.App.Concurrent
 import Data.Maybe
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 
 import LobbyTypes
 import LobbyAPI
@@ -76,12 +76,12 @@ handleChatInput api currentChatName =
   where
     handleChatCommand :: String -> [String] -> String -> Client ()
     handleChatCommand c args chatName
-      | c == "join"  = if null args
+      | c == "join" = if null args
         then
           pushToChatBox chatName "Missing chatname, use: /join [CHATNAME]"
-        else let chatName' = head args in do
+        else let chatName' = head args in
           clientJoinChat api chatName'
-      | c == "leave"  = do
+      | c == "leave" =
         if null args
           then do
             clientLeaveChat api chatName
@@ -89,25 +89,22 @@ handleChatInput api currentChatName =
           else do
             let chatName' = head args
             clientLeaveChat api chatName'
-            if chatName == chatName'
-              then setActiveChat "main"
-              else return ()
-      | c == "msg"  =
-        let chatName = head args
-            chatMessage = unwords $ tail args
-        in do
+            when (chatName == chatName') $ setActiveChat "main"
+            return ()
+      | c == "msg" =
+        let chatName    = head args
+            chatMessage = unwords $ tail args in
         onServer $ sendChatMessage api <.> chatName <.> ChatMessage "" chatMessage
 
 -- |Add the header container for chat tabs
 createChatTabsHeader :: Client Elem
-createChatTabsHeader = do
-  chatTabsHeader <- newElem "ul" `with`
+createChatTabsHeader =
+  newElem "ul" `with`
     [
       attr "id" =: "chat-tabs",
       attr "class" =: "nav nav-tabs",
       attr "role" =: "tablist"
     ]
-  return chatTabsHeader
 
 addNewChat :: LobbyAPI -> String -> Client ()
 addNewChat api chatName = do
@@ -163,9 +160,9 @@ addInputFieldToInputFieldsContainer api chatName =
 
 deleteChat :: String -> Client ()
 deleteChat chatName = do
-  liftIO $ print $ "chat-tab-" ++ chatName
-  liftIO $ print $ ("chat-container-" ++ chatName)
-  liftIO $ print $ ("input-field-"    ++ chatName)
+  liftIO $ print $ "chat-tab-"       ++ chatName
+  liftIO $ print $ "chat-container-" ++ chatName
+  liftIO $ print $ "input-field-"    ++ chatName
   deleteDOM ("chat-tab-"       ++ chatName) "chat-tabs"
   deleteDOM ("chat-container-" ++ chatName) "chat-container"
   deleteDOM ("input-field-"    ++ chatName) "input-container"
@@ -187,16 +184,14 @@ setActiveChat chatName = do
     setClassOnChildren inputs "hide"
     maybeInputField <- elemById $ "input-field-" ++ chatName
     setClassOnMaybeDOMElem maybeInputField "form-control"
-    if isJust maybeInputField
-      then focus $ fromJust maybeInputField
-      else return ()
+    maybe  (return ()) focus maybeInputField
   return ()
     where
       setClassOnChildren parent value = do
         children <- getChildren parent
         mapM_ (\c -> setAttr c "class" value) children
 
-      setClassOnMaybeDOMElem maybeDOMElem attr = do
+      setClassOnMaybeDOMElem maybeDOMElem attr =
         case maybeDOMElem of
           Nothing   -> return ()
           Just chat -> do
@@ -233,9 +228,8 @@ chatMessageCallback api chatName (ChatAnnounceJoin from)    =
 chatMessageCallback api chatName (ChatAnnounceLeave from)   = do
   pushToChatBox chatName $ from ++ " has left " ++ chatName
   thisClientName <- onServer $ getClientName api
-  if from == thisClientName
-    then deleteChat chatName
-    else return ()
+  when (from == thisClientName) $ deleteChat chatName
+  return ()
 chatMessageCallback api chatName (ChatError errorMessage)   = do
   liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
   pushToChatBox "main" $ "ChatError" ++ errorMessage
