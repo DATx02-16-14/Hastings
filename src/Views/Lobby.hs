@@ -71,6 +71,8 @@ createLobbyDOM api gapi = do
     [
       prop "id" =: "createGamebtn"
     ]
+  setClass createGamebtn "btn" True
+  setClass createGamebtn "btn-default" True
   crGamebtnText <- newTextElem "Create new game"
 
   header <- newElem "h1" `with`

@@ -39,6 +39,8 @@ createGameDOM api gapi = do
     [
       prop "id" =: "startGameButton"
     ]
+  setClass createStartGameBtn "btn" True
+  setClass createStartGameBtn "btn-default" True
   createStartGameBtnText <- newTextElem "Start game"
   appendChild createStartGameBtn createStartGameBtnText
 
@@ -149,6 +151,8 @@ addPlayerWithKickToPlayerlist api parent name = do
   textElem <- newTextElem name
   br <- newElem "br"
   kickBtn <- newElem "button"
+  setClass kickBtn "btn" True
+  setClass kickBtn "btn-default" True
   kick <- newTextElem "kick"
   clickEventElem kickBtn $ kickFunction name api
   appendChild kickBtn kick
@@ -170,6 +174,8 @@ addGame api gapi gameID = do
         [
           prop "id" =: gameName
         ]
+      setClass gameEntry "btn" True
+      setClass gameEntry "btn-default" True
       textElemBtn <- newTextElem "Join"
 
       textElemName <- newTextElem gameName
