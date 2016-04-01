@@ -18,6 +18,14 @@ import LobbyTypes
 import LobbyAPI
 import Views.Common
 
+-- Html ID constants
+chatTabId = "chat-tabs"
+chatContainerId = "chat-container"
+inputContainerId = "input-container"
+chatTabIdPrefix = "chat-tab-"
+inputFieldIdPrefix = "input-field-"
+chatContainerIdPrefix = "chat-container-"
+
 -- | Create chat DOM in the left column
 createChatDOM :: LobbyAPI -> Client ()
 createChatDOM api = do
@@ -38,15 +46,12 @@ createChatDOMInParent api parentDiv = do
 
   chatContainer <- newElem "div" `with`
     [
-      attr "id"       =: "chat-container"
-      --attr "rows"     =: "10",
-      --attr "cols"     =: "18",
-      --attr "readonly" =: "True"
+      attr "id"       =: chatContainerId
     ]
 
   inputContainer <- newElem "div" `with`
     [
-      attr "id" =: "input-container"
+      attr "id" =: inputContainerId
     ]
 
   chatTabsHeader <- createChatTabsHeader
@@ -61,7 +66,7 @@ createChatDOMInParent api parentDiv = do
 -- | Also handle commands. commands begin with a "/"
 handleChatInput :: LobbyAPI -> String -> Client ()
 handleChatInput api currentChatName =
-  ("input-field-" ++ currentChatName) `withElem` \inputField -> do
+  (inputFieldIdPrefix ++ currentChatName) `withElem` \inputField -> do
     message <- getValue inputField
     setProp inputField "value" ""
     case message of
@@ -101,13 +106,14 @@ createChatTabsHeader :: Client Elem
 createChatTabsHeader =
   newElem "ul" `with`
     [
-      attr "id" =: "chat-tabs",
+      attr "id" =: chatTabId,
       attr "class" =: "nav nav-tabs",
       attr "role" =: "tablist"
     ]
 
-addNewChat :: LobbyAPI -> String -> Client ()
-addNewChat api chatName = do
+-- | Adds new DOM elements for a the named chat.
+addNewChatDOM :: LobbyAPI -> String -> Client ()
+addNewChatDOM api chatName = do
   addTabToTabHeader chatName
   addChatToChatContainer chatName
   addInputFieldToInputFieldsContainer api chatName
@@ -116,10 +122,10 @@ addNewChat api chatName = do
 -- | Clicks on this tabs changes changes to only show its respective chat window and input field
 addTabToTabHeader :: String -> Client ()
 addTabToTabHeader chatName =
-  "chat-tabs" `withElem` \chatTabsHeader -> do
+  chatTabId `withElem` \chatTabsHeader -> do
     chatTab <- newElem "li" `with`
       [
-        attr "id"   =: ("chat-tab-" ++ chatName),
+        attr "id"   =: (chatTabIdPrefix ++ chatName),
         attr "role" =: "presentation"
       ]
     onEvent chatTab Click $ \_ -> setActiveChat chatName
@@ -134,10 +140,10 @@ addTabToTabHeader chatName =
 -- | The given string is used to set an id attribute.
 addChatToChatContainer :: String -> Client ()
 addChatToChatContainer chatName =
-  "chat-container" `withElem` \chatContainer -> do
+  chatContainerId `withElem` \chatContainer -> do
     chatDiv <- newElem "div" `with`
       [
-        attr "id" =: ("chat-container-" ++ chatName),
+        attr "id" =: (chatContainerIdPrefix ++ chatName),
         attr "style" =: "overflow: auto; height: 200px; word-wrap: break-word;"
       ]
     appendChild chatContainer chatDiv
@@ -146,10 +152,10 @@ addChatToChatContainer chatName =
 -- | The input field forwards the message to the handleChatInput function when 'enter' is pressed.
 addInputFieldToInputFieldsContainer :: LobbyAPI -> String -> Client ()
 addInputFieldToInputFieldsContainer api chatName =
-  "input-container" `withElem` \inputFieldContainer -> do
+  inputContainerId `withElem` \inputFieldContainer -> do
     inputField <- newElem "input" `with`
       [
-        attr "id" =: ("input-field-" ++ chatName),
+        attr "id" =: (inputFieldIdPrefix ++ chatName),
         attr "type" =: "text",
         attr "cols" =: "60"
 
@@ -158,31 +164,32 @@ addInputFieldToInputFieldsContainer api chatName =
     appendChild inputFieldContainer inputField
     return ()
 
-deleteChat :: String -> Client ()
-deleteChat chatName = do
-  liftIO $ print $ "chat-tab-"       ++ chatName
-  liftIO $ print $ "chat-container-" ++ chatName
-  liftIO $ print $ "input-field-"    ++ chatName
-  deleteDOM ("chat-tab-"       ++ chatName) "chat-tabs"
-  deleteDOM ("chat-container-" ++ chatName) "chat-container"
-  deleteDOM ("input-field-"    ++ chatName) "input-container"
+-- | Removes the DOM elements corresponding to the named chat
+deleteChatDOM :: String -> Client ()
+deleteChatDOM chatName = do
+  liftIO $ print $ chatTabIdPrefix       ++ chatName
+  liftIO $ print $ chatContainerIdPrefix ++ chatName
+  liftIO $ print $ inputFieldIdPrefix    ++ chatName
+  deleteDOM (chatTabIdPrefix       ++ chatName) chatTabId
+  deleteDOM (chatContainerIdPrefix ++ chatName) chatContainerId
+  deleteDOM (inputFieldIdPrefix    ++ chatName) inputContainerId
   return ()
 
 -- | Show the proper DOM elements for a named chat.
 -- | All other chat elements are hidden.
 setActiveChat :: String -> Client ()
 setActiveChat chatName = do
-  "chat-tabs" `withElem` \chatTabs -> do
+  chatTabId `withElem` \chatTabs -> do
     setClassOnChildren chatTabs ""
-    maybeChatTab <- elemById $ "chat-tab-" ++ chatName
+    maybeChatTab <- elemById $ chatTabIdPrefix ++ chatName
     setClassOnMaybeDOMElem maybeChatTab "active"
-  "chat-container" `withElem` \chatContainer -> do
+  chatContainerId `withElem` \chatContainer -> do
     setClassOnChildren chatContainer "hide"
-    maybeChatContainer <- elemById $ "chat-container-" ++ chatName
+    maybeChatContainer <- elemById $ chatContainerIdPrefix ++ chatName
     setClassOnMaybeDOMElem maybeChatContainer ""
-  "input-container" `withElem` \inputs -> do
+  inputContainerId `withElem` \inputs -> do
     setClassOnChildren inputs "hide"
-    maybeInputField <- elemById $ "input-field-" ++ chatName
+    maybeInputField <- elemById $ inputFieldIdPrefix ++ chatName
     setClassOnMaybeDOMElem maybeInputField "form-control"
     maybe  (return ()) focus maybeInputField
   return ()
@@ -207,7 +214,7 @@ clientJoinChat api chatName = do
       setActiveChat chatName
     else do
       onServer $ joinChat api <.> chatName
-      addNewChat api chatName
+      addNewChatDOM api chatName
       fork $ listenForChatMessages api chatName $ chatMessageCallback api chatName
       setActiveChat chatName
   return ()
@@ -228,7 +235,7 @@ chatMessageCallback api chatName (ChatAnnounceJoin from)    =
 chatMessageCallback api chatName (ChatAnnounceLeave from)   = do
   pushToChatBox chatName $ from ++ " has left " ++ chatName
   thisClientName <- onServer $ getClientName api
-  when (from == thisClientName) $ deleteChat chatName
+  when (from == thisClientName) $ deleteChatDOM chatName
   return ()
 chatMessageCallback api chatName (ChatError errorMessage)   = do
   liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
@@ -238,7 +245,7 @@ chatMessageCallback api chatName _ =
 
 -- |Pushes the String arguments to the "chatBox" textarea
 pushToChatBox :: String -> String -> Client ()
-pushToChatBox chatName str = ("chat-container-" ++ chatName) `withElem` \chatContainer -> do
+pushToChatBox chatName str = (chatContainerIdPrefix ++ chatName) `withElem` \chatContainer -> do
   br <- newElem "br"
   appendChild chatContainer br
   textElem <- newTextElem str
