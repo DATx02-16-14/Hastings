@@ -54,7 +54,9 @@ deleteLobbyDOM = deleteDOM "lobby" "centerContent"
 deleteGameDOM :: Client ()
 deleteGameDOM = do
   deleteDOM "lobbyGame" "centerContent"
-  deleteDOM "changeGameName" "rightContent"
+  deleteDOM "gameNameDiv" "rightContent"
+  deleteDOM "maxNumberDiv" "rightContent"
+  deleteDOM "setPasswordDiv" "rightContent"
 
 -- |Helper function that deletes DOM given an identifier from that element and the parent element
 deleteDOM :: String -> String -> Client ()
