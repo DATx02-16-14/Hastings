@@ -434,10 +434,10 @@ setPasswordToGame remoteGames passwordString = do
           games
     (Just (_,gameData), False) -> do
       sid <- getSessionID
-      case lookupClientEntry sid (players gameData) of
-        Nothing     -> return ()
-        Just client -> return () -- Message client with error when available
-                                 -- messageClients (LobbyError "Not owner of the game") client
+      maybe
+        (return ())
+        (\client -> liftIO $ messageClients (LobbyError "Not owner of the game") [client])
+        (lookupClientEntry sid (players gameData))
 
 -- |Returns True if game is password protected, False otherwise. 'String' is the UUID of the game
 isGamePasswordProtected :: Server GamesList -> String -> Server Bool
