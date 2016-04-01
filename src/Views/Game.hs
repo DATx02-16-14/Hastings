@@ -14,7 +14,7 @@ import GameAPI
 
 import Text.Read
 
-import Control.Monad
+import Control.Monad (when)
 
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
