@@ -94,6 +94,9 @@ addChildrenToParent' parent children = mapM_ (appendChild parent) children
 
 -- |Creates an input field and button. Has 'String' as id and '(Client ())' is the function
 -- |That activates when clicking button or pressing enter. Descriptive text is second 'String'
+-- |Div is created with id = identifier ++ "Div". Field is created with id = identifier ++ "Field".
+-- |Button is created with id = identifier ++ "Btn"
+-- |The field and button is then placed in the right sidebar.
 createInputFieldWithButton :: String -> String -> (Client ()) -> Client ()
 createInputFieldWithButton identifier text function = do
   parentDiv <- createDiv [("id", identifier ++ "Div")]
