@@ -5,6 +5,7 @@ import Haste.App
 import Data.List
 import Data.Word
 import Haste.Binary (Binary, Get)
+import Data.ByteString.Char8 (ByteString)
 
 -- |A type synonym to clarify that some Strings are Names.
 type Name = String
@@ -29,7 +30,7 @@ type LobbyGame = (String, GameData)
 data GameData = GameData {players            :: [ClientEntry],
                           gameName           :: Name,
                           maxAmountOfPlayers :: Int,
-                          gamePassword       :: String}
+                          gamePassword       :: ByteString}
   deriving (Eq)
 
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.

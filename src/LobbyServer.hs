@@ -29,10 +29,15 @@ import Data.List
 import Data.Maybe
 import LobbyTypes
 import Hastings.Utils
+
+import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
+import Crypto.PasswordStore
+
 #ifndef __HASTE__
 import Data.UUID
 import System.Random
 #endif
+
 
 -- |Initial connection with the server
 -- Creates a 'Player' for that user given a name.
@@ -98,7 +103,7 @@ createGame remoteGames remoteClientList maxPlayers = do
 
   liftIO $ CC.modifyMVar_ games $ \gs ->
     case maybeClientEntry of
-        Just c  -> return $ (uuidStr, GameData [c] "GameName" maxPlayers "") : gs
+        Just c  -> return $ (uuidStr, GameData [c] "GameName" maxPlayers empty) : gs
         Nothing -> return gs
   liftIO $ messageClients GameAdded clientList
   case maybeClientEntry of
