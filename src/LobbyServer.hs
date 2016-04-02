@@ -120,15 +120,14 @@ playerJoinGame remoteClientList remoteGameList gameID = do
   case maybeGame of
     Nothing           -> return False
     Just (_,gameData) ->
-      if maxAmountOfPlayers gameData > length (players gameData) then do
-          case lookupClientEntry sid clientList of
-            Nothing     -> liftIO $ putStrLn "playerJoinGame: Client not registered"
-            Just player -> liftIO $ CC.modifyMVar_ gameList $
+      case (maxAmountOfPlayers gameData > length (players gameData), lookupClientEntry sid clientList) of
+        (True, Just player) -> do
+          liftIO $ do
+            CC.modifyMVar_ gameList $
               \gList -> return $ addPlayerToGame player gameID gList
-
-          liftIO $ messageClients PlayerJoinedGame (players gameData)
+            messageClients PlayerJoinedGame (players gameData)
           return True
-      else return False
+        _     -> return False
 
 -- |Finds the name of a game given it's identifier
 findGameNameWithID :: Server GamesList -> String -> Server String
