@@ -101,27 +101,26 @@ addChildrenToParent' parent = mapM_ (appendChild parent)
 -- |The field and button is then placed in the right sidebar.
 createInputFieldWithButton :: String -> String -> Client () -> Client ()
 createInputFieldWithButton identifier text function = do
-  parentDiv <- createDiv [("id", identifier ++ "-div")]
-  setClass parentDiv "input-group" True
+  parentDiv <- createDiv [("id", identifier ++ "-div"),("class","input-group")]
 
   inputField <- newElem "input" `with`
     [
-      attr "type" =: "text",
-      attr "id" =: (identifier ++ "-field"),
-      attr "placeholder" =: text
+      attr "type"        =: "text",
+      attr "id"          =: (identifier ++ "-field"),
+      attr "placeholder" =: text,
+      attr "class"       =: "form-control"
     ]
-  setClass inputField "form-control" True
 
-  buttonSpan <- newElem "span"
-  setClass buttonSpan "input-group-btn" True
+  buttonSpan <- newElem "span" `with`
+    [
+      attr "class" =: "input-group-btn"
+    ]
   button <- newElem "button" `with`
     [
-      attr "id" =: (identifier ++ "-btn"),
-      attr "type" =: "button"
+      attr "id"    =: (identifier ++ "-btn"),
+      attr "type"  =: "button",
+      attr "class" =: "btn btn-default"
     ]
-
-  setClass button "btn" True
-  setClass button "btn-default" True
   buttonText <- newTextElem "Change"
 
   appendChild button buttonText
