@@ -195,24 +195,6 @@ changeNickName remoteClientList remoteGames newName = do
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
 
--- |Change the name of a 'LobbyGame' given the game's ID
-changeGameNameWithID :: Server GamesList -> Server ConcurrentClientList -> String -> Name -> Server ()
-changeGameNameWithID remoteGames remoteClients uuid newName = do
-  mVarGamesList <- remoteGames
-  mVarClientList <- remoteClients
-  gamesList <- liftIO $ CC.readMVar mVarGamesList
-  case findGameWithID uuid gamesList of
-    Nothing                -> return ()
-    Just game@(_,gameData) ->
-      liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
-        return $ updateListElem
-          (\(guuid, gData) -> (guuid, gData {gameName = newName}))
-          (== game)
-          games
-  liftIO $ do
-    clientsList <- CC.readMVar mVarClientList
-    messageClients GameNameChange clientsList
-
 -- |Change the name of a 'LobbyGame' that the connected client is in
 changeGameNameWithSid :: Server GamesList -> Server ConcurrentClientList -> Name -> Server ()
 changeGameNameWithSid remoteGames remoteClients newName = do
