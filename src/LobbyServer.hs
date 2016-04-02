@@ -77,40 +77,38 @@ disconnectPlayerFromGame remoteGames remoteClientList sid = do
   mVarGames <- remoteGames
   concurrentClientList <- remoteClientList
   clientList <- liftIO $ CC.readMVar concurrentClientList
-  case lookupClientEntry sid clientList of
-    Nothing -> return ()
-    Just clientEntry -> liftIO $ CC.modifyMVar_ mVarGames $ \games -> mapM removePlayer games
-      where
-        removePlayer (uuid, gameData) =
-          let newClientList = filter ((name clientEntry /=) . name) $ players gameData in
-          return (uuid, gameData {players = newClientList})
+  maybe
+    (return ())
+    (\client -> liftIO $ CC.modifyMVar_ mVarGames $ \games ->
+      return $ map (deletePlayerFromGame (name client)) games)
+    (lookupClientEntry sid clientList)
 
 -- |Creates a new game on the server. The 'Int' represents the max number of players.
 createGame :: Server GamesList -> Server ConcurrentClientList -> Int -> Server (Maybe String)
 createGame remoteGames remoteClientList maxPlayers = do
-  concurrentClientList <- remoteClientList
-  clientList <- liftIO $ CC.readMVar concurrentClientList
-  games <- remoteGames
+  mVarClientList <- remoteClientList
+  clientList <- liftIO $ CC.readMVar mVarClientList
+  mVarGames <- remoteGames
   sid <- getSessionID
   gen <- liftIO newStdGen
-  let maybeClientEntry = lookupClientEntry sid clientList
   let (uuid, g) = random gen
   let uuidStr = Data.UUID.toString uuid
 
-  liftIO $ CC.modifyMVar_ games $ \gs ->
-    case maybeClientEntry of
-        Just c  -> return $ (uuidStr, GameData [c] "GameName" maxPlayers) : gs
-        Nothing -> return gs
-  liftIO $ messageClients GameAdded clientList
-  case maybeClientEntry of
-    Just p  -> return $ Just uuidStr
-    Nothing -> return Nothing
+  liftIO $ maybe
+    (return Nothing)
+    (\c -> do
+      CC.modifyMVar_ mVarGames $ \gs ->
+        return $ (uuidStr, GameData [c] "GameName" maxPlayers) : gs
+      messageClients GameAdded clientList
+      return $ Just uuidStr)
+    (lookupClientEntry sid clientList)
+
 
 -- |Returns a list of the each game's uuid as a String
 getGamesList :: Server GamesList -> Server [String]
 getGamesList remoteGames = do
   gameList <- remoteGames >>= liftIO . CC.readMVar
-  return $ map fst gameList
+  return $ getUUIDFromGamesList gameList
 
 -- |Lets a player join a 'LobbyGame'. The 'String' represents the UUID for the game.
 playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> Server Bool
