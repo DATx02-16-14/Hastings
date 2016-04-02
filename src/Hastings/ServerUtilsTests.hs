@@ -32,3 +32,20 @@ instance Arbitrary GameData where
     let playersNum' = (abs.flip mod maxPlayers') playersNum -- No more players than max nuber
     clients <- sequence [ arbitrary | _ <- [1..playersNum']]
     return $ GameData clients ("GameData " ++ show gameNr) maxPlayers'
+
+
+-- Tests
+
+prop_getUUIDFromGamesList :: [LobbyGame] -> Property
+prop_getUUIDFromGamesList list = not (null list) ==>
+  [fst x | x <- list ] == getUUIDFromGamesList list
+
+prop_deletePlayerFromGame :: Int -> LobbyGame -> Property
+prop_deletePlayerFromGame i g@(_, gameData) = not (null (players gameData)) ==>
+  length (players gameData) - 1 == length (players newGameData)
+  where
+    (_, newGameData) = deletePlayerFromGame playerName g
+
+    i' =  abs $ mod i (length $ players gameData)
+    player = (players gameData) !! i'
+    playerName = name player
