@@ -127,7 +127,7 @@ playerJoinGame remoteClientList remoteGameList gameID = do
               \gList -> return $ addPlayerToGame player gameID gList
             messageClients PlayerJoinedGame (players gameData)
           return True
-        _     -> return False
+        _                   -> return False
 
 -- |Finds the name of a game given it's identifier
 findGameNameWithID :: Server GamesList -> String -> Server String
@@ -328,5 +328,4 @@ getClientName remoteClientList = do
   sid <- getSessionID
   concurrentClientList <- remoteClientList
   clientList <- liftIO $ CC.readMVar concurrentClientList
-  let client = find ((sid ==) . sessionID) clientList
-  return $ name $ fromJust client
+  return $ name $ fromJust $ lookupClientEntry sid clientList
