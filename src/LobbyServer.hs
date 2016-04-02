@@ -147,15 +147,6 @@ findGameNameWithSid remoteGames = do
     Just (_, gameData) -> return $ gameName gameData
     Nothing            -> return ""
 
--- |Finds the name of the players of a game given it's identifier
-playerNamesInGameWithID :: Server GamesList -> String -> Server [String]
-playerNamesInGameWithID remoteGameList gid = do
-  mVarGamesList <- remoteGameList
-  maybeGame <- liftIO $ findGameWithID gid mVarGamesList
-  case maybeGame of
-    Just (gid, gameData)   -> return $ map name $ players gameData
-    Nothing                -> return []
-
 -- |Finds the name of the players of the game the current client is in
 playerNamesInGameWithSid :: Server GamesList -> Server [String]
 playerNamesInGameWithSid remoteGameList = do
