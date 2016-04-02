@@ -27,3 +27,7 @@ deletePlayerFromGame clientName (gameID, gameData)  =
 addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]
 addPlayerToGame client gameID =
   updateListElem (\(gID, gameData) -> (gID, gameData {players = nub $ client : players gameData})) ((gameID ==) .fst)
+
+-- |Finds the 'LobbyGame' matching the first parameter and returns it
+findGameWithID :: String -> [LobbyGame] -> Maybe LobbyGame
+findGameWithID gid = find (\g -> fst g == gid)

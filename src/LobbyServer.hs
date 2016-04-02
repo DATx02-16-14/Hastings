@@ -114,16 +114,16 @@ getGamesList remoteGames = do
 playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> Server Bool
 playerJoinGame remoteClientList remoteGameList gameID = do
   clientList <- remoteClientList >>= liftIO . CC.readMVar
-  gameList <- remoteGameList
+  mVarGamesList <- remoteGameList
+  gameList <- liftIO $ CC.readMVar mVarGamesList
   sid <- getSessionID
-  maybeGame <- liftIO $ findGameWithID gameID gameList
-  case maybeGame of
+  case findGameWithID gameID gameList of
     Nothing           -> return False
     Just (_,gameData) ->
       case (maxAmountOfPlayers gameData > length (players gameData), lookupClientEntry sid clientList) of
         (True, Just player) -> do
           liftIO $ do
-            CC.modifyMVar_ gameList $
+            CC.modifyMVar_ mVarGamesList $
               \gList -> return $ addPlayerToGame player gameID gList
             messageClients PlayerJoinedGame (players gameData)
           return True
@@ -132,9 +132,8 @@ playerJoinGame remoteClientList remoteGameList gameID = do
 -- |Finds the name of a game given it's identifier
 findGameNameWithID :: Server GamesList -> String -> Server String
 findGameNameWithID remoteGames gid = do
-  mVarGamesList <- remoteGames
-  maybeGame <- liftIO $ findGameWithID gid mVarGamesList
-  case maybeGame of
+  mVarGamesList <- remoteGames >>= liftIO . CC.readMVar
+  case findGameWithID gid mVarGamesList of
     Just (_, gameData) -> return $ gameName gameData
     Nothing            -> return ""
 
@@ -155,12 +154,6 @@ playerNamesInGameWithSid remoteGameList = do
   case maybeGame of
     Nothing            -> return []
     Just (_, gameData) -> return $ map name (players gameData)
-
--- |Finds the 'LobbyGame' matching the first parameter and returns it
-findGameWithID :: String -> GamesList -> IO (Maybe LobbyGame)
-findGameWithID gid mVarGamesList = do
-  gamesList <- CC.readMVar mVarGamesList
-  return $ find (\g -> fst g == gid) gamesList
 
 -- |Finds the 'LobbyGame' that the current connection is in (or the first if there are multiple)
 findGameWithSid :: GamesList -> Server (Maybe LobbyGame)
@@ -225,13 +218,13 @@ changeNickName remoteClientList remoteGames newName = do
 -- |Change the name of a 'LobbyGame' given the game's ID
 changeGameNameWithID :: Server GamesList -> Server ConcurrentClientList -> String -> Name -> Server ()
 changeGameNameWithID remoteGames remoteClients uuid newName = do
-  gamesList <- remoteGames
+  mVarGamesList <- remoteGames
   mVarClientList <- remoteClients
-  maybeGame <- liftIO $ findGameWithID uuid gamesList
-  case maybeGame of
-    Nothing           -> return ()
+  gamesList <- liftIO $ CC.readMVar mVarGamesList
+  case findGameWithID uuid gamesList of
+    Nothing                -> return ()
     Just game@(_,gameData) ->
-      liftIO $ CC.modifyMVar_ gamesList $ \games ->
+      liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
         return $ updateListElem
           (\(guuid, gData) -> (guuid, gData {gameName = newName}))
           (== game)
