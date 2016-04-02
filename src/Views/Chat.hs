@@ -12,6 +12,8 @@ import Haste.Events
 import Haste.DOM
 import Haste.App.Concurrent
 import Data.Maybe
+import Data.List (find)
+import Data.Char (toLower)
 import Control.Monad (unless, when)
 
 import LobbyTypes
@@ -89,11 +91,11 @@ handleChatInput api currentChatName =
       | c == "leave" =
         if null args
           then do
-            clientLeaveChat api chatName
+            clientLeaveChat api chatName chatName
             setActiveChat "main"
           else do
             let chatName' = head args
-            clientLeaveChat api chatName'
+            clientLeaveChat api chatName chatName'
             when (chatName == chatName') $ setActiveChat "main"
             return ()
       | c == "msg" =
@@ -211,26 +213,40 @@ setActiveChat chatName = do
 -- | Client joins the named chat and starts listen to it's messages
 clientJoinChat :: LobbyAPI -> String -> Client ()
 clientJoinChat api chatName = do
-  chats <- onServer $ getJoinedChats api
-  if chatName `elem` chats
+  joinedChats <- onServer $ getJoinedChats api
+  if lowerCaseChatName `elem` (map stringToLower joinedChats)
     then
       setActiveChat chatName
     else do
-      onServer $ joinChat api <.> chatName
-      addNewChatDOM api chatName
-      fork $ listenForChatMessages api chatName $ chatMessageCallback api chatName
-      setActiveChat chatName
+      chats <- onServer $ getChats api
+      let chatToJoin = fromMaybe chatName $ find ((lowerCaseChatName ==). stringToLower) chats
+      onServer $ joinChat api <.> chatToJoin
+      addNewChatDOM api chatToJoin
+      fork $ listenForChatMessages api chatToJoin $ chatMessageCallback api chatToJoin
+      setActiveChat chatToJoin
   return ()
+  where
+    lowerCaseChatName = stringToLower chatName
+    stringToLower = map toLower
 
 -- | Tells the server that the client wants to leave the named chat.
 -- | Special case. You can't leave the chat named "main".
-clientLeaveChat :: LobbyAPI -> String -> Client ()
-clientLeaveChat api chatName =
+clientLeaveChat :: LobbyAPI -> String -> String -> Client ()
+clientLeaveChat api activeChat chatName =
   if chatName == "main"
-    then pushToChatBox chatName "You can't leave the main chat"
+    then pushToChatBox activeChat "You can't leave the main chat"
     else do
-      onServer $ leaveChat api <.> chatName
-      deleteChatDOM chatName
+      joinedChats <- onServer $ getJoinedChats api
+      case find ((lowerCaseChatName ==). stringToLower) joinedChats of
+        Nothing             -> do
+          pushToChatBox activeChat $ "No chat named " ++ chatName
+          return ()
+        Just actualChatName -> do
+          onServer $ leaveChat api <.> actualChatName
+          deleteChatDOM actualChatName
+  where
+    lowerCaseChatName = stringToLower chatName
+    stringToLower = map toLower
 
 
 -- | Called when a ChatMessage is received
