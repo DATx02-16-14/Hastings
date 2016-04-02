@@ -46,3 +46,7 @@ isOwnerOfGame sid gamesList =
   case findGameWithSid sid gamesList of
     Nothing         -> False
     Just (_, gData) -> sessionID (last $ players gData) == sid
+
+-- |Function that finds a 'ClientEntry' based on the 'SessionID'
+lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry
+lookupClientEntry sid = find ((sid ==) . sessionID)

@@ -86,9 +86,6 @@ instance Binary ChatMessage where
 -- |A list of all the chats in the lobby.
 type ConcurrentChatList = CC.MVar [Chat]
 
-lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry
-lookupClientEntry sid = find ((sid ==) . sessionID)
-
 -- |LobbyMessage is a message to a client idicating some udate to the state that the cliet has to adapt to.
 data LobbyMessage = NickChange | GameNameChange | KickedFromGame | GameAdded | ClientJoined
       | ClientLeft | PlayerJoinedGame | LobbyError {lobbyErrorMessage :: String}
