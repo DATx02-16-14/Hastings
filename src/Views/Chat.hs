@@ -228,7 +228,9 @@ clientLeaveChat :: LobbyAPI -> String -> Client ()
 clientLeaveChat api chatName =
   if chatName == "main"
     then pushToChatBox chatName "You can't leave the main chat"
-    else onServer $ leaveChat api <.> chatName
+    else do
+      onServer $ leaveChat api <.> chatName
+      deleteChatDOM chatName
 
 
 -- | Called when a ChatMessage is received
@@ -239,9 +241,9 @@ chatMessageCallback api chatName (ChatAnnounceJoin from)    =
   pushToChatBox chatName $ from ++ " has joined " ++ chatName
 chatMessageCallback api chatName (ChatAnnounceLeave from)   = do
   pushToChatBox chatName $ from ++ " has left " ++ chatName
-  thisClientName <- onServer $ getClientName api
-  when (from == thisClientName) $ deleteChatDOM chatName
-  return ()
+  --thisClientName <- onServer $ getClientName api
+  --when (from == thisClientName) $ deleteChatDOM chatName
+  --return ()
 chatMessageCallback api chatName (ChatError errorMessage)   = do
   liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
   pushToChatBox "main" $ "ChatError" ++ errorMessage
@@ -274,7 +276,7 @@ listenForChatMessages api chatName callBack = do
   -- If its this client that's leaving. then stop listening for new ChatMessages
   case msg of
     ChatAnnounceLeave from -> do
-      clientName <- onServer $ getClientName api
-      unless (from == clientName) $
+      joinedChats <- onServer $ getJoinedChats api
+      when (chatName `elem` joinedChats) $
         listenForChatMessages api chatName callBack
     _ -> listenForChatMessages api chatName callBack
