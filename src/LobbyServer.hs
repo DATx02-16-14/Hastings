@@ -263,9 +263,8 @@ changeMaxNumberOfPlayers :: Server GamesList -> Int -> Server ()
 changeMaxNumberOfPlayers remoteGames newMax = do
   mVarGamesList <- remoteGames
   gamesList <- liftIO $ CC.readMVar mVarGamesList
-  isOwnerOfGame <- isOwnerOfGame remoteGames
   sid <- getSessionID
-  if isOwnerOfGame then do
+  if isOwnerOfGame sid gamesList then do
     case findGameWithSid sid gamesList of
       Nothing   -> return ()
       Just game ->
@@ -278,13 +277,11 @@ changeMaxNumberOfPlayers remoteGames newMax = do
     return ()
 
 -- |Returns if the current player is owner of the game it's in
-isOwnerOfGame :: Server GamesList -> Server Bool
-isOwnerOfGame remoteGames = do
+remoteIsOwnerOfGame :: Server GamesList -> Server Bool
+remoteIsOwnerOfGame remoteGames = do
   gamesList <- remoteGames >>= liftIO . CC.readMVar
   sid <- getSessionID
-  case findGameWithSid sid gamesList of
-    Nothing         -> return False
-    Just (_, gData) -> return $ sessionID (last $ players gData) == sid
+  return $ isOwnerOfGame sid gamesList
 
 -- |Called by client to join a chat
 joinChat :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()

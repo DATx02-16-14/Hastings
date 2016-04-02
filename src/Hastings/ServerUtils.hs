@@ -39,3 +39,10 @@ findGameWithSid :: SessionID -> [LobbyGame] -> Maybe LobbyGame
 findGameWithSid sid = find (\(_, gameData) -> sid `elem` sidsInGame gameData)
   where
     sidsInGame gameData = map sessionID $ players gameData
+
+-- |Returns if the current player is owner of the game it's in
+isOwnerOfGame :: SessionID -> [LobbyGame] -> Bool
+isOwnerOfGame sid gamesList =
+  case findGameWithSid sid gamesList of
+    Nothing         -> False
+    Just (_, gData) -> sessionID (last $ players gData) == sid
