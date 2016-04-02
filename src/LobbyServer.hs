@@ -27,8 +27,11 @@ import Haste.App
 import qualified Control.Concurrent as CC
 import Data.List
 import Data.Maybe
+
 import LobbyTypes
 import Hastings.Utils
+import Hastings.ServerUtils
+
 #ifndef __HASTE__
 import Data.UUID
 import System.Random
@@ -49,8 +52,6 @@ connect remoteClientList remoteChats name = do
 
     clientList <- CC.readMVar concurrentClientList
     messageClients ClientJoined clientList
-
-
 
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
@@ -129,12 +130,7 @@ playerJoinGame remoteClientList remoteGameList gameID = do
 
           liftIO $ messageClients PlayerJoinedGame (players gameData)
           return True
-        else return False
-
--- |Adds a player to a lobby game with the game ID
-addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]
-addPlayerToGame client gameID =
-  updateListElem (\(gID, gameData) -> (gID, gameData {players = nub $ client : players gameData})) ((gameID ==) .fst)
+      else return False
 
 -- |Finds the name of a game given it's identifier
 findGameNameWithID :: Server GamesList -> String -> Server String
@@ -286,13 +282,6 @@ readLobbyChannel remoteClientList = do
       Just client -> CC.readChan $ lobbyChannel client
       Nothing     -> error "readLobbyChannel: Could not find session ID"
 
--- |Finds the client with 'Name' from the list of 'ClientEntry'
-findClient :: Name -> [ClientEntry] -> Maybe ClientEntry
-findClient clientName = find ((clientName ==).name)
-
--- |Maps over the clients and writes the message to their channel
-messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
-messageClients m = mapM_ (\c -> CC.writeChan (lobbyChannel c) m)
 
 -- |Changes the maximum number of players for a game
 -- Requires that the player is the last in the player list (i.e. the owner)
@@ -322,12 +311,6 @@ isOwnerOfGame remoteGames = do
   case maybeGame of
     Nothing         -> return False
     Just (_, gData) -> return $ sessionID (last $ players gData) == sid
-
--- |Deletes the player with 'Name' from the game.
-deletePlayerFromGame :: Name -> LobbyGame -> LobbyGame
-deletePlayerFromGame clientName (gameID, gameData)  =
-  (gameID, gameData {players = filter ((clientName /=) . name) $ players gameData})
-
 
 -- |Called by client to join a chat
 joinChat :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()
