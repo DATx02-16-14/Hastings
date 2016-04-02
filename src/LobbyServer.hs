@@ -132,37 +132,28 @@ playerJoinGame remoteClientList remoteGameList gameID = do
 -- |Finds the name of a game given it's identifier
 findGameNameWithID :: Server GamesList -> String -> Server String
 findGameNameWithID remoteGames gid = do
-  mVarGamesList <- remoteGames >>= liftIO . CC.readMVar
-  case findGameWithID gid mVarGamesList of
+  gamesList <- remoteGames >>= liftIO . CC.readMVar
+  case findGameWithID gid gamesList of
     Just (_, gameData) -> return $ gameName gameData
     Nothing            -> return ""
 
 -- |Finds the name of the game the client is currently in
 findGameNameWithSid :: Server GamesList -> Server String
 findGameNameWithSid remoteGames = do
-  mVarGamesList <- remoteGames
-  maybeGame <- findGameWithSid mVarGamesList
-  case maybeGame of
+  gamesList <- remoteGames >>= liftIO . CC.readMVar
+  sid <- getSessionID
+  case findGameWithSid sid gamesList of
     Just (_, gameData) -> return $ gameName gameData
     Nothing            -> return ""
 
 -- |Finds the name of the players of the game the current client is in
 playerNamesInGameWithSid :: Server GamesList -> Server [String]
-playerNamesInGameWithSid remoteGameList = do
-  mVarGamesList <- remoteGameList
-  maybeGame <- findGameWithSid mVarGamesList
-  case maybeGame of
+playerNamesInGameWithSid remoteGames = do
+  gamesList <- remoteGames >>= liftIO . CC.readMVar
+  sid <- getSessionID
+  case findGameWithSid sid gamesList of
     Nothing            -> return []
     Just (_, gameData) -> return $ map name (players gameData)
-
--- |Finds the 'LobbyGame' that the current connection is in (or the first if there are multiple)
-findGameWithSid :: GamesList -> Server (Maybe LobbyGame)
-findGameWithSid mVarGamesList = do
-  gamesList <- liftIO $ CC.readMVar mVarGamesList
-  sid <- getSessionID
-  return $ find (\(_, gameData) -> sid `elem` sidsInGame gameData) gamesList
-  where
-    sidsInGame gameData = map sessionID $ players gameData
 
 -- |Returns a list of strings containing all connected players names.
 getConnectedPlayerNames :: Server ConcurrentClientList -> Server [String]
@@ -187,8 +178,9 @@ kickPlayerWithGameID remoteGames gameID clientName = do
 kickPlayerWithSid :: Server GamesList -> Name -> Server ()
 kickPlayerWithSid remoteGames clientName = do
   mVarGamesList <- remoteGames
-  maybeGame <- findGameWithSid mVarGamesList
-  case maybeGame of
+  gamesList <- liftIO $ CC.readMVar mVarGamesList
+  sid <- getSessionID
+  case findGameWithSid sid gamesList of
     Nothing   -> return ()
     Just game@(_,gameData) -> do
       liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
@@ -236,13 +228,14 @@ changeGameNameWithID remoteGames remoteClients uuid newName = do
 -- |Change the name of a 'LobbyGame' that the connected client is in
 changeGameNameWithSid :: Server GamesList -> Server ConcurrentClientList -> Name -> Server ()
 changeGameNameWithSid remoteGames remoteClients newName = do
-  gamesList <- remoteGames
   mVarClientList <- remoteClients
-  maybeGame <- findGameWithSid gamesList
-  case maybeGame of
+  mVarGamesList <- remoteGames
+  gamesList <- liftIO $ CC.readMVar mVarGamesList
+  sid <- getSessionID
+  case findGameWithSid sid gamesList of
     Nothing           -> return ()
     Just game@(_,gameData) ->
-      liftIO $ CC.modifyMVar_ gamesList $ \games ->
+      liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
         return $ updateListElem
           (\(guuid, gData) -> (guuid, gData {gameName = newName}))
           (== game)
@@ -268,14 +261,15 @@ readLobbyChannel remoteClientList = do
 -- Requires that the player is the last in the player list (i.e. the owner)
 changeMaxNumberOfPlayers :: Server GamesList -> Int -> Server ()
 changeMaxNumberOfPlayers remoteGames newMax = do
-  mVarGames <- remoteGames
+  mVarGamesList <- remoteGames
+  gamesList <- liftIO $ CC.readMVar mVarGamesList
   isOwnerOfGame <- isOwnerOfGame remoteGames
+  sid <- getSessionID
   if isOwnerOfGame then do
-    maybeGame <- findGameWithSid mVarGames
-    case maybeGame of
+    case findGameWithSid sid gamesList of
       Nothing   -> return ()
       Just game ->
-        liftIO $ CC.modifyMVar_ mVarGames $ \games ->
+        liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
           return $ updateListElem
             (\(guuid, gData) -> (guuid, gData {maxAmountOfPlayers = newMax}))
             (== game)
@@ -286,10 +280,9 @@ changeMaxNumberOfPlayers remoteGames newMax = do
 -- |Returns if the current player is owner of the game it's in
 isOwnerOfGame :: Server GamesList -> Server Bool
 isOwnerOfGame remoteGames = do
-  mVarGames <- remoteGames
-  maybeGame <- findGameWithSid mVarGames
+  gamesList <- remoteGames >>= liftIO . CC.readMVar
   sid <- getSessionID
-  case maybeGame of
+  case findGameWithSid sid gamesList of
     Nothing         -> return False
     Just (_, gData) -> return $ sessionID (last $ players gData) == sid
 

@@ -1,6 +1,8 @@
 module Hastings.ServerUtils where
 
-import LobbyTypes (LobbyGame, Name, ClientEntry, name, LobbyMessage, players, lobbyChannel)
+import Haste.App (SessionID)
+
+import LobbyTypes (LobbyGame, Name, ClientEntry, name, LobbyMessage, players, lobbyChannel, sessionID)
 import Hastings.Utils (updateListElem)
 
 import qualified Control.Concurrent as CC (writeChan)
@@ -31,3 +33,9 @@ addPlayerToGame client gameID =
 -- |Finds the 'LobbyGame' matching the first parameter and returns it
 findGameWithID :: String -> [LobbyGame] -> Maybe LobbyGame
 findGameWithID gid = find (\g -> fst g == gid)
+
+-- |Finds the 'LobbyGame' that the current connection is in (or the first if there are multiple)
+findGameWithSid :: SessionID -> [LobbyGame] -> Maybe LobbyGame
+findGameWithSid sid = find (\(_, gameData) -> sid `elem` sidsInGame gameData)
+  where
+    sidsInGame gameData = map sessionID $ players gameData
