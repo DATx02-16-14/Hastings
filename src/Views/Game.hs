@@ -37,16 +37,15 @@ createGameDOM api gapi = do
 
   createStartGameBtn <- newElem "button" `with`
     [
-      prop "id" =: "startGameButton"
+      attr "id"    =: "startGameButton",
+      attr "class" =: "btn btn-default"
     ]
-  setClass createStartGameBtn "btn" True
-  setClass createStartGameBtn "btn-default" True
   createStartGameBtnText <- newTextElem "Start game"
   appendChild createStartGameBtn createStartGameBtnText
 
   list <- newElem "div" `with`
     [
-      prop "id" =: "gamePlayerList"
+      attr "id" =: "gamePlayerList"
     ]
   listhead <- newTextElem "Players: "
   br <- newElem "br"
@@ -67,7 +66,7 @@ createGameChangeNameDOM api = do
   gameNameField <- newElem "input" `with`
     [
       attr "type" =: "text",
-      attr "id" =: "gameNameField"
+      attr "id"   =: "gameNameField"
     ]
   gameNameButton <- newElem "button" `with`
     [
@@ -150,9 +149,10 @@ addPlayerWithKickToPlayerlist :: LobbyAPI -> Elem -> String -> Client ()
 addPlayerWithKickToPlayerlist api parent name = do
   textElem <- newTextElem name
   br <- newElem "br"
-  kickBtn <- newElem "button"
-  setClass kickBtn "btn" True
-  setClass kickBtn "btn-default" True
+  kickBtn <- newElem "button" `with`
+    [
+      attr "class" =: "btn btn-default"
+    ]
   kick <- newTextElem "kick"
   clickEventElem kickBtn $ kickFunction name api
   appendChild kickBtn kick
@@ -172,10 +172,9 @@ addGame api gapi gameID = do
       tdBtn <- newElem "td"
       gameEntry <- newElem "button" `with`
         [
-          prop "id" =: gameName
+          attr "id"    =: gameName,
+          attr "class" =: "btn btn-default"
         ]
-      setClass gameEntry "btn" True
-      setClass gameEntry "btn-default" True
       textElemBtn <- newTextElem "Join"
 
       textElemName <- newTextElem gameName
