@@ -171,9 +171,9 @@ addInputFieldToInputFieldsContainer api chatName =
 -- | Removes the DOM elements corresponding to the named chat
 deleteChatDOM :: String -> Client ()
 deleteChatDOM chatName = do
-  liftIO $ print $ chatTabIdPrefix       ++ chatName
-  liftIO $ print $ chatContainerIdPrefix ++ chatName
-  liftIO $ print $ inputFieldIdPrefix    ++ chatName
+  liftIO . print $ chatTabIdPrefix       ++ chatName
+  liftIO . print $ chatContainerIdPrefix ++ chatName
+  liftIO . print $ inputFieldIdPrefix    ++ chatName
   deleteDOM (chatTabIdPrefix       ++ chatName) chatTabId
   deleteDOM (chatContainerIdPrefix ++ chatName) chatContainerId
   deleteDOM (inputFieldIdPrefix    ++ chatName) inputContainerId
@@ -229,7 +229,7 @@ clientJoinChat api chatName = do
       let chatToJoin = fromMaybe chatName $ find ((lowerCaseChatName ==). stringToLower) chats
       onServer $ joinChat api <.> chatToJoin
       addNewChatDOM api chatToJoin
-      fork $ listenForChatMessages api chatToJoin $ chatMessageCallback api chatToJoin
+      fork . listenForChatMessages api chatToJoin $ chatMessageCallback api chatToJoin
       setActiveChat chatToJoin
   return ()
   where
@@ -268,10 +268,10 @@ chatMessageCallback api chatName (ChatAnnounceLeave from)   = do
   --when (from == thisClientName) $ deleteChatDOM chatName
   --return ()
 chatMessageCallback api chatName (ChatError errorMessage)   = do
-  liftIO $ print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
+  liftIO . print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
   pushToChatBox "main" $ "ChatError" ++ errorMessage
 chatMessageCallback api chatName _ =
-  liftIO $ print $ "chatMessageCallback > Bad ChatMessage on chat " ++ chatName
+  liftIO . print $ "chatMessageCallback > Bad ChatMessage on chat " ++ chatName
 
 -- |Pushes the String arguments to the "chatBox" textarea
 pushToChatBox :: String -> String -> Client ()
