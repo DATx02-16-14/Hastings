@@ -283,7 +283,7 @@ pushToChatBox chatName str = (chatContainerIdPrefix ++ chatName) `withElem` \cha
   scrollToBottom chatContainer
   return ()
 
--- | Set set the scrollTop property equal to the scrollHeight property.
+-- | Set the scrollTop property equal to the scrollHeight property.
 scrollToBottom :: Elem -> Client()
 scrollToBottom scrollableElem = do
   scrollHeight <- getProp scrollableElem "scrollHeight"
