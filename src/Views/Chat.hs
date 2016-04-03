@@ -183,10 +183,15 @@ deleteChatDOM chatName = do
 -- | All other chat elements are hidden.
 setActiveChat :: String -> Client ()
 setActiveChat chatName = do
-  chatTabId `withElem` \chatTabs -> do
-    setClassOnChildren chatTabs "active" False
+  chatTabId `withElem` \chatTabContainer -> do
+    setClassOnChildren chatTabContainer "active" False
     maybeChatTab <- elemById $ chatTabIdPrefix ++ chatName
     setClassOnMaybeDOMElem maybeChatTab "active" True
+    maybe
+      (return ())
+      (scrollToElem chatTabContainer)
+      maybeChatTab
+
 
   chatContainerId `withElem` \chatContainer -> do
     setClassOnChildren chatContainer "hide" True
@@ -283,6 +288,12 @@ scrollToBottom :: Elem -> Client()
 scrollToBottom scrollableElem = do
   scrollHeight <- getProp scrollableElem "scrollHeight"
   setProp scrollableElem "scrollTop" scrollHeight
+
+-- | Set the parents scrollLeft property equal to the childs offsetLeft
+scrollToElemHorizontal :: Elem -> Elem -> Client()
+scrollToElem parent child = do
+  offsetLeft <- getProp child "offsetLeft"
+  setProp parent "scrollLeft" offsetLeft
 
 -- |Listen for chat messages on a chatChannel until the chat announces that the client leaves
 -- |Start this method with fork $ listenForChatMessage args...
