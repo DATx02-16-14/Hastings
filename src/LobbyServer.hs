@@ -245,18 +245,18 @@ changeNickName remoteClientList remoteGames newName = do
     clients <- CC.readMVar mVarClientList
     messageClients NickChange clients
   -- Notify all chats about nick update
-  notifyClientsJoinedChats remoteClientList $ oldName ++ " changed nick to " ++ newName
+  notifyClientChats remoteClientList $ oldName ++ " changed nick to " ++ newName
 
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
 
 -- | Sends a server notification to all chats the client has joined
-notifyClientsJoinedChats :: Server ConcurrentClientList -> String -> Server ()
-notifyClientsJoinedChats remoteClients notification = do
+notifyClientChats :: Server ConcurrentClientList -> String -> Server ()
+notifyClientChats remoteClients notification = do
   clientList <- remoteClients >>= liftIO . CC.readMVar
   sid <- getSessionID
   maybe
-    (liftIO . print $ "notifyClientsJoinedChats > Could not find sid in connected clients")
+    (liftIO . print $ "notifyClientChats > Could not find sid in connected clients")
     (liftIO . (mapM_ ((flip CC.writeChan $ ChatMessage "SERVER" notification) . snd)) . chats)
     $ sid `lookupClientEntry` clientList
 
