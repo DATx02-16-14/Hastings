@@ -58,6 +58,14 @@ connect remoteClientList remoteChats name = do
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
 disconnect (clientList, games, chats) sid = do
+  cs <- clientList >>= liftIO . CC.readMVar
+  maybe
+    (return ())
+    (\c -> do
+      notifyClientChats clientList $ (name c) ++ " disconnected"
+      return ())
+    $ sid `lookupClientEntry` cs
+
   disconnectPlayerFromGame games clientList sid
   disconnectPlayerFromLobby clientList sid
 
