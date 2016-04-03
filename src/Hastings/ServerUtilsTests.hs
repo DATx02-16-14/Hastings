@@ -72,7 +72,9 @@ prop_addPlayerToGame_unique i list = not (null list) ==>
   where
     addIfChanged ((guuid,og), (_,ng)) | length (players og) == length (players ng) = (+ 0)
                                       | otherwise                                  = (+ 1)
-
+-- |Template for tests with addPlayerToGame
+-- Requires a function that wants the GameID (of the game that was changed), and two lists of games
+-- , one unchanged and one where a player has been added.
 addPlayerToGamePropTemplate :: Int -> [LobbyGame] -> (String -> [LobbyGame] -> [LobbyGame] -> Bool) -> Bool
 addPlayerToGamePropTemplate i list fun = fun gameID list' newList
   where

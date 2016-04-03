@@ -26,6 +26,7 @@ deletePlayerFromGame clientName (gameID, gameData)  =
   (gameID, gameData {players = filter ((clientName /=) . name) $ players gameData})
 
 -- |Adds a player to a lobby game with the game ID
+-- Doesn't care if the max #players has been reached.
 addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]
 addPlayerToGame client gameID =
   updateListElem (\(gID, gameData) -> (gID, gameData {players = nub $ client : players gameData})) ((gameID ==) .fst)
