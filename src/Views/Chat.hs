@@ -110,6 +110,7 @@ createChatTabsHeader =
     [
       attr "id" =: chatTabId,
       attr "class" =: "nav nav-tabs",
+      attr "style" =: "overflow-x: scroll; overflow-y: hidden; display: -webkit-box;",
       attr "role" =: "tablist"
     ]
 
@@ -127,8 +128,9 @@ addTabToTabHeader chatName =
   chatTabId `withElem` \chatTabsHeader -> do
     chatTab <- newElem "li" `with`
       [
-        attr "id"   =: (chatTabIdPrefix ++ chatName),
-        attr "role" =: "presentation"
+        attr "id"    =: (chatTabIdPrefix ++ chatName),
+        attr "role"  =: "presentation",
+        attr "style" =: "float: none;"
       ]
     onEvent chatTab Click $ \_ -> setActiveChat chatName
 
