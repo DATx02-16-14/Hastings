@@ -189,7 +189,7 @@ setActiveChat chatName = do
     maybe (return ())
       (\tab -> do
         setClass tab "active" True
-        scrollToElemHorizontal chatTabContainer tab
+        scrollToElemHorizontal chatTabContainer tab (-60)
       )
       maybeChatTab
 
@@ -292,10 +292,12 @@ scrollToBottom scrollableElem = do
   setProp scrollableElem "scrollTop" scrollHeight
 
 -- | Set the parents scrollLeft property equal to the childs offsetLeft
-scrollToElemHorizontal :: Elem -> Elem -> Client()
-scrollToElemHorizontal parent child = do
+-- | Int is offset to apply on scroll
+scrollToElemHorizontal :: Elem -> Elem -> Int -> Client()
+scrollToElemHorizontal parent child offset = do
   offsetLeft <- getProp child "offsetLeft"
-  setProp parent "scrollLeft" offsetLeft
+  width <- getProp child "width"
+  setProp parent "scrollLeft" . show $ read offsetLeft + offset
 
 -- |Listen for chat messages on a chatChannel until the chat announces that the client leaves
 -- |Start this method with fork $ listenForChatMessage args...
