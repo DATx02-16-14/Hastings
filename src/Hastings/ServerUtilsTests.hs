@@ -5,6 +5,7 @@ import Haste.App (SessionID, liftIO)
 import Data.Word (Word64)
 import Control.Concurrent (Chan, newChan)
 import System.IO.Unsafe (unsafePerformIO)
+import Data.List (nub)
 
 import LobbyTypes
 import Hastings.ServerUtils
@@ -40,12 +41,51 @@ prop_getUUIDFromGamesList :: [LobbyGame] -> Property
 prop_getUUIDFromGamesList list = not (null list) ==>
   [fst x | x <- list ] == getUUIDFromGamesList list
 
-prop_deletePlayerFromGame :: Int -> LobbyGame -> Property
-prop_deletePlayerFromGame i g@(_, gameData) = not (null (players gameData)) ==>
+prop_deletePlayerFromGame_length :: Int -> LobbyGame -> Property
+prop_deletePlayerFromGame_length i g@(_, gameData) = not (null (players gameData)) ==>
   length (players gameData) - 1 == length (players newGameData)
   where
     (_, newGameData) = deletePlayerFromGame playerName g
 
     i' =  abs $ mod i (length $ players gameData)
-    player = (players gameData) !! i'
+    player = players gameData !! i'
     playerName = name player
+
+-- |Property that checks that only the correct one has changed, and all others have the same length.
+-- Runs nub on the list of players since sessionID's are meant to be unique
+-- Also goes through each LobbyGame to make sure the GameID is unique.
+-- Will fail if `18446744073709551615` is the sessionID of one of the clients.
+prop_addPlayerToGame_length :: Int -> [LobbyGame] -> Property
+prop_addPlayerToGame_length i list = not (null list) ==>
+  addPlayerToGamePropTemplate i list fun
+  where
+    fun :: String -> [LobbyGame] -> [LobbyGame] -> Bool
+    fun gameID list newList = all prop $ zip list newList
+      where
+        prop ((guuid,og), (_,ng)) | guuid == gameID = length (nub $ players og) + 1 == length (players ng)
+                                  | otherwise       = length (players og) == length (players ng)
+
+-- |Checks that only one lobbyGame has changed
+prop_addPlayerToGame_unique :: Int -> [LobbyGame] -> Property
+prop_addPlayerToGame_unique i list = not (null list) ==>
+  addPlayerToGamePropTemplate i list (\_ list newList -> 1 >= foldr addIfChanged 0 (zip list newList))
+  where
+    addIfChanged ((guuid,og), (_,ng)) | length (players og) == length (players ng) = (+ 0)
+                                      | otherwise                                  = (+ 1)
+
+addPlayerToGamePropTemplate :: Int -> [LobbyGame] -> (String -> [LobbyGame] -> [LobbyGame] -> Bool) -> Bool
+addPlayerToGamePropTemplate i list fun = fun gameID list' newList
+  where
+    list' = zipWith newLobbyGame list [0..]
+    newLobbyGame (_, gameData) i = (show i, gameData)
+
+    i' = abs $ mod i (length list')
+
+    lobbyChan = unsafePerformIO newChan
+    client = ClientEntry 18446744073709551615 "new client" [] lobbyChan
+    gameID = fst $ list' !! i'
+    newList = addPlayerToGame client gameID list'
+
+    playersList list = players $ snd $ list !! i'
+
+  -- other prop: check that it was not possible to join if max has been reached
