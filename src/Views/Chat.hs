@@ -266,9 +266,6 @@ chatMessageCallback api chatName (ChatAnnounceJoin from)    =
   pushToChatBox chatName $ from ++ " has joined " ++ chatName
 chatMessageCallback api chatName (ChatAnnounceLeave from)   = do
   pushToChatBox chatName $ from ++ " has left " ++ chatName
-  --thisClientName <- onServer $ getClientName api
-  --when (from == thisClientName) $ deleteChatDOM chatName
-  --return ()
 chatMessageCallback api chatName (ChatError errorMessage)   = do
   liftIO . print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
   pushToChatBox "main" $ "ChatError" ++ errorMessage
