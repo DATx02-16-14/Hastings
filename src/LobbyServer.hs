@@ -62,7 +62,7 @@ disconnect (clientList, games, chats) sid = do
   maybe
     (return ())
     (\c -> do
-      notifyClientChats clientList $ (name c) ++ " disconnected"
+      notifyClientChats clientList $ name c ++ " disconnected"
       return ())
     $ sid `lookupClientEntry` cs
 
@@ -265,7 +265,7 @@ notifyClientChats remoteClients notification = do
   sid <- getSessionID
   maybe
     (liftIO . print $ "notifyClientChats > Could not find sid in connected clients")
-    (liftIO . (mapM_ ((flip CC.writeChan $ ChatMessage "SERVER" notification) . snd)) . chats)
+    (liftIO . mapM_ (flip CC.writeChan (ChatMessage "SERVER" notification) . snd) . chats)
     $ sid `lookupClientEntry` clientList
 
 
@@ -405,7 +405,7 @@ announceChatJoin remoteClientList remoteChatList chatName = do
       sid <- getSessionID
       maybe
         (return ())
-        (liftIO . (CC.writeChan channel) . (ChatAnnounceJoin . name))
+        (liftIO . CC.writeChan channel . ChatAnnounceJoin . name)
         $ sid `lookupClientEntry` clientList
 
 -- | Called by client to leave the named Chat

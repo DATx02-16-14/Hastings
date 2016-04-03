@@ -207,9 +207,7 @@ setActiveChat chatName = do
     setClassOnChildren inputs "hide" True
     maybeInputField <- elemById $ inputFieldIdPrefix ++ chatName
     maybe (return ())
-      (\inputField -> do
-        setClass inputField "hide" False
-      )
+      (\inputField -> setClass inputField "hide" False)
       maybeInputField
 
     maybe  (return ()) focus maybeInputField
@@ -223,7 +221,7 @@ setActiveChat chatName = do
 clientJoinChat :: LobbyAPI -> String -> Client ()
 clientJoinChat api chatName = do
   joinedChats <- onServer $ getJoinedChats api
-  if lowerCaseChatName `elem` (map stringToLower joinedChats)
+  if lowerCaseChatName `elem` map stringToLower joinedChats
     then
       setActiveChat chatName
     else do
@@ -264,7 +262,7 @@ chatMessageCallback api chatName (ChatMessage from content) =
   pushToChatBox chatName $ from ++ ": " ++ content
 chatMessageCallback api chatName (ChatAnnounceJoin from)    =
   pushToChatBox chatName $ from ++ " has joined " ++ chatName
-chatMessageCallback api chatName (ChatAnnounceLeave from)   = do
+chatMessageCallback api chatName (ChatAnnounceLeave from)   =
   pushToChatBox chatName $ from ++ " has left " ++ chatName
 chatMessageCallback api chatName (ChatError errorMessage)   = do
   liftIO . print $ "chatMessageCallback > " ++ "ChatError" ++ errorMessage
