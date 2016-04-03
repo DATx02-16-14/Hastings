@@ -227,9 +227,14 @@ kickPlayerWithSid remoteGames clientName = do
 changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()
 changeNickName remoteClientList remoteGames newName = do
   mVarClientList <- remoteClientList
+  clientList <- liftIO $ CC.readMVar mVarClientList
   sid <- getSessionID
-  liftIO $ CC.modifyMVar_ mVarClientList $ \cs -> do
-    notifyNickChangeChats sid cs newName
+  let oldName = maybe
+                  "NO_SUCH_CLIENT"
+                  name
+                  $ sid `lookupClientEntry` clientList
+
+  liftIO $ CC.modifyMVar_ mVarClientList $ \cs ->
     return $ updateNick sid cs
   mVarGamesList <- remoteGames
   liftIO $ CC.modifyMVar_ mVarGamesList $ \gs ->
@@ -239,21 +244,22 @@ changeNickName remoteClientList remoteGames newName = do
   liftIO $ do
     clients <- CC.readMVar mVarClientList
     messageClients NickChange clients
+  -- Notify all chats about nick update
+  notifyClientsJoinedChats remoteClientList $ oldName ++ " changed nick to " ++ newName
 
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
 
-    notifyNickChangeChats sid clientList newName = do
-      let maybeOldClient = sid `lookupClientEntry` clientList
-      let oldName = maybe "NO_SUCH_CLIENT" name $ maybeOldClient
-      maybe
-        (return ())
-        (\client ->
-          mapM_
-            (\c -> CC.writeChan c $ (ChatMessage "SERVER" $ oldName ++ " changed nick to " ++ newName))
-            (map snd $ chats client)
-        )
-        maybeOldClient
+-- | Sends a server notification to all chats the client has joined
+notifyClientsJoinedChats :: Server ConcurrentClientList -> String -> Server ()
+notifyClientsJoinedChats remoteClients notification = do
+  clientList <- remoteClients >>= liftIO . CC.readMVar
+  sid <- getSessionID
+  maybe
+    (liftIO . print $ "notifyClientsJoinedChats > Could not find sid in connected clients")
+    (liftIO . (mapM_ ((flip CC.writeChan $ ChatMessage "SERVER" notification) . snd)) . chats)
+    $ sid `lookupClientEntry` clientList
+
 
 -- |Change the name of a 'LobbyGame' given the game's ID
 changeGameNameWithID :: Server GamesList -> Server ConcurrentClientList -> String -> Name -> Server ()
