@@ -228,7 +228,8 @@ changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Ser
 changeNickName remoteClientList remoteGames newName = do
   mVarClientList <- remoteClientList
   sid <- getSessionID
-  liftIO $ CC.modifyMVar_ mVarClientList $ \cs ->
+  liftIO $ CC.modifyMVar_ mVarClientList $ \cs -> do
+    notifyNickChangeChats sid cs newName
     return $ updateNick sid cs
   mVarGamesList <- remoteGames
   liftIO $ CC.modifyMVar_ mVarGamesList $ \gs ->
@@ -238,8 +239,21 @@ changeNickName remoteClientList remoteGames newName = do
   liftIO $ do
     clients <- CC.readMVar mVarClientList
     messageClients NickChange clients
+
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
+
+    notifyNickChangeChats sid clientList newName = do
+      let maybeOldClient = sid `lookupClientEntry` clientList
+      let oldName = maybe "NO_SUCH_CLIENT" name $ maybeOldClient
+      maybe
+        (return ())
+        (\client ->
+          mapM_
+            (\c -> CC.writeChan c $ (ChatMessage "SERVER" $ oldName ++ " changed nick to " ++ newName))
+            (map snd $ chats client)
+        )
+        maybeOldClient
 
 -- |Change the name of a 'LobbyGame' given the game's ID
 changeGameNameWithID :: Server GamesList -> Server ConcurrentClientList -> String -> Name -> Server ()
