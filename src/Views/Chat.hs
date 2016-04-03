@@ -186,22 +186,31 @@ setActiveChat chatName = do
   chatTabId `withElem` \chatTabContainer -> do
     setClassOnChildren chatTabContainer "active" False
     maybeChatTab <- elemById $ chatTabIdPrefix ++ chatName
-    setClassOnMaybeDOMElem maybeChatTab "active" True
-    maybe
-      (return ())
-      (scrollToElem chatTabContainer)
+    maybe (return ())
+      (\tab -> do
+        setClass tab "active" True
+        scrollToElemHorizontal chatTabContainer tab
+      )
       maybeChatTab
-
 
   chatContainerId `withElem` \chatContainer -> do
     setClassOnChildren chatContainer "hide" True
     maybeChatContainer <- elemById $ chatContainerIdPrefix ++ chatName
-    setClassOnMaybeDOMElem maybeChatContainer "hide" False
+    maybe (return ())
+      (\chat -> do
+        setClass chat "hide" False
+        scrollToBottom chat
+      )
+      maybeChatContainer
 
   inputContainerId `withElem` \inputs -> do
     setClassOnChildren inputs "hide" True
     maybeInputField <- elemById $ inputFieldIdPrefix ++ chatName
-    setClassOnMaybeDOMElem maybeInputField "hide" False
+    maybe (return ())
+      (\inputField -> do
+        setClass inputField "hide" False
+      )
+      maybeInputField
 
     maybe  (return ()) focus maybeInputField
   return ()
@@ -209,13 +218,6 @@ setActiveChat chatName = do
       setClassOnChildren parent value doSet = do
         children <- getChildren parent
         mapM_ (\c -> setClass c value doSet) children
-
-      setClassOnMaybeDOMElem maybeDOMElem value doSet =
-        case maybeDOMElem of
-          Nothing   -> return ()
-          Just chat -> do
-            setClass chat value doSet
-            scrollToBottom chat
 
 -- | Client joins the named chat and starts listen to it's messages
 clientJoinChat :: LobbyAPI -> String -> Client ()
@@ -291,7 +293,7 @@ scrollToBottom scrollableElem = do
 
 -- | Set the parents scrollLeft property equal to the childs offsetLeft
 scrollToElemHorizontal :: Elem -> Elem -> Client()
-scrollToElem parent child = do
+scrollToElemHorizontal parent child = do
   offsetLeft <- getProp child "offsetLeft"
   setProp parent "scrollLeft" offsetLeft
 
