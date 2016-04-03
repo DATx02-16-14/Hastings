@@ -91,3 +91,16 @@ addPlayerToGamePropTemplate i list fun = fun gameID list' newList
     playersList list = players $ snd $ list !! i'
 
   -- other prop: check that it was not possible to join if max has been reached
+
+-- |Checks that findGameWithID finds the correct game
+prop_findGameWithID :: Int -> [LobbyGame] -> Property
+prop_findGameWithID i list = not (null list) ==>
+  case findGameWithID gameID list' of
+    Nothing         -> False
+    Just (guuid, _) -> gameID == guuid
+  where
+    i' = abs $ mod i (length list')
+    gameID = fst $ list' !! i'
+
+    list' = zipWith newLobbyGame list [0..]
+    newLobbyGame (_, gameData) i = (show i, gameData)
