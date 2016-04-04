@@ -1,3 +1,5 @@
+-- |Contains util functions for the module "LobbyServer".
+-- The functions are meant to be as pure as possible
 module Hastings.ServerUtils where
 
 import Haste.App (SessionID)
