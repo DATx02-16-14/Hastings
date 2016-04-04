@@ -13,6 +13,9 @@ import Data.List (nub)
 import LobbyTypes
 import Hastings.ServerUtils
 
+-- To run tests in ghci
+-- :l ../test/Hastings/ServerUtilsTests.hs Hastings/ServerUtils.hs Hastings/Utils.hs LobbyTypes.hs 
+
 -- Arbitrary instances for the Data types
 
 -- |Arbitrary ClientEntry
@@ -20,7 +23,7 @@ import Hastings.ServerUtils
 -- by unsafePerformIO (!)
 instance Arbitrary ClientEntry where
   arbitrary = do
-    sessionIDWord64 <- elements [1..18446] -- SessionID should be unique
+    sessionIDWord64 <- elements [1..184467] -- SessionID should be unique, increasing this number will make some props very slow
     clientNr <- arbitrary :: Gen Int
     let chan = unsafePerformIO newChan
     return $ ClientEntry sessionIDWord64 ("ClientEntry " ++ show clientNr) [] chan
