@@ -95,6 +95,7 @@ addPlayerToGamePropTemplate i list fun = fun gameID list' newList
   -- other prop: check that it was not possible to join if max has been reached
 
 -- |Checks that findGameWithID finds the correct game
+-- I.e. that the gameID is the same.
 prop_findGameWithID :: Int -> [LobbyGame] -> Property
 prop_findGameWithID i list = not (null list) ==>
   case findGameWithID gameID list' of
@@ -103,6 +104,28 @@ prop_findGameWithID i list = not (null list) ==>
   where
     i' = abs $ mod i (length list')
     gameID = fst $ list' !! i'
+
+    list' = zipWith newLobbyGame list [0..]
+    newLobbyGame (_, gameData) i = (show i, gameData)
+
+-- |Checks that this function always returns correct results
+-- I.e. given a SessionID that corresponds to the last player it returns 'True'
+-- and given any other SessionID it returns 'False'.
+-- The test fails if the SessionID's of the clients are not unique
+prop_isOwnerOfGame :: Int -- ^This 'Int' correseponds to which LobbyGame to choose
+  -> Int -- ^This 'Int' corresponds to which player to choose
+  -> [LobbyGame] -- ^The list of 'LobbyGame's to test. Is modified to make sure gameID is unique
+  -> Property
+prop_isOwnerOfGame i j list = not (null list) && not (null playersList)==>
+  case isOwnerOfGame sid list' of
+    False -> j' /= (length playersList - 1)
+    True  -> j' == (length playersList - 1)
+  where
+    i' = abs $ mod i (length list')
+    j' = abs $ mod j (length playersList)
+    sid = sessionID $ playersList !! j'
+
+    playersList = players $ snd $ list' !! i'
 
     list' = zipWith newLobbyGame list [0..]
     newLobbyGame (_, gameData) i = (show i, gameData)
