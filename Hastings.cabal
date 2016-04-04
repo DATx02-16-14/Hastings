@@ -53,6 +53,7 @@ test-suite Hastings-test
   build-depends:
     base,
     Hastings,
+    haste-compiler,
     test-framework,
     test-framework-quickcheck2,
     QuickCheck
