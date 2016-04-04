@@ -1,3 +1,6 @@
+-- |Tests functions from "Hastings.ServerUtils".
+-- Does not test simple functions such as those running a 'find'
+-- or simple 'map's.
 module Hastings.ServerUtilsTests where
 
 import Test.QuickCheck
