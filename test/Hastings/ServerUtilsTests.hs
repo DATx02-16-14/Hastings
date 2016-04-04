@@ -14,7 +14,7 @@ import LobbyTypes
 import Hastings.ServerUtils
 
 -- To run tests in ghci
--- :l ../test/Hastings/ServerUtilsTests.hs Hastings/ServerUtils.hs Hastings/Utils.hs LobbyTypes.hs 
+-- :l test/Hastings/ServerUtilsTests.hs src/Hastings/ServerUtils.hs src/Hastings/Utils.hs src/LobbyTypes.hs
 
 -- Arbitrary instances for the Data types
 
