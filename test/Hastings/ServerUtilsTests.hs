@@ -43,10 +43,12 @@ instance Arbitrary GameData where
 
 -- Tests
 
+-- |Property that checks that the UUIDs received are the correct ones
 prop_getUUIDFromGamesList :: [LobbyGame] -> Property
 prop_getUUIDFromGamesList list = not (null list) ==>
   [fst x | x <- list ] == getUUIDFromGamesList list
 
+-- |Property that checks that a player is deleted
 prop_deletePlayerFromGame_length :: Int -> LobbyGame -> Property
 prop_deletePlayerFromGame_length i g@(_, gameData) = not (null (players gameData)) ==>
   length (players gameData) - 1 == length (players newGameData)
@@ -80,7 +82,13 @@ prop_addPlayerToGame_unique i list = not (null list) ==>
 -- |Template for tests with addPlayerToGame
 -- Requires a function that wants the GameID (of the game that was changed), and two lists of games
 -- , one unchanged and one where a player has been added.
-addPlayerToGamePropTemplate :: Int -> [LobbyGame] -> (String -> [LobbyGame] -> [LobbyGame] -> Bool) -> Bool
+addPlayerToGamePropTemplate :: Int -- ^ This 'Int' corresponds to which 'LobbyGame' to choose
+  -> [LobbyGame] -- ^The list to test
+  -> ( String -- ^GameID of the choosen game
+    -> [LobbyGame] -- ^The originial list of 'LobbyGame's
+    -> [LobbyGame] -- ^The list of 'LobbyGame's where a player has been adde
+    -> Bool) -- ^The function that determines if the test succeeds
+  -> Bool
 addPlayerToGamePropTemplate i list fun = fun gameID list' newList
   where
     list' = zipWith newLobbyGame list [0..]
