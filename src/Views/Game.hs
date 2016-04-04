@@ -57,9 +57,9 @@ createGameDOM api gapi = do
   addChildrenToParent' parentDiv [header, list, createStartGameBtn]
   addChildrenToCenterColumn [parentDiv]
 
-
+-- |Creates DOM for changing game settings
 createGameOwnerDOM :: LobbyAPI -> GameAPI -> Client ()
-createGameOwnerDOM api gapi= do
+createGameOwnerDOM api gapi = do
   createGameChangeNameDOM api
   createUpdateMaxNumberPlayersDOM api gapi
   createSetPasswordDOM api

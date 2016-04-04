@@ -54,9 +54,27 @@ deleteLobbyDOM = deleteDOM "lobby" "centerContent"
 deleteGameDOM :: Client ()
 deleteGameDOM = do
   deleteDOM "lobby-game" "centerContent"
-  deleteDOM "game-name-div" "rightContent"
-  deleteDOM "max-number-div" "rightContent"
-  deleteDOM "set-password-div" "rightContent"
+  deleteGameOwnerDOM
+
+-- |Deletes the DOM created for changing settings in a game
+deleteGameOwnerDOM :: Client ()
+deleteGameOwnerDOM = do
+  deleteDomSafe "game-name-div" "rightContent"
+  deleteDomSafe "max-number-div" "rightContent"
+  deleteDomSafe "set-password-div" "rightContent"
+
+-- |Helper function that deletes DOM, but checks if the elements exists first
+deleteDomSafe :: String  -- ^The id of the element to remove
+              -> String  -- ^The id of the parent of the element to remove
+              -> Client ()
+deleteDomSafe child parent = do
+  childElem  <- elemById child
+  parentElem <- elemById parent
+  case (childElem, parentElem) of
+    (Just c, Just p) -> deleteChild p c
+    _                -> return ()
+
+
 
 -- |Helper function that deletes DOM given an identifier from that element and the parent element
 deleteDOM :: String -> String -> Client ()

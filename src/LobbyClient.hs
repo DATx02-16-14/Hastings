@@ -59,4 +59,6 @@ listenForLobbyChanges api gapi = do
     playerLeftGameFun = do
       updatePlayerListGame api
       isOwner <- onServer $ isOwnerOfCurrentGame api
-      when isOwner $ createGameOwnerDOM api gapi
+      when isOwner $ do
+        deleteGameOwnerDOM
+        createGameOwnerDOM api gapi
