@@ -20,7 +20,7 @@ import Hastings.ServerUtils
 -- by unsafePerformIO (!)
 instance Arbitrary ClientEntry where
   arbitrary = do
-    sessionIDWord64 <- arbitrary
+    sessionIDWord64 <- elements [1..18446] -- SessionID should be unique
     clientNr <- arbitrary :: Gen Int
     let chan = unsafePerformIO newChan
     return $ ClientEntry sessionIDWord64 ("ClientEntry " ++ show clientNr) [] chan
@@ -57,7 +57,6 @@ prop_deletePlayerFromGame_length i g@(_, gameData) = not (null (players gameData
 -- |Property that checks that only the correct one has changed, and all others have the same length.
 -- Runs nub on the list of players since sessionID's are meant to be unique
 -- Also goes through each LobbyGame to make sure the GameID is unique.
--- Will fail if `18446744073709551615` is the sessionID of one of the clients.
 prop_addPlayerToGame_length :: Int -> [LobbyGame] -> Property
 prop_addPlayerToGame_length i list = not (null list) ==>
   addPlayerToGamePropTemplate i list fun
