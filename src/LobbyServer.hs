@@ -194,31 +194,30 @@ getConnectedPlayerNames remoteClientList = do
   clientList <- liftIO $ CC.readMVar concurrentClientList
   return $ map name clientList
 
--- | Kicks the player with 'Name' from the game with id String
+-- | Kicks the player with 'Int' from the game with id String
 -- Currently does not notify the kicked person it has been kicked
 -- Implement this if the method is used in the future.
-kickPlayerWithGameID :: Server GamesList -> String -> Name -> Server ()
-kickPlayerWithGameID remoteGames gameID clientName = do
+kickPlayerWithGameID :: Server GamesList -> String -> Int -> Server ()
+kickPlayerWithGameID remoteGames gameID clientIndex = do
   mVarGamesList <- remoteGames
   liftIO $ CC.modifyMVar_ mVarGamesList $ \lst -> do
     let (h,t) = break ((gameID ==) . fst) lst
     case t of
-      (game : gt)    -> return $ h ++ (deletePlayerFromGame clientName game) : gt
+      (game : gt)    -> return $ h ++ (deletePlayerFromGame clientIndex game) : gt
       _              -> return $ h ++ t
 
--- |Kicks the player with 'Name' from the game that the current client is in.
-kickPlayerWithSid :: Server GamesList -> Name -> Server ()
-kickPlayerWithSid remoteGames clientName = do
+-- |Kicks the player with 'Int' from the game that the current client is in.
+kickPlayerWithSid :: Server GamesList -> Int -> Server ()
+kickPlayerWithSid remoteGames clientIndex = do
   mVarGamesList <- remoteGames
   maybeGame <- findGameWithSid mVarGamesList
   case maybeGame of
     Nothing   -> return ()
     Just game@(_,gameData) -> do
-      liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
-        return $ updateListElem (deletePlayerFromGame clientName) (== game) games
-      case findClient clientName (players gameData) of
-        Just c  -> liftIO $ messageClients KickedFromGame [c]
-        Nothing -> return ()
+      liftIO $ do
+        CC.modifyMVar_ mVarGamesList $ \games ->
+          return $ updateListElem (deletePlayerFromGame clientIndex) (== game) games
+        messageClients KickedFromGame [players gameData !! clientIndex]
 
 -- |Change the nick name of the current player to that given.
 changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()
@@ -323,10 +322,14 @@ isOwnerOfGame remoteGames = do
     Nothing         -> return False
     Just (_, gData) -> return $ sessionID (last $ players gData) == sid
 
--- |Deletes the player with 'Name' from the game.
-deletePlayerFromGame :: Name -> LobbyGame -> LobbyGame
-deletePlayerFromGame clientName (gameID, gameData)  =
-  (gameID, gameData {players = filter ((clientName /=) . name) $ players gameData})
+-- |Deletes the player with 'Int' from the game.
+deletePlayerFromGame :: Int  -- ^The index of the player to kick
+                     -> LobbyGame  -- ^The game to kick the player from
+                     -> LobbyGame
+deletePlayerFromGame clientIndex (gameID, gameData)  =
+  (gameID, gameData {players = clientHead ++ clientTail})
+  where
+    (clientHead, c:clientTail) = splitAt clientIndex $ players gameData
 
 
 -- |Called by client to join a chat
