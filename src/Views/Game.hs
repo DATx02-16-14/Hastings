@@ -52,7 +52,7 @@ createGameDOM api gapi = do
   appendChild list listhead
   appendChild list br
 
-  mapM_ (addPlayerWithKickToPlayerlist api list) players
+  addPlayersToPlayerList api list players
 
   addChildrenToParent' parentDiv [header, list, createStartGameBtn]
   addChildrenToCenterColumn [parentDiv]
@@ -114,25 +114,26 @@ createSetPasswordDOM api = createInputFieldWithButton "set-password" "Set passwo
             setProp field "value" ""
             onServer $ setPassword api <.> passwordString
 
--- |Convenience function for calling on the kick function.
-kickFunction :: Name -> LobbyAPI -> Client ()
-kickFunction name api = onServer $ kickPlayer api <.> name
 
--- |Adds the playername and a button to kick them followed by a <br> tag to the given parent.
-addPlayerWithKickToPlayerlist :: LobbyAPI -> Elem -> String -> Client ()
-addPlayerWithKickToPlayerlist api parent name = do
-  textElem <- newTextElem name
-  br <- newElem "br"
-  kickBtn <- newElem "button" `with`
-    [
-      attr "class" =: "btn btn-default"
-    ]
-  kick <- newTextElem "kick"
-  clickEventElem kickBtn $ kickFunction name api
-  appendChild kickBtn kick
-  appendChild parent textElem
-  appendChild parent kickBtn
-  appendChild parent br
+-- |Adds the list of 'Name' to the list of players with
+-- Also adds a kick button if the current player is owner of the game
+addPlayersToPlayerList :: LobbyAPI -> Elem -> [Name] -> Client ()
+addPlayersToPlayerList api parent = addPlayersToPlayerList' 0
+  where
+    addPlayersToPlayerList' :: Int -> [Name] -> Client ()
+    addPlayersToPlayerList' i []     = return ()
+    addPlayersToPlayerList' i (name:names) = do
+      textElem <- newTextElem name
+      br <- newElem "br"
+      kickBtn <- newElem "button" `with`
+        [
+          attr "class" =: "btn btn-default"
+        ]
+      kick <- newTextElem "kick"
+      clickEventElem kickBtn $ onServer $ kickPlayer api <.> i
+      appendChild kickBtn kick
+      addChildrenToParent' parent [textElem, kickBtn, br]
+      addPlayersToPlayerList' (i+1) names
 
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()
@@ -145,7 +146,7 @@ updatePlayerListGame api = do
       br <- newElem "br"
       text <- newTextElem "Players:"
       addChildrenToParent "game-player-list" [text, br]
-      mapM_ (addPlayerWithKickToPlayerlist api parent) players
+      addPlayersToPlayerList api parent players
     Nothing     -> return ()
 
 -- |Updates the game header with the value at the server

@@ -15,4 +15,5 @@ extra-deps:
 - data-embed-0.1.0.0
 - haste-compiler-0.5.4
 - pwstore-fast-2.4.4
+- QuickCheck-2.8.2
 resolver: lts-5.2
