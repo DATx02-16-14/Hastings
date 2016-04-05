@@ -55,7 +55,7 @@ connect remoteClientList remoteChats name = do
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
 disconnect (clientList, games, chats) sid = do
-  disconnectPlayerFromGame games clientList sid
+  disconnectPlayerFromGame games sid
   disconnectPlayerFromLobby clientList sid
 
   mVarClients <- clientList
@@ -71,18 +71,15 @@ disconnectPlayerFromLobby remoteClientList sid = do
     return $ filter ((sid /=) . sessionID) cs
 
 -- |Removes a player that has disconnected from all games
-disconnectPlayerFromGame :: Server GamesList -> Server ConcurrentClientList -> SessionID -> Server ()
-disconnectPlayerFromGame remoteGames remoteClientList sid = do
+disconnectPlayerFromGame :: Server GamesList -> SessionID -> Server ()
+disconnectPlayerFromGame remoteGames sid = do
   mVarGames <- remoteGames
-  concurrentClientList <- remoteClientList
-  clientList <- liftIO $ CC.readMVar concurrentClientList
-  case lookupClientEntry sid clientList of
-    Nothing -> return ()
-    Just clientEntry -> liftIO $ CC.modifyMVar_ mVarGames $ \games -> mapM removePlayer games
-      where
-        removePlayer (uuid, gameData) =
-          let newClientList = filter ((name clientEntry /=) . name) $ players gameData in
-          return (uuid, gameData {players = newClientList})
+  liftIO $ CC.modifyMVar_ mVarGames $ \games -> mapM removePlayer games
+
+  where
+    removePlayer (uuid, gameData) =
+      let newClientList = filter ((sid /=) . sessionID) $ players gameData in
+      return (uuid, gameData {players = newClientList})
 
 -- |Creates a new game on the server. The 'Int' represents the max number of players.
 createGame :: Server GamesList -> Server ConcurrentClientList -> Int -> Server (Maybe String)
