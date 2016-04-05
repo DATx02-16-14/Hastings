@@ -263,9 +263,9 @@ notifyClientChats :: Server ConcurrentClientList -> String -> Server ()
 notifyClientChats remoteClients notification = do
   clientList <- remoteClients >>= liftIO . CC.readMVar
   sid <- getSessionID
-  maybe
-    (liftIO . print $ "notifyClientChats > Could not find sid in connected clients")
-    (liftIO . mapM_ (flip CC.writeChan (ChatMessage "SERVER" notification) . snd) . chats)
+  liftIO . maybe
+    (print $ "notifyClientChats > Could not find sid in connected clients")
+    (mapM_ (flip CC.writeChan (ChatMessage "SERVER" notification) . snd) . chats)
     $ sid `lookupClientEntry` clientList
 
 
