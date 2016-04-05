@@ -8,7 +8,7 @@ stack-standalone:
 	stack build --flag Hastings:HasteStandalone
 
 stack:
-	stack build --flag Hastings:NoHasteStandalone
+	stack build
 
 haste-cabal:
 	haste-cabal configure && haste-cabal build
