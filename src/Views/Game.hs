@@ -5,6 +5,7 @@ import Haste.App
 import Haste.DOM
 import Haste.Events
 import Haste.App.Concurrent
+import Control.Monad (when)
 
 import LobbyTypes
 import LobbyAPI
@@ -36,14 +37,15 @@ createGameDOM api gapi = do
 
   createStartGameBtn <- newElem "button" `with`
     [
-      prop "id" =: "startGameButton"
+      attr "id"    =: "startGameButton",
+      attr "class" =: "btn btn-default"
     ]
   createStartGameBtnText <- newTextElem "Start game"
   appendChild createStartGameBtn createStartGameBtnText
 
   list <- newElem "div" `with`
     [
-      prop "id" =: "gamePlayerList"
+      attr "id" =: "gamePlayerList"
     ]
   listhead <- newTextElem "Players: "
   br <- newElem "br"
@@ -64,7 +66,7 @@ createGameChangeNameDOM api = do
   gameNameField <- newElem "input" `with`
     [
       attr "type" =: "text",
-      attr "id" =: "gameNameField"
+      attr "id"   =: "gameNameField"
     ]
   gameNameButton <- newElem "button" `with`
     [
@@ -147,7 +149,10 @@ addPlayerWithKickToPlayerlist :: LobbyAPI -> Elem -> String -> Client ()
 addPlayerWithKickToPlayerlist api parent name = do
   textElem <- newTextElem name
   br <- newElem "br"
-  kickBtn <- newElem "button"
+  kickBtn <- newElem "button" `with`
+    [
+      attr "class" =: "btn btn-default"
+    ]
   kick <- newTextElem "kick"
   clickEventElem kickBtn $ kickFunction name api
   appendChild kickBtn kick
@@ -158,28 +163,34 @@ addPlayerWithKickToPlayerlist api parent name = do
 -- |Adds DOM for a game
 addGame :: LobbyAPI -> GameAPI -> String -> Client ()
 addGame api gapi gameID = do
-  maybeGameListDiv <- elemById "gamesList"
+  maybeGameListDiv <- elemById "gamesListTableBody"
   case maybeGameListDiv of
     Nothing -> return ()
     Just gameListDiv -> do
-      gameDiv <- newElem "div"
       gameName <- onServer $ findGameNameWithID api <.> gameID
+      tr <- newElem "tr"
+      tdBtn <- newElem "td"
       gameEntry <- newElem "button" `with`
         [
-          prop "id" =: gameName
+          attr "id"    =: gameName,
+          attr "class" =: "btn btn-default"
         ]
-      textElem <- newTextElem gameName
-      appendChild gameEntry textElem
-      appendChild gameDiv gameEntry
-      appendChild gameListDiv gameDiv
+      textElemBtn <- newTextElem "Join"
+
+      textElemName <- newTextElem gameName
+      tdName <- newElem "td"
+
+      appendChild gameEntry textElemBtn
+      appendChild tdBtn gameEntry
+      appendChild tdName textElemName
+      addChildrenToParent' tr [tdName, tdBtn]
+      appendChild gameListDiv tr
 
       clickEventString gameName $ do
-        bool <- onServer $ joinGame api <.> gameID
-        if bool then do
+        didJoinGame <- onServer $ joinGame api <.> gameID
+        when didJoinGame $ do
             deleteLobbyDOM
             createGameDOM api gapi
-        else
-          return ()
       return ()
 
 -- |Updates the list of players in a game on the client
