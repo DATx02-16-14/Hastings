@@ -217,7 +217,7 @@ kickPlayerWithSid remoteGames clientIndex = do
   maybeGame <- findGameWithSid mVarGamesList
   case maybeGame of
     Nothing   -> return ()
-    Just game@(_,gameData) -> do
+    Just game@(_,gameData) ->
       liftIO $ do
         CC.modifyMVar_ mVarGamesList $ \games ->
           return $ updateListElem (deletePlayerFromGame clientIndex) (== game) games
