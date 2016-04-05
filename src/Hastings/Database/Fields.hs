@@ -1,0 +1,23 @@
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+-- | All database fields.
+
+module Hastings.Database.Fields where
+
+import Database.Persist.TH
+
+share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
+Game
+    name String
+    maxAmountOfPlayers Int
+Player
+    userName String
+    session String
+|]
