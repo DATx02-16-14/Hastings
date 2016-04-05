@@ -27,7 +27,8 @@ data LobbyAPI = LobbyAPI
   , findGameName :: Remote (Server String)
   , getPlayerNameList :: Remote (Server [String])
     -- |Kicks a player frrom a game.
-  , kickPlayer :: Remote (Name -> Server ())
+  , kickPlayer :: Remote ( Int  -- ^The index of the player to kick
+                         -> Server ())
     -- |Changes the nickname of the active player
   , changeNickName :: Remote (Name -> Server ())
     -- |Change the name of the game to the new name
