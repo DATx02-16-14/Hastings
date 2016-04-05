@@ -20,13 +20,25 @@ import LobbyServer
 
 -- |Main method and entry point for the program
 main :: IO ()
-main = runApp defaultConfig $ do
-  playersList <- liftServerIO $ CC.newMVar []
-  gamesList <- liftServerIO $ CC.newMVar []
-  chatList <- liftServerIO $ CC.newMVar []
+main = do
+  config <- readFile "config.conf"
+  let conf = getConfig config
+  print $ cfgHost conf
+  print $ cfgPort conf
+  runApp (getConfig . head $ words config) $ do
 
-  let serverState = (playersList, gamesList, chatList)
+    playersList <- liftServerIO $ CC.newMVar []
+    gamesList <- liftServerIO $ CC.newMVar []
+    chatList <- liftServerIO $ CC.newMVar []
 
-  onSessionEnd $ disconnect(serverState)
-  api <- newLobbyAPI (playersList, gamesList, chatList)
-  runClient $ clientMain api newGameAPI
+    let serverState = (playersList, gamesList, chatList)
+
+    onSessionEnd $ disconnect(serverState)
+    api <- newLobbyAPI (playersList, gamesList, chatList)
+    runClient $ clientMain api newGameAPI
+
+-- | The config used by the clients to connect to the server. i.e. where the server is running.
+getConfig :: String -> AppCfg
+getConfig config = do
+  let (h,(_:t)) = break (==':') config
+  mkConfig h (read t :: Int)

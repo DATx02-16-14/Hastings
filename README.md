@@ -32,3 +32,7 @@ stack exec -- Hastings-exe --embed dist/build/Hastings-exe/Hastings-exe --force
 stack exec Hastings-exe
 ```
 
+#### Configure
+Host and port configuration are read in from the `config.conf` file from the project-root.
+The only thing that should be in this file `host:port` so for example `82.134.8.63:12345`.
+Whitespaces are ignored.
