@@ -15,6 +15,7 @@ cabal-version:       >=1.10
 
 Flag HasteStandalone
   Description: If the HasteStandalone package is available.
+  Default: False
   -- Cabal checks if the configuration is possible, first
   -- with this flag set to True and if not it tries with False
 
