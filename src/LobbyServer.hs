@@ -191,10 +191,14 @@ getConnectedPlayerNames remoteClientList = do
   clientList <- liftIO $ CC.readMVar concurrentClientList
   return $ map name clientList
 
--- | Kicks the player with 'Int' from the game with id String
+-- | Kicks the player with index 'Int' from the list of players in the
+-- game with id String
 -- Currently does not notify the kicked person it has been kicked
 -- Implement this if the method is used in the future.
-kickPlayerWithGameID :: Server GamesList -> String -> Int -> Server ()
+kickPlayerWithGameID :: Server GamesList
+                     -> String  -- ^The UUID of the game
+                     -> Int     -- ^The index in the list of players of the player to kick
+                     -> Server ()
 kickPlayerWithGameID remoteGames gameID clientIndex = do
   mVarGamesList <- remoteGames
   liftIO $ CC.modifyMVar_ mVarGamesList $ \lst -> do
@@ -203,8 +207,11 @@ kickPlayerWithGameID remoteGames gameID clientIndex = do
       (game : gt)    -> return $ h ++ (deletePlayerFromGame clientIndex game) : gt
       _              -> return $ h ++ t
 
--- |Kicks the player with 'Int' from the game that the current client is in.
-kickPlayerWithSid :: Server GamesList -> Int -> Server ()
+-- |Kicks the player with index 'Int' from the list of players in
+-- the game that the current client is in.
+kickPlayerWithSid :: Server GamesList
+                  -> Int  -- ^The index in the list of players of the player to kick
+                  -> Server ()
 kickPlayerWithSid remoteGames clientIndex = do
   mVarGamesList <- remoteGames
   maybeGame <- findGameWithSid mVarGamesList
