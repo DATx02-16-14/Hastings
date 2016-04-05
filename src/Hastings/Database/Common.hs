@@ -1,13 +1,9 @@
 module Hastings.Database.Common
    where
 
-
-import qualified Database.Persist
 import qualified Database.Persist.MySQL as MySQL
 import Database.Esqueleto
 import Control.Monad.Logger
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Reader
 
 import Hastings.Database.Fields
 
