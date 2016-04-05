@@ -53,11 +53,10 @@ prop_deletePlayerFromGame_length :: Int -> LobbyGame -> Property
 prop_deletePlayerFromGame_length i g@(_, gameData) = not (null (players gameData)) ==>
   length (players gameData) - 1 == length (players newGameData)
   where
-    (_, newGameData) = deletePlayerFromGame playerName g
+    (_, newGameData) = deletePlayerFromGame i' g
 
     i' =  abs $ mod i (length $ players gameData)
-    player = players gameData !! i'
-    playerName = name player
+
 
 -- |Property that checks that only the correct one has changed, and all others have the same length.
 -- Runs nub on the list of players since sessionID's are meant to be unique

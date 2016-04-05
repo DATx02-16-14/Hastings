@@ -22,10 +22,14 @@ findClient clientName = find ((clientName ==).name)
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m = mapM_ (\c -> CC.writeChan (lobbyChannel c) m)
 
--- |Deletes the player with 'Name' from the game.
-deletePlayerFromGame :: Name -> LobbyGame -> LobbyGame
-deletePlayerFromGame clientName (gameID, gameData)  =
-  (gameID, gameData {players = filter ((clientName /=) . name) $ players gameData})
+-- |Deletes the player with 'Int' from the game.
+deletePlayerFromGame :: Int  -- ^The index of the player to kick
+                     -> LobbyGame  -- ^The game to kick the player from
+                     -> LobbyGame
+deletePlayerFromGame clientIndex (gameID, gameData)  =
+  (gameID, gameData {players = clientHead ++ clientTail})
+  where
+    (clientHead, c:clientTail) = splitAt clientIndex $ players gameData
 
 -- |Adds a player to a lobby game with the game ID
 -- Doesn't care if the max #players has been reached.

@@ -69,7 +69,8 @@ createLobbyDOM api gapi = do
 
   createGamebtn <- newElem "button" `with`
     [
-      prop "id" =: "createGamebtn"
+      attr "id"    =: "createGamebtn",
+      attr "class" =: "btn btn-default"
     ]
   crGamebtnText <- newTextElem "Create new game"
 
@@ -95,7 +96,10 @@ createLobbyDOM api gapi = do
       style "height" =: "500px",
       style "overflow" =: "auto"
     ]
-  gameListTable <- newElem "table"
+  gameListTable <- newElem "table" `with`
+    [
+      attr "class" =: "table table-striped"
+    ]
   thead <- newElem "thead"
   tr <- newElem "tr"
   thName <- newElem "th"
@@ -104,11 +108,8 @@ createLobbyDOM api gapi = do
   thJoinText <- newTextElem ""
   tbody <- newElem "tbody" `with`
     [
-      prop "id" =: "gamesListTableBody"
+      prop "id"    =: "gamesListTableBody"
     ]
-  setClass gameListTable "table" True
-  setClass gameListTable "table-striped" True
-
   appendChild thJoin thJoinText
   appendChild thName thNameText
   addChildrenToParent' tr [thName, thJoin]
