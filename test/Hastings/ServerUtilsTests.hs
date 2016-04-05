@@ -127,9 +127,9 @@ prop_isOwnerOfGame :: Int -- ^This 'Int' correseponds to which LobbyGame to choo
   -> [LobbyGame] -- ^The list of 'LobbyGame's to test. Is modified to make sure gameID is unique
   -> Property
 prop_isOwnerOfGame i j list = not (null list) && not (null playersList)==>
-  case isOwnerOfGame sid list' of
-    False -> j' /= (length playersList - 1)
-    True  -> j' == (length playersList - 1)
+  if isOwnerOfGame sid list'
+    then j' == (length playersList - 1)
+    else j' /= (length playersList - 1)
   where
     i' = abs $ mod i (length list')
     j' = abs $ mod j (length playersList)
