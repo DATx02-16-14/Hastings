@@ -13,13 +13,14 @@ import Hastings.Utils
 import Data.Maybe
 import LobbyAPI
 import LobbyTypes
+import GameAPI
 
 #ifdef __HASTE__
 import LobbyClient
 #define disconnect(x) (\_ -> return ())
 #else
 import LobbyServer
-#define clientMain (\_ -> return ())
+#define clientMain (\_ _ -> return ())
 #endif
 
 -- |Main method and entry point for the program
@@ -33,4 +34,4 @@ main = runStandaloneApp $ do
 
   onSessionEnd $ disconnect(serverState)
   api <- newLobbyAPI (playersList, gamesList, chatList)
-  runClient $ clientMain api
+  runClient $ clientMain api newGameAPI

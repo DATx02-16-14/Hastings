@@ -62,14 +62,15 @@ createChangeNickNameDOM api = do
           Nothing   -> return ()
 
 -- |Creates the initial DOM upon entering the lobby
-createLobbyDOM :: LobbyAPI -> Client ()
-createLobbyDOM api = do
+createLobbyDOM :: LobbyAPI -> GameAPI -> Client ()
+createLobbyDOM api gapi = do
 
   lobbyDiv <- createDiv [("id","lobby")]
 
   createGamebtn <- newElem "button" `with`
     [
-      prop "id" =: "createGamebtn"
+      attr "id"    =: "createGamebtn",
+      attr "class" =: "btn btn-default"
     ]
   crGamebtnText <- newTextElem "Create new game"
 
@@ -91,8 +92,32 @@ createLobbyDOM api = do
 
   gamesListDiv <- newElem "div" `with`
     [
-      attr "id" =: "gamesList"
+      attr "id" =: "gamesList",
+      style "height" =: "500px",
+      style "overflow" =: "auto"
     ]
+  gameListTable <- newElem "table" `with`
+    [
+      attr "class" =: "table table-striped"
+    ]
+  thead <- newElem "thead"
+  tr <- newElem "tr"
+  thName <- newElem "th"
+  thNameText <- newTextElem "Name"
+  thJoin <- newElem "th"
+  thJoinText <- newTextElem ""
+  tbody <- newElem "tbody" `with`
+    [
+      prop "id"    =: "gamesListTableBody"
+    ]
+  appendChild thJoin thJoinText
+  appendChild thName thNameText
+  addChildrenToParent' tr [thName, thJoin]
+  appendChild thead tr
+  addChildrenToParent' gameListTable [thead, tbody]
+  appendChild gamesListDiv gameListTable
+
+
 
   addChildrenToLeftColumn [playerList]
   addChildrenToParent' lobbyDiv [header, gamesListDiv, createGamebtn]
@@ -101,7 +126,7 @@ createLobbyDOM api = do
   createGameBtn api newGameAPI
 
   gameList <- onServer $ getGamesList api
-  mapM_ (addGame api) gameList
+  mapM_ (addGame api gapi) gameList
 
 -- |Creates a button for creating a 'LobbyGame'
 createGameBtn :: LobbyAPI -> GameAPI-> Client ()
@@ -126,7 +151,7 @@ createGameBtn lapi gapi = do
 
     switchToGameDOM guid = do
       deleteLobbyDOM
-      createGameDOM lapi
+      createGameDOM lapi gapi
 
 -- |Updates the list of players on the client
 updatePlayerList :: LobbyAPI -> Client ()
@@ -168,12 +193,12 @@ addGameToDOM api gameName = do
   return ()
 
 -- |Updates the list of games that a player can join
-updateGamesList :: LobbyAPI -> Client ()
-updateGamesList api = do
-  gamesListDiv <- elemById "gamesList"
+updateGamesList :: LobbyAPI -> GameAPI -> Client ()
+updateGamesList api gapi = do
+  gamesListDiv <- elemById "gamesListTableBody"
   case gamesListDiv of
     Just listDiv -> do
       clearChildren listDiv
       gameList <- onServer $ getGamesList api
-      mapM_ (addGame api) gameList
+      mapM_ (addGame api gapi) gameList
     _ -> return ()
