@@ -5,21 +5,17 @@ module Main
 import Haste.App
 import Haste.App.Standalone
 import Haste.App.Concurrent
-import Views.Lobby
 import qualified Control.Concurrent as CC
-import Haste.Events
-import Haste.DOM
-import Hastings.Utils
-import Data.Maybe
+import Views.Lobby
+
 import LobbyAPI
-import LobbyTypes
 import GameAPI
 
 #ifdef __HASTE__
-import LobbyClient
+import LobbyClient (clientMain)
 #define disconnect(x) (\_ -> return ())
 #else
-import LobbyServer
+import LobbyServer (disconnect)
 #define clientMain (\_ _ -> return ())
 #endif
 
