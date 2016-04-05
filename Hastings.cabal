@@ -27,11 +27,11 @@ library
   hs-source-dirs:      src
   build-depends:
     base >= 4.7 && < 5
+  exposed-modules: Views.Chat Views.Lobby, Views.Common, Views.Game, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, GameAPI
   if impl(haste)
-    exposed-modules:     Chat, Lobby, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, GameAPI
     build-depends: haste-lib >= 0.5 && < 0.6
   else
-    exposed-modules:     Chat, Lobby, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, GameAPI, LobbyServer
+    exposed-modules: LobbyServer
     build-depends:
       haste-compiler >= 0.5 && < 0.6,
       uuid,

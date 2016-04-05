@@ -1,29 +1,53 @@
 -- |Module for all of the client only code
 module LobbyClient where
-import Lobby
+import Views.Common
+import Views.Lobby
+import Views.Game
 import Haste.App
 import LobbyAPI
 import Haste.DOM
 import Haste.Concurrent
 import Data.Maybe
 import GameAPI
+import LobbyTypes
+import Views.Chat
 
 -- |Main mehtod for the client.
-clientMain :: LobbyAPI -> Client ()
-clientMain api = do
+clientMain :: LobbyAPI -> GameAPI -> Client ()
+clientMain lapi gapi = do
   name <- prompt "Hello! Please enter your name:"
-  onServer $ connect api <.> name
+  onServer $ connect lapi <.> name
 
   initDOM
-  createLobbyDOM api
-
-  createGameBtn api newGameAPI
-
-  gameList <- onServer $ getGamesList api
-  mapM_ (addGame api) gameList
-
-  playerDiv <- elemById "playerList"
-  fork $ listenForChanges (getPlayerNameList api) addPlayerToPlayerlist 1000 $ fromJust playerDiv
+  createBootstrapTemplate "Hastings"
+  createChangeNickNameDOM lapi
+  createChatDOM lapi
+  createLobbyDOM lapi gapi
 
 
+  fork $ listenForLobbyChanges lapi gapi
+  onServer $ joinChat lapi <.> "main"
+  fork $ listenForChatMessages lapi "main" chatMessageCallback
   return ()
+
+listenForLobbyChanges :: LobbyAPI -> GameAPI -> Client ()
+listenForLobbyChanges api gapi = do
+  message <- onServer $ readLobbyChannel api
+  case message of
+    GameNameChange   -> do
+      updateGameHeader api
+      updateGamesList api gapi
+    NickChange       -> do
+      updatePlayerList api
+      updatePlayerListGame api
+    KickedFromGame   -> do
+      deleteGameDOM
+      createLobbyDOM api gapi
+    GameAdded        -> updateGamesList api gapi
+    ClientJoined     -> updatePlayerList api
+    ClientLeft       -> do
+      updatePlayerList api
+      updatePlayerListGame api
+    PlayerJoinedGame -> updatePlayerListGame api
+    (LobbyError msg) -> showError msg
+  listenForLobbyChanges api gapi

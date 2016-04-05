@@ -17,6 +17,6 @@ data GameAPI = GameAPI
   }
 
 newGameAPI :: GameAPI
-newGameAPI = undefined
+newGameAPI = GameAPI "testGame" 6 2 undefined
 
 
