@@ -13,6 +13,10 @@ data ClientEntry = ClientEntry {sessionID    :: SessionID
                                ,name         :: Name
                                ,chats        :: [Chat]
                                ,lobbyChannel :: CC.Chan LobbyMessage}
+
+instance Show ClientEntry where
+  show c = "sessionID: " ++ show (sessionID c) ++ " name: " ++ show (name c)
+
 instance Eq ClientEntry where
   c1 == c2 = sessionID c1 == sessionID c2
   c1 /= c2 = sessionID c1 == sessionID c2
@@ -29,7 +33,7 @@ type LobbyGame = (String, GameData)
 data GameData = GameData {players            :: [ClientEntry],
                           gameName           :: Name,
                           maxAmountOfPlayers :: Int}
-  deriving (Eq)
+  deriving (Eq, Show)
 
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
 type GamesList = CC.MVar [LobbyGame]
@@ -85,9 +89,6 @@ instance Binary ChatMessage where
 
 -- |A list of all the chats in the lobby.
 type ConcurrentChatList = CC.MVar [Chat]
-
-lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry
-lookupClientEntry sid = find ((sid ==) . sessionID)
 
 -- |LobbyMessage is a message to a client idicating some udate to the state that the cliet has to adapt to.
 data LobbyMessage = NickChange | GameNameChange | KickedFromGame | GameAdded | ClientJoined
