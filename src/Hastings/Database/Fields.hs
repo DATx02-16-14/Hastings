@@ -12,6 +12,7 @@
 module Hastings.Database.Fields where
 
 import Database.Persist.TH
+import Data.Word (Word64)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Game
@@ -19,5 +20,5 @@ Game
     maxAmountOfPlayers Int
 Player
     userName String
-    session String
+    session Word64
 |]

@@ -5,15 +5,16 @@ import Hastings.Database.Common
 import Hastings.Database.Fields
 
 import Database.Esqueleto
+import Data.Word (Word64)
 
--- |Save a game to the database.
+-- |Save a player to the database.
 savePlayer :: String -- ^The name of the player to save.
-           -> String -- ^The sessionID of the player
+           -> Word64 -- ^The sessionID of the player
            -> IO (Key Player)
 savePlayer name sessionID = runDB $ insert $ Player name sessionID
 
--- |Retrieve a game from the database.
-retrievePlayer :: String -- ^The sessionID of the player to retrieve.
+-- |Retrieve a player from the database.
+retrievePlayer :: Word64 -- ^The sessionID of the player to retrieve.
                -> IO [Entity Player]
 retrievePlayer sessionID = runDB $
   select $
