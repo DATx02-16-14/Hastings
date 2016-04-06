@@ -24,4 +24,5 @@ html:
 	cp -r app/Main.hs src/* tmp
 	(cd tmp; hastec --output-html Main.hs)
 	mv tmp/Main.html index.html
+	chmod 644 index.html
 	rm -rf tmp
