@@ -1,5 +1,5 @@
 all: stack-standalone haste-cabal embed run
-server: stack haste-cabal
+server: stack html
 
 clean:
 	rm -rf dist .stack-work
