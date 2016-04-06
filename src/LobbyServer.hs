@@ -21,7 +21,10 @@ module LobbyServer(
   readChatChannel,
   sendChatMessage,
   joinChat,
+  leaveChat,
   getClientName,
+  getJoinedChats,
+  getChats,
   setPasswordToGame,
   isGamePasswordProtected,
   remoteIsOwnerOfGame) where
@@ -66,6 +69,14 @@ connect remoteClientList remoteChats name = do
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
 disconnect (clientList, games, chats) sid = do
+  cs <- clientList >>= liftIO . CC.readMVar
+  maybe
+    (return ())
+    (\c -> do
+      notifyClientChats clientList $ name c ++ " disconnected"
+      return ())
+    $ sid `lookupClientEntry` cs
+
   disconnectPlayerFromGame games sid
   disconnectPlayerFromLobby clientList sid
 
@@ -200,7 +211,13 @@ kickPlayerWithSid remoteGames clientIndex = do
 changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()
 changeNickName remoteClientList remoteGames newName = do
   mVarClientList <- remoteClientList
+  clientList <- liftIO $ CC.readMVar mVarClientList
   sid <- getSessionID
+  let oldName = maybe
+                  "NO_SUCH_CLIENT"
+                  name
+                  $ sid `lookupClientEntry` clientList
+
   liftIO $ CC.modifyMVar_ mVarClientList $ \cs ->
     return $ updateNick sid cs
   mVarGamesList <- remoteGames
@@ -211,8 +228,41 @@ changeNickName remoteClientList remoteGames newName = do
   liftIO $ do
     clients <- CC.readMVar mVarClientList
     messageClients NickChange clients
+  -- Notify all chats about nick update
+  notifyClientChats remoteClientList $ oldName ++ " changed nick to " ++ newName
+
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
+
+-- | Sends a server notification to all chats the client has joined
+notifyClientChats :: Server ConcurrentClientList -> String -> Server ()
+notifyClientChats remoteClients notification = do
+  clientList <- remoteClients >>= liftIO . CC.readMVar
+  sid <- getSessionID
+  liftIO . maybe
+    (print "notifyClientChats > Could not find sid in connected clients")
+    (mapM_ (flip CC.writeChan (ChatMessage "SERVER" notification) . snd) . chats)
+    $ sid `lookupClientEntry` clientList
+
+
+-- |Change the name of a 'LobbyGame' given the game's ID
+changeGameNameWithID :: Server GamesList -> Server ConcurrentClientList -> String -> Name -> Server ()
+changeGameNameWithID remoteGames remoteClients uuid newName = do
+  mVarGamesList <- remoteGames
+  gamesList <- liftIO $ CC.readMVar mVarGamesList
+  mVarClientList <- remoteClients
+  let maybeGame = findGameWithID uuid gamesList
+  case maybeGame of
+    Nothing           -> return ()
+    Just game@(_,gameData) ->
+      liftIO $ CC.modifyMVar_ mVarGamesList $ \games ->
+        return $ updateListElem
+          (\(guuid, gData) -> (guuid, gData {gameName = newName}))
+          (== game)
+          games
+  liftIO $ do
+    clientsList <- CC.readMVar mVarClientList
+    messageClients GameNameChange clientsList
 
 -- |Change the name of a 'LobbyGame' that the connected client is in
 changeGameNameWithSid :: Server GamesList -> Server ConcurrentClientList -> Name -> Server ()
@@ -285,8 +335,10 @@ joinChat remoteClientList remoteChatList chatName = do
       liftIO $ CC.modifyMVar_ concurrentChatList $ \chatList ->
         return $ (chatName, newChatChannel) : chatList
       addChannelToClient sid concurrentChatList concurrentClientList
-    else
+      announceChatJoin remoteClientList remoteChatList chatName
+    else do
       addChannelToClient sid concurrentChatList concurrentClientList
+      announceChatJoin remoteClientList remoteChatList chatName
 
 
     where
@@ -295,12 +347,50 @@ joinChat remoteClientList remoteChatList chatName = do
         let chan = fromJust $ chatName `lookup` cs
         clientChan <- liftIO $ CC.dupChan chan
         let newChat = (chatName, clientChan)
-        liftIO $ CC.modifyMVar_ concurrentClientList $ \clients -> do
+        liftIO $ CC.modifyMVar_ concurrentClientList $ \clients ->
           return $ updateListElem (addChatToClient newChat) ((sid ==) . sessionID) clients
 
       addChatToClient :: Chat -> ClientEntry -> ClientEntry
       addChatToClient chat client | chatName `elem` map fst (chats client) = client
                        | otherwise = client {chats = chat : chats client}
+
+-- | Sends a ChatAnnounceJoin to all clients present in the channel.
+-- | String is the name of the channel joined
+announceChatJoin :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()
+announceChatJoin remoteClientList remoteChatList chatName = do
+  clientList <- remoteClientList >>= liftIO . CC.readMVar
+  chatList <- remoteChatList >>= liftIO . CC.readMVar
+  case chatName `lookup` chatList of
+    Nothing      -> return ()
+    Just channel -> do
+      sid <- getSessionID
+      maybe
+        (return ())
+        (liftIO . CC.writeChan channel . ChatAnnounceJoin . name)
+        $ sid `lookupClientEntry` clientList
+
+-- | Called by client to leave the named Chat
+-- | String is the name of the chat to be left
+leaveChat :: Server ConcurrentClientList -> String -> Server ()
+leaveChat remoteClientList chatName = do
+  sid <- getSessionID
+  concurrentClientList <- remoteClientList
+  cs <- liftIO $ CC.readMVar concurrentClientList
+  case sid `lookupClientEntry` cs of
+    Nothing     -> return ()
+    Just client ->
+      case chatName `lookup` chats client of
+        Nothing      -> return ()
+        Just channel -> do
+          liftIO $ do
+            CC.writeChan channel $ ChatAnnounceLeave $ name client
+            CC.modifyMVar_ concurrentClientList $ \clientList ->
+              return $ updateListElem (\c -> c {chats =
+                deleteBy (\(cName1,_) (cName2,_) -> cName1 == cName2) (chatName, channel) $ chats client
+                }) ((sessionID client ==) . sessionID) clientList
+          return ()
+
+
 
 -- |Called by a client to read its various chat channels
 readChatChannel :: Server ConcurrentClientList -> String ->  Server ChatMessage
@@ -310,8 +400,8 @@ readChatChannel remoteClientList chatName = do
   clients <- liftIO $ CC.readMVar concurrentClientList
   case sid `lookupClientEntry` clients of
     Nothing     -> return $ ChatError "Couldn't find clients sessionID in remotes client list, try reconnecting."
-    Just client -> do
-      case chatName `lookup` (chats client) of
+    Just client ->
+      case chatName `lookup` chats client of
         Nothing          -> return $ ChatError "Couldn't find chat in clients currently joined chats. join chat before trying to read from it"
         Just chatChannel -> liftIO $ CC.readChan chatChannel
 
@@ -326,7 +416,7 @@ sendChatMessage remoteClientList remoteChatList chatName chatMessage = do
 
   case chatName `lookup` chatList of
     Nothing   -> return ()
-    Just chatChannel -> do
+    Just chatChannel ->
       case sid `lookupClientEntry` clientList of
         Nothing     -> return()
         Just client -> do
@@ -346,7 +436,26 @@ getClientName remoteClientList = do
   sid <- getSessionID
   concurrentClientList <- remoteClientList
   clientList <- liftIO $ CC.readMVar concurrentClientList
+  let client = find ((sid ==) . sessionID) clientList
   return $ name $ fromJust $ lookupClientEntry sid clientList
+
+-- | Return list of chatnames which the client have joined
+getJoinedChats :: Server ConcurrentClientList -> Server [String]
+getJoinedChats remoteClientList = do
+  sid <- getSessionID
+  clientList <- remoteClientList >>= liftIO . CC.readMVar
+  case sid `lookupClientEntry` clientList of
+    Nothing     -> do
+      liftIO $ print "getJoinedChats > Error: expected client not found."
+      return []
+    Just client ->
+      return $ map fst $ chats client
+
+-- | Return list of all chatnames
+getChats :: Server ConcurrentChatList -> Server [String]
+getChats remoteChatList = do
+  chatList <- remoteChatList >>= liftIO . CC.readMVar
+  return $ map fst chatList
 
 -- |Sets the password (as a 'ByteString') of the game the client is in.
 -- |Only possible if the client is the owner of the game.
@@ -378,4 +487,3 @@ isGamePasswordProtected remoteGames guuid = do
   case findGameWithID guuid gamesList of
     Nothing           -> return False
     Just (_,gameData) -> return $ gamePassword gameData /= empty
-
