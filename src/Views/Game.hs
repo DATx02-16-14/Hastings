@@ -118,22 +118,29 @@ createSetPasswordDOM api = createInputFieldWithButton "set-password" "Set passwo
 -- |Adds the list of 'Name' to the list of players with
 -- Also adds a kick button if the current player is owner of the game
 addPlayersToPlayerList :: LobbyAPI -> Elem -> [Name] -> Client ()
-addPlayersToPlayerList api parent = addPlayersToPlayerList' 0
+addPlayersToPlayerList api parent names = do
+  isOwner <- onServer $ isOwnerOfCurrentGame api
+  addPlayersToPlayerList' 0 isOwner names
   where
-    addPlayersToPlayerList' :: Int -> [Name] -> Client ()
-    addPlayersToPlayerList' i []     = return ()
-    addPlayersToPlayerList' i (name:names) = do
+    addPlayersToPlayerList' :: Int -> Bool -> [Name] -> Client ()
+    addPlayersToPlayerList' i isOwner []           = return ()
+    addPlayersToPlayerList' i isOwner (name:names) = do
       textElem <- newTextElem name
       br <- newElem "br"
-      kickBtn <- newElem "button" `with`
-        [
-          attr "class" =: "btn btn-default"
-        ]
-      kick <- newTextElem "kick"
-      clickEventElem kickBtn $ onServer $ kickPlayer api <.> i
-      appendChild kickBtn kick
-      addChildrenToParent' parent [textElem, kickBtn, br]
-      addPlayersToPlayerList' (i+1) names
+      appendChild parent textElem
+      when isOwner $ do
+        kickBtn <- newElem "button" `with`
+          [
+            attr "class" =: "btn btn-default"
+          ]
+        kick <- newTextElem "kick"
+        clickEventElem kickBtn $ onServer $ kickPlayer api <.> i
+        appendChild kickBtn kick
+        appendChild parent kickBtn
+
+      appendChild parent br
+
+      addPlayersToPlayerList' (i+1) isOwner names
 
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()
