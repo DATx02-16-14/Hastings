@@ -15,10 +15,9 @@ savePlayer name sessionID = runDB $ insert $ Player name sessionID
 
 -- |Retrieve a player from the database.
 retrievePlayer :: Word64 -- ^The sessionID of the player to retrieve.
-               -> IO [Entity Player]
-retrievePlayer sessionID = runDB $
-  select $
-    from $ \p -> do
-      where_ (p ^. PlayerSession ==. val sessionID)
-      return p
-
+               -> IO (Maybe Player)
+retrievePlayer sessionID = runDB $ do
+  t <- getBy $ UniqueSession sessionID
+  case t of
+    Just entity -> return $ Just $ entityVal entity
+    _           -> return Nothing

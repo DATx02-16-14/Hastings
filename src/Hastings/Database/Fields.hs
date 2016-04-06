@@ -21,4 +21,5 @@ Game
 Player
     userName String
     session Word64
+    UniqueSession session
 |]
