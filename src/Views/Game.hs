@@ -43,18 +43,11 @@ createGameDOM api gapi = do
   createStartGameBtnText <- newTextElem "Start game"
   appendChild createStartGameBtn createStartGameBtnText
 
-  list <- newElem "div" `with`
-    [
-      attr "id" =: "game-player-list"
-    ]
-  listhead <- newTextElem "Players: "
-  br <- newElem "br"
-  appendChild list listhead
-  appendChild list br
+  (tableDiv, tableBody) <- createTable "game-player-list" 500 ["Players"]
 
-  addPlayersToPlayerList api list players
+  addPlayersToPlayerList api tableBody players
 
-  addChildrenToParent' parentDiv [header, list, createStartGameBtn]
+  addChildrenToParent' parentDiv [header, tableDiv, createStartGameBtn]
   addChildrenToCenterColumn [parentDiv]
 
 -- |Creates DOM for changing game settings
@@ -125,34 +118,35 @@ addPlayersToPlayerList api parent names = do
     addPlayersToPlayerList' :: Int -> Bool -> [Name] -> Client ()
     addPlayersToPlayerList' i isOwner []           = return ()
     addPlayersToPlayerList' i isOwner (name:names) = do
+      tr <- newElem "tr"
+      tdText <- newElem "td"
       textElem <- newTextElem name
-      br <- newElem "br"
-      appendChild parent textElem
+      appendChild tdText textElem
+      appendChild tr tdText
       when isOwner $ do
+        tdBtn <- newElem "td"
         kickBtn <- newElem "button" `with`
           [
-            attr "class" =: "btn btn-default"
+            attr "class" =: "btn btn-warning"
           ]
-        kick <- newTextElem "kick"
+        kick <- newTextElem "Kick"
         clickEventElem kickBtn $ onServer $ kickPlayer api <.> i
         appendChild kickBtn kick
-        appendChild parent kickBtn
+        appendChild tdBtn kickBtn
+        appendChild tr tdBtn
 
-      appendChild parent br
+      appendChild parent tr
 
       addPlayersToPlayerList' (i+1) isOwner names
 
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()
 updatePlayerListGame api = do
-  playerDiv <- elemById "game-player-list"
+  playerDiv <- elemById "game-player-list-table-body"
   case playerDiv of
     Just parent -> do
       players <- onServer $ findPlayersInGame api
       clearChildren parent
-      br <- newElem "br"
-      text <- newTextElem "Players:"
-      addChildrenToParent "game-player-list" [text, br]
       addPlayersToPlayerList api parent players
     Nothing     -> return ()
 
