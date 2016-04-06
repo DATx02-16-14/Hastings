@@ -7,7 +7,7 @@ import LobbyTypes
 #ifdef __HASTE__
 #define REMOTE(x) (remote undefined)
 #else
-import qualified LobbyServer as Server
+import qualified Server
 #define REMOTE(x) (remote x)
 #endif
 -- |The api provided by the server.

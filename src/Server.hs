@@ -1,33 +1,34 @@
 
 {-# LANGUAGE CPP #-}
 -- |Contains all functions that are meant to be run server side only. As such this only needs to be compiled with GHC and never with Haste.
-module LobbyServer(
-  connect,
-  disconnect,
-  createGame,
-  getGamesList,
-  playerJoinGame,
-  playerNamesInGameWithSid,
-  getConnectedPlayerNames,
-  disconnectPlayerFromLobby,
-  leaveGame,
-  kickPlayerWithSid,
-  changeNickName,
-  changeGameNameWithSid,
-  findGameNameWithID,
-  findGameNameWithSid,
-  readLobbyChannel,
-  changeMaxNumberOfPlayers,
-  readChatChannel,
-  sendChatMessage,
-  joinChat,
-  leaveChat,
-  getClientName,
-  getJoinedChats,
-  getChats,
-  setPasswordToGame,
-  isGamePasswordProtected,
-  remoteIsOwnerOfGame) where
+module Server(
+    connect
+  , disconnect
+  , createGame
+  , getGamesList
+  , playerJoinGame
+  , playerNamesInGameWithSid
+  , getConnectedPlayerNames
+  , disconnectPlayerFromLobby
+  , leaveGame
+  , kickPlayerWithSid
+  , changeNickName
+  , changeGameNameWithSid
+  , findGameNameWithID
+  , findGameNameWithSid
+  , readLobbyChannel
+  , changeMaxNumberOfPlayers
+  , readChatChannel
+  , sendChatMessage
+  , joinChat
+  , leaveChat
+  , getClientName
+  , getJoinedChats
+  , getChats
+  , setPasswordToGame
+  , isGamePasswordProtected
+  , remoteIsOwnerOfGame
+  ) where
 
 import Haste.App
 

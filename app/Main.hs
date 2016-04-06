@@ -19,7 +19,7 @@ import GameAPI
 import LobbyClient
 #define disconnect(x) (\_ -> return ())
 #else
-import LobbyServer
+import Server (disconnect)
 #define clientMain (\_ _ -> return ())
 #endif
 
