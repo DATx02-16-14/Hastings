@@ -20,7 +20,7 @@ import LobbyServer
 
 -- |Main method and entry point for the program
 main :: IO ()
-main = runApp defaultConfig $ do
+main = runApp (mkConfig "129.16.23.58" 24601) $ do
   playersList <- liftServerIO $ CC.newMVar []
   gamesList <- liftServerIO $ CC.newMVar []
   chatList <- liftServerIO $ CC.newMVar []
