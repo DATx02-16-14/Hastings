@@ -54,6 +54,8 @@ createGameDOM api gapi = do
     ]
   leaveGameText <- newTextElem "Leave"
   appendChild leaveGameButton leaveGameText
+  clickEventElem leaveGameButton $ onServer $ leaveGame api
+
 
   addChildrenToParent' buttonGroup [leaveGameButton, createStartGameBtn]
 

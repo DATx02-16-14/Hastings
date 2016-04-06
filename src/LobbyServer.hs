@@ -10,7 +10,7 @@ module LobbyServer(
   playerNamesInGameWithSid,
   getConnectedPlayerNames,
   disconnectPlayerFromLobby,
-  disconnectPlayerFromGame,
+  leaveGame,
   kickPlayerWithSid,
   changeNickName,
   changeGameNameWithSid,
@@ -77,7 +77,7 @@ disconnect (clientList, games, chats) sid = do
       return ())
     $ sid `lookupClientEntry` cs
 
-  disconnectPlayerFromGame games sid
+  leaveGame games
   disconnectPlayerFromLobby clientList sid
 
   mVarClients <- clientList
@@ -92,16 +92,27 @@ disconnectPlayerFromLobby remoteClientList sid = do
   liftIO $ CC.modifyMVar_ mVarClientList $ \cs ->
     return $ filter ((sid /=) . sessionID) cs
 
--- |Removes a player that has disconnected from all games
-disconnectPlayerFromGame :: Server GamesList -> SessionID -> Server ()
-disconnectPlayerFromGame remoteGames sid = do
+-- |Removes a player that has disconnected from it's game
+leaveGame :: Server GamesList -> Server ()
+leaveGame remoteGames = do
   mVarGames <- remoteGames
-  liftIO $ CC.modifyMVar_ mVarGames $ \games -> mapM removePlayer games
+  gamesList <- liftIO $ CC.readMVar mVarGames
+  sid <- getSessionID
+  case findGameWithSid sid gamesList of
+    Nothing                 -> return ()
+    Just game@(_, gameData) -> liftIO $ do
+      CC.modifyMVar_ mVarGames $ \games ->
+        return $ updateListElem (removePlayer sid) (== game) games
+      maybe
+        (return ())
+        (\p -> messageClients KickedFromGame [p])
+        (lookupClientEntry sid $ players gameData)
+      messageClients PlayerLeftGame $ players gameData
 
   where
-    removePlayer (uuid, gameData) =
+    removePlayer sid (uuid, gameData) =
       let newClientList = filter ((sid /=) . sessionID) $ players gameData in
-      return (uuid, gameData {players = newClientList})
+      (uuid, gameData {players = newClientList})
 
 -- |Creates a new game on the server. The 'Int' represents the max number of players.
 createGame :: Server GamesList -> Server ConcurrentClientList -> Int -> Server (Maybe String)
