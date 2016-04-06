@@ -58,7 +58,6 @@ createLobbyDOM api gapi = do
   headerText <- newTextElem "Hastings Lobby"
   appendChild header headerText
 
-
   appendChild createGamebtn crGamebtnText
 
   playerList <- newElem "div" `with`
@@ -66,34 +65,7 @@ createLobbyDOM api gapi = do
       prop "id" =: "player-list"
     ]
 
-  gamesListDiv <- newElem "div" `with`
-    [
-      attr "id" =: "games-list",
-      style "height" =: "500px",
-      style "overflow" =: "auto"
-    ]
-  gameListTable <- newElem "table" `with`
-    [
-      attr "class" =: "table table-striped"
-    ]
-  thead <- newElem "thead"
-  tr <- newElem "tr"
-  thName <- newElem "th"
-  thNameText <- newTextElem "Name"
-  thJoin <- newElem "th"
-  thJoinText <- newTextElem ""
-  tbody <- newElem "tbody" `with`
-    [
-      prop "id" =: "games-list-table-body"
-    ]
-  appendChild thJoin thJoinText
-  appendChild thName thNameText
-  addChildrenToParent' tr [thName, thJoin]
-  appendChild thead tr
-  addChildrenToParent' gameListTable [thead, tbody]
-  appendChild gamesListDiv gameListTable
-
-
+  (gamesListDiv, _) <- createTable "games-list" 500 ["Name", ""]
 
   addChildrenToLeftColumn [playerList]
   addChildrenToParent' lobbyDiv [header, gamesListDiv, createGamebtn]
