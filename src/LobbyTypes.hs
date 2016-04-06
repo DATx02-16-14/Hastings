@@ -5,6 +5,7 @@ import Haste.App
 import Data.List
 import Data.Word
 import Haste.Binary (Binary, Get)
+import Data.ByteString.Char8 (ByteString)
 
 -- |A type synonym to clarify that some Strings are Names.
 type Name = String
@@ -30,9 +31,11 @@ type LobbyGame = (String, GameData)
 -- |The players who are in the game (where the last one is the owner)
 -- |The name of the game
 -- |The maximum allowed players, can be changed by the owner
-data GameData = GameData {players            :: [ClientEntry],
-                          gameName           :: Name,
-                          maxAmountOfPlayers :: Int}
+data GameData = GameData { players            :: [ClientEntry]
+                         , gameName           :: Name
+                         , maxAmountOfPlayers :: Int
+                         , gamePassword       :: ByteString}
+
   deriving (Eq, Show)
 
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
@@ -92,8 +95,7 @@ type ConcurrentChatList = CC.MVar [Chat]
 
 -- |LobbyMessage is a message to a client idicating some udate to the state that the cliet has to adapt to.
 data LobbyMessage = NickChange | GameNameChange | KickedFromGame | GameAdded | ClientJoined
-      | ClientLeft | PlayerJoinedGame | LobbyError {lobbyErrorMessage :: String}
-  deriving (Eq)
+      | ClientLeft | PlayerJoinedGame | PlayerLeftGame | LobbyError {lobbyErrorMessage :: String}
 
 instance Binary LobbyMessage where
   put NickChange       = put (0 :: Word8)
@@ -103,8 +105,9 @@ instance Binary LobbyMessage where
   put ClientJoined     = put (4 :: Word8)
   put ClientLeft       = put (5 :: Word8)
   put PlayerJoinedGame = put (6 :: Word8)
+  put PlayerLeftGame   = put (7 :: Word8)
   put (LobbyError msg) = do
-    put (7 :: Word8)
+    put (8 :: Word8)
     put msg
 
   get = do
@@ -117,7 +120,8 @@ instance Binary LobbyMessage where
       4 -> return ClientJoined
       5 -> return ClientLeft
       6 -> return PlayerJoinedGame
-      7 -> do
+      7 -> return PlayerLeftGame
+      8 -> do
         msg <- get :: Get String
         return $ LobbyError msg
 

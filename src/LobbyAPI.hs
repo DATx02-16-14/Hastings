@@ -7,7 +7,7 @@ import LobbyTypes
 #ifdef __HASTE__
 #define REMOTE(x) (remote undefined)
 #else
-import LobbyServer as Server
+import qualified LobbyServer as Server
 #define REMOTE(x) (remote x)
 #endif
 -- |The api provided by the server.
@@ -15,11 +15,12 @@ data LobbyAPI = LobbyAPI
   { connect :: Remote (String -> Server ())
     -- |Creates a game on the server with the current client as host.
     -- |The 'Int' represents the default max number of players
-  , createGame :: Remote (Int -> Server (Maybe (String)))
+  , createGame :: Remote (Int -> Server (Maybe String))
   , getGamesList :: Remote (Server [String])
     -- |Joins a game with the 'UUID' representetd by the 'String'.
+    -- |The second 'String' is the password for the game, can be left as "" if there is no password.
     -- |Returns if the client successfully joined or not.
-  , joinGame :: Remote (String -> Server Bool)
+  , joinGame :: Remote (String -> String -> Server Bool)
   , findPlayersInGame :: Remote (Server [String])
     -- |Finds the name of the game with String as identifier
   , findGameNameWithID :: Remote (String -> Server String)
@@ -45,6 +46,13 @@ data LobbyAPI = LobbyAPI
   , sendChatMessage :: Remote (Name -> ChatMessage -> Server ())
     -- |Reads next ChatMessage from named chat channel.
   , readChatChannel :: Remote (Name -> Server ChatMessage)
+    -- |Sets a password to the game the client is in as 'ByteString'
+    -- |Only allowed if the current player is owner of it's game
+  , setPassword :: Remote (String -> Server ())
+    -- |Returns if the game is protected by a password or not. 'String' is the Game ID
+  , isGamePasswordProtected :: Remote (String -> Server Bool)
+    -- |Returns whether or not the current player is owner of the game it's in
+  , isOwnerOfCurrentGame :: Remote (Server Bool)
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -67,3 +75,6 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.joinChat playersList chatList))
             <*> REMOTE((Server.sendChatMessage playersList chatList))
             <*> REMOTE((Server.readChatChannel playersList))
+            <*> REMOTE((Server.setPasswordToGame gamesList))
+            <*> REMOTE((Server.isGamePasswordProtected gamesList))
+            <*> REMOTE((Server.remoteIsOwnerOfGame gamesList))

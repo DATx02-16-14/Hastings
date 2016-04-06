@@ -1,13 +1,16 @@
 -- |Module for all of the client only code
 module LobbyClient where
+import Haste.App
+import Haste.DOM
+import Haste.Concurrent
+
+import Data.Maybe
+import Control.Monad (when)
+
 import Views.Common
 import Views.Lobby
 import Views.Game
-import Haste.App
 import LobbyAPI
-import Haste.DOM
-import Haste.Concurrent
-import Data.Maybe
 import GameAPI
 import LobbyTypes
 import Views.Chat
@@ -47,7 +50,15 @@ listenForLobbyChanges api gapi = do
     ClientJoined     -> updatePlayerList api
     ClientLeft       -> do
       updatePlayerList api
-      updatePlayerListGame api
+      playerLeftGameFun
     PlayerJoinedGame -> updatePlayerListGame api
+    PlayerLeftGame   -> playerLeftGameFun
     (LobbyError msg) -> showError msg
   listenForLobbyChanges api gapi
+  where
+    playerLeftGameFun = do
+      updatePlayerListGame api
+      isOwner <- onServer $ isOwnerOfCurrentGame api
+      when isOwner $ do
+        deleteGameOwnerDOM
+        createGameOwnerDOM api gapi

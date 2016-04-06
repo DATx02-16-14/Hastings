@@ -18,17 +18,17 @@ import Text.Read
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
 createGameDOM :: LobbyAPI -> GameAPI -> Client ()
 createGameDOM api gapi = do
-  parentDiv <- createDiv [("id","lobbyGame")]
+  parentDiv <- createDiv [("id","lobby-game")]
 
-  createGameChangeNameDOM api
-  createUpdateMaxNumberPlayersDOM api gapi
+  isOwner <- onServer $ isOwnerOfCurrentGame api
+  when isOwner $ createGameOwnerDOM api gapi
 
   gameName <- onServer $ findGameName api
   players <- onServer $ findPlayersInGame api
   nameOfGame <- newTextElem gameName
   header <- newElem "h1" `with`
     [
-      attr "id" =: "gameHeader",
+      attr "id" =: "game-header",
       style "text-align" =: "center",
       style "margin-left" =: "auto",
       style "margin-right" =: "auto"
@@ -37,7 +37,7 @@ createGameDOM api gapi = do
 
   createStartGameBtn <- newElem "button" `with`
     [
-      attr "id"    =: "startGameButton",
+      attr "id"    =: "start-game-button",
       attr "class" =: "btn btn-default"
     ]
   createStartGameBtnText <- newTextElem "Start game"
@@ -45,7 +45,7 @@ createGameDOM api gapi = do
 
   list <- newElem "div" `with`
     [
-      attr "id" =: "gamePlayerList"
+      attr "id" =: "game-player-list"
     ]
   listhead <- newTextElem "Players: "
   br <- newElem "br"
@@ -57,37 +57,20 @@ createGameDOM api gapi = do
   addChildrenToParent' parentDiv [header, list, createStartGameBtn]
   addChildrenToCenterColumn [parentDiv]
 
+-- |Creates DOM for changing game settings
+createGameOwnerDOM :: LobbyAPI -> GameAPI -> Client ()
+createGameOwnerDOM api gapi = do
+  createGameChangeNameDOM api
+  createUpdateMaxNumberPlayersDOM api gapi
+  createSetPasswordDOM api
+
 -- |Creates the DOM for chaning the name of a game.
 -- |It includes an input field and a button.
 createGameChangeNameDOM :: LobbyAPI -> Client ()
-createGameChangeNameDOM api = do
-  gameNameDiv <- createDiv [("id", "changeGameName")]
-  gameNameText <- newTextElem "Change game name"
-  gameNameField <- newElem "input" `with`
-    [
-      attr "type" =: "text",
-      attr "id"   =: "gameNameField"
-    ]
-  gameNameButton <- newElem "button" `with`
-    [
-      attr "id" =: "gameNameBtn"
-    ]
-  gameNameBtnText <- newTextElem "Change"
-  appendChild gameNameButton gameNameBtnText
-
-  addChildrenToParent' gameNameDiv [gameNameText, gameNameField, gameNameButton]
-
-  addChildrenToRightColumn [gameNameDiv]
-
-  onEvent gameNameField KeyPress $ \13 -> gameUpdateFunction
-
-  clickEventString "gameNameBtn" gameUpdateFunction
-
-  return ()
-
+createGameChangeNameDOM api = createInputFieldWithButton "game-name" "Game name" gameUpdateFunction
   where
     gameUpdateFunction =
-      withElem "gameNameField" $ \field -> do
+      withElem "game-name-field" $ \field -> do
         newName <- getValue field
         case newName of
           Just ""   -> return ()
@@ -99,35 +82,11 @@ createGameChangeNameDOM api = do
 -- |Creates DOM for the updatin the maximum number of players in a game
 -- |Contains an input field and a button. Is placed in the right sidebar
 createUpdateMaxNumberPlayersDOM :: LobbyAPI -> GameAPI-> Client ()
-createUpdateMaxNumberPlayersDOM api gapi = do
-  maxNumberDiv <- createDiv [("id","maxNumberDiv")]
-
-  maxNumberText <- newTextElem "Change maximum number of players"
-  maxNumberField <- newElem "input" `with`
-    [
-      attr "type" =: "text",
-      attr "id" =: "maxNumberField"
-    ]
-  maxNumberButton <- newElem "button" `with`
-    [
-      attr "id" =: "maxNumberBtn"
-    ]
-  maxNumberBtnText <- newTextElem "Change"
-
-  appendChild maxNumberButton maxNumberBtnText
-  appendChild maxNumberDiv maxNumberText
-  appendChild maxNumberDiv maxNumberField
-  appendChild maxNumberDiv maxNumberButton
-  addChildrenToRightColumn [maxNumberDiv]
-
-  onEvent maxNumberField KeyPress $ \13 -> maxNumberUpdateFunction
-
-  clickEventString "maxNumberBtn" maxNumberUpdateFunction
-  return ()
-
+createUpdateMaxNumberPlayersDOM api gapi =
+  createInputFieldWithButton "max-number" "Maximum number of players" maxNumberUpdateFunction
   where
     maxNumberUpdateFunction =
-      withElem "maxNumberField" $ \field -> do
+      withElem "max-number-field" $ \field -> do
         newNumber <- getValue field
         case newNumber of
           Just ""   -> return ()
@@ -139,6 +98,22 @@ createUpdateMaxNumberPlayersDOM api gapi = do
                 onServer $ changeMaxNumberOfPlayers api <.> number
                           | otherwise -> return ()
           Nothing   -> return ()
+
+-- |Creates an input field for setting the password of a game.
+-- |Contains an input field and a button. Is placed in right sidebar.
+createSetPasswordDOM :: LobbyAPI -> Client ()
+createSetPasswordDOM api = createInputFieldWithButton "set-password" "Set password" setPasswordFunction
+  where
+    setPasswordFunction =
+      withElem "set-password-field" $ \field -> do
+        maybePassword <- getValue field
+        case maybePassword of
+          Nothing             -> return ()
+          Just ""             -> return ()
+          Just passwordString -> do
+            setProp field "value" ""
+            onServer $ setPassword api <.> passwordString
+
 
 -- |Adds the list of 'Name' to the list of players with
 -- Also adds a kick button if the current player is owner of the game
@@ -160,57 +135,24 @@ addPlayersToPlayerList api parent = addPlayersToPlayerList' 0
       addChildrenToParent' parent [textElem, kickBtn, br]
       addPlayersToPlayerList' (i+1) names
 
--- |Adds DOM for a game
-addGame :: LobbyAPI -> GameAPI -> String -> Client ()
-addGame api gapi gameID = do
-  maybeGameListDiv <- elemById "gamesListTableBody"
-  case maybeGameListDiv of
-    Nothing -> return ()
-    Just gameListDiv -> do
-      gameName <- onServer $ findGameNameWithID api <.> gameID
-      tr <- newElem "tr"
-      tdBtn <- newElem "td"
-      gameEntry <- newElem "button" `with`
-        [
-          attr "id"    =: gameName,
-          attr "class" =: "btn btn-default"
-        ]
-      textElemBtn <- newTextElem "Join"
-
-      textElemName <- newTextElem gameName
-      tdName <- newElem "td"
-
-      appendChild gameEntry textElemBtn
-      appendChild tdBtn gameEntry
-      appendChild tdName textElemName
-      addChildrenToParent' tr [tdName, tdBtn]
-      appendChild gameListDiv tr
-
-      clickEventString gameName $ do
-        didJoinGame <- onServer $ joinGame api <.> gameID
-        when didJoinGame $ do
-            deleteLobbyDOM
-            createGameDOM api gapi
-      return ()
-
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()
 updatePlayerListGame api = do
-  playerDiv <- elemById "gamePlayerList"
+  playerDiv <- elemById "game-player-list"
   case playerDiv of
     Just parent -> do
       players <- onServer $ findPlayersInGame api
       clearChildren parent
       br <- newElem "br"
       text <- newTextElem "Players:"
-      addChildrenToParent "gamePlayerList" [text, br]
+      addChildrenToParent "game-player-list" [text, br]
       addPlayersToPlayerList api parent players
     Nothing     -> return ()
 
 -- |Updates the game header with the value at the server
 updateGameHeader :: LobbyAPI -> Client ()
 updateGameHeader api = do
-  maybeHeader <- elemById "gameHeader"
+  maybeHeader <- elemById "game-header"
   case maybeHeader of
     Nothing     -> return ()
     Just parent -> do

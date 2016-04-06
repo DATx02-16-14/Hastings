@@ -21,12 +21,21 @@ module LobbyServer(
   readChatChannel,
   sendChatMessage,
   joinChat,
-  getClientName) where
+  getClientName,
+  setPasswordToGame,
+  isGamePasswordProtected,
+  remoteIsOwnerOfGame) where
 
 import Haste.App
+
 import qualified Control.Concurrent as CC
+import Control.Monad (when)
+
 import Data.List
 import Data.Maybe
+import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
+
+import Crypto.PasswordStore (makePassword, verifyPassword)
 
 import LobbyTypes
 import Hastings.Utils
@@ -36,6 +45,7 @@ import Hastings.ServerUtils
 import Data.UUID
 import System.Random
 #endif
+
 
 -- |Initial connection with the server
 -- Creates a 'Player' for that user given a name.
@@ -97,11 +107,10 @@ createGame remoteGames remoteClientList maxPlayers = do
     (return Nothing)
     (\c -> do
       CC.modifyMVar_ mVarGames $ \gs ->
-        return $ (uuidStr, GameData [c] "GameName" maxPlayers) : gs
+        return $ (uuidStr, GameData [c] "GameName" maxPlayers empty) : gs
       messageClients GameAdded clientList
       return $ Just uuidStr)
     (lookupClientEntry sid clientList)
-
 
 -- |Returns a list of the each game's uuid as a String
 getGamesList :: Server GamesList -> Server [String]
@@ -110,23 +119,31 @@ getGamesList remoteGames = do
   return $ getUUIDFromGamesList gameList
 
 -- |Lets a player join a 'LobbyGame'. The 'String' represents the UUID for the game.
-playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> Server Bool
-playerJoinGame remoteClientList remoteGameList gameID = do
+-- |The second 'String' is the password for the game, if there is no password it can be left empty.
+playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> String -> Server Bool
+playerJoinGame remoteClientList remoteGameList gameID passwordString = do
   clientList <- remoteClientList >>= liftIO . CC.readMVar
   mVarGamesList <- remoteGameList
   gameList <- liftIO $ CC.readMVar mVarGamesList
   sid <- getSessionID
-  case findGameWithID gameID gameList of
-    Nothing           -> return False
-    Just (_,gameData) ->
-      case (maxAmountOfPlayers gameData > length (players gameData), lookupClientEntry sid clientList) of
-        (True, Just player) -> do
-          liftIO $ do
+  case (lookupClientEntry sid clientList, findGameWithID gameID gameList) of
+    (Just player, Just (_,gameData)) -> do
+      let passwordOfGame = gamePassword gameData
+      if passwordOfGame == empty || verifyPassword (pack passwordString) passwordOfGame
+        then if maxAmountOfPlayers gameData > length (players gameData)
+          then liftIO $ do
             CC.modifyMVar_ mVarGamesList $
               \gList -> return $ addPlayerToGame player gameID gList
             messageClients PlayerJoinedGame (players gameData)
-          return True
-        _                   -> return False
+            return True
+          else do
+            liftIO $ messageClients (LobbyError "Game is full") [player]
+            return False
+        else do
+          liftIO $ messageClients (LobbyError "Wrong password") [player]
+          return False
+    _                                -> return False
+
 
 -- |Finds the name of a game given it's identifier
 findGameNameWithID :: Server GamesList -> String -> Server String
@@ -177,6 +194,7 @@ kickPlayerWithSid remoteGames clientIndex = do
         CC.modifyMVar_ mVarGamesList $ \games ->
           return $ updateListElem (deletePlayerFromGame clientIndex) (== game) games
         messageClients KickedFromGame [players gameData !! clientIndex]
+        messageClients PlayerLeftGame $ players gameData
 
 -- |Change the nick name of the current player to that given.
 changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()
@@ -235,7 +253,7 @@ changeMaxNumberOfPlayers remoteGames newMax = do
   mVarGamesList <- remoteGames
   gamesList <- liftIO $ CC.readMVar mVarGamesList
   sid <- getSessionID
-  if isOwnerOfGame sid gamesList then do
+  when (isOwnerOfGame sid gamesList) $
     case findGameWithSid sid gamesList of
       Nothing   -> return ()
       Just game ->
@@ -244,8 +262,6 @@ changeMaxNumberOfPlayers remoteGames newMax = do
             (\(guuid, gData) -> (guuid, gData {maxAmountOfPlayers = newMax}))
             (== game)
             games
-  else
-    return ()
 
 -- |Returns if the current player is owner of the game it's in
 remoteIsOwnerOfGame :: Server GamesList -> Server Bool
@@ -331,3 +347,35 @@ getClientName remoteClientList = do
   concurrentClientList <- remoteClientList
   clientList <- liftIO $ CC.readMVar concurrentClientList
   return $ name $ fromJust $ lookupClientEntry sid clientList
+
+-- |Sets the password (as a 'ByteString') of the game the client is in.
+-- |Only possible if the client is the owner of the game.
+setPasswordToGame :: Server GamesList -> String -> Server ()
+setPasswordToGame remoteGames passwordString = do
+  let password = pack passwordString
+  hashedPassword <- liftIO $ makePassword password 17
+  mVarGames <- remoteGames
+  gamesList <- remoteGames >>= liftIO . CC.readMVar
+  sid <- getSessionID
+  case (findGameWithSid sid gamesList, isOwnerOfGame sid gamesList) of
+    (Just game, True)          -> liftIO $
+      CC.modifyMVar_ mVarGames $ \games ->
+        return $ updateListElem
+          (\(guuid, gData) -> (guuid, gData {gamePassword = hashedPassword}))
+          (== game)
+          games
+    (Just (_,gameData), False) -> do
+      sid <- getSessionID
+      maybe
+        (return ())
+        (\client -> liftIO $ messageClients (LobbyError "Not owner of the game") [client])
+        (lookupClientEntry sid (players gameData))
+
+-- |Returns True if game is password protected, False otherwise. 'String' is the UUID of the game
+isGamePasswordProtected :: Server GamesList -> String -> Server Bool
+isGamePasswordProtected remoteGames guuid = do
+  gamesList <- remoteGames >>= liftIO . CC.readMVar
+  case findGameWithID guuid gamesList of
+    Nothing           -> return False
+    Just (_,gameData) -> return $ gamePassword gameData /= empty
+

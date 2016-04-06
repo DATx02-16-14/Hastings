@@ -9,6 +9,7 @@ import Data.Word (Word64)
 import Control.Concurrent (Chan, newChan)
 import System.IO.Unsafe (unsafePerformIO)
 import Data.List (nub)
+import Data.ByteString.Char8 (empty)
 
 import LobbyTypes
 import Hastings.ServerUtils
@@ -38,7 +39,7 @@ instance Arbitrary GameData where
     playersNum <- arbitrary :: Gen Int
     let playersNum' = (abs.flip mod maxPlayers') playersNum -- No more players than max nuber
     clients <- sequence [ arbitrary | _ <- [1..playersNum']]
-    return $ GameData clients ("GameData " ++ show gameNr) maxPlayers'
+    return $ GameData clients ("GameData " ++ show gameNr) maxPlayers' empty
 
 
 -- Tests
