@@ -59,6 +59,8 @@ data LobbyAPI = LobbyAPI
   , isGamePasswordProtected :: Remote (String -> Server Bool)
     -- |Returns whether or not the current player is owner of the game it's in
   , isOwnerOfCurrentGame :: Remote (Server Bool)
+    -- |Leaves the game the player is in
+  , leaveGame :: Remote (Server ())
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -87,3 +89,4 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.setPasswordToGame gamesList))
             <*> REMOTE((Server.isGamePasswordProtected gamesList))
             <*> REMOTE((Server.remoteIsOwnerOfGame gamesList))
+            <*> REMOTE((Server.leaveGame gamesList))
