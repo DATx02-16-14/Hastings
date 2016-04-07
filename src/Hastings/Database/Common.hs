@@ -3,14 +3,14 @@ module Hastings.Database.Common
    where
 
 import qualified Database.Persist.MySQL as MySQL
-import Database.Esqueleto
-import Control.Monad.Logger
+import qualified Database.Esqueleto as Esql
+import qualified Control.Monad.Logger as Logger
 
 import Hastings.Database.Fields
 
 -- |Run database migration, creating all relevant tables.
 migrateDatabase :: IO ()
-migrateDatabase = runDB $ runMigration migrateAll
+migrateDatabase = runDB $ Esql.runMigration migrateAll
 
 -- |Helper function that should be called before running a query on the database.
 --  It's primary purpose is running the proper prerequisites to be able to excecute an SQL query on the database.
@@ -25,5 +25,5 @@ migrateDatabase = runDB $ runMigration migrateAll
 -- @
 -- saveCar = runDB $ insert $ Car \"Volvo\"
 -- @
-runDB :: SqlPersistT (NoLoggingT IO) a -> IO a
-runDB = runNoLoggingT . MySQL.withMySQLConn MySQL.defaultConnectInfo . runSqlConn
+runDB :: MySQL.SqlPersistT (Logger.NoLoggingT IO) a -> IO a
+runDB = Logger.runNoLoggingT . MySQL.withMySQLConn MySQL.defaultConnectInfo . Esql.runSqlConn
