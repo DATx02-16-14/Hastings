@@ -16,13 +16,13 @@ import Data.Word (Word64)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Game
-    name String
+    name               String
     maxAmountOfPlayers Int
 Player
-    userName String
+    userName       String
     UniqueUsername userName
 OnlinePlayer
-    player PlayerId
-    sessionID Word64
+    player        PlayerId
+    sessionID     Word64
     UniqueSession sessionID
 |]
