@@ -1,3 +1,4 @@
+-- | Contains database utility functions.
 module Hastings.Database.Common
    where
 

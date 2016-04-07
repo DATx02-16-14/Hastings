@@ -1,3 +1,4 @@
+-- | Contains database functions that manipulate 'OnlinePlayer' and 'Player'
 module Hastings.Database.Player
    where
 
@@ -46,7 +47,15 @@ saveOnlinePlayer name sessionID = do
     where
       saveOnlinePlayer' sessionID key = runDB $ insert $ OnlinePlayer key sessionID
 
+
 -- |Retrieve an online player from the database.
+--
+--  Runs this query on the database.
+--
+-- @
+-- SELECT OnlinePlayer.*, Player.Id
+-- WHERE OnlinePlayer.Player == Player.Id
+-- @
 retrieveOnlinePlayer :: Word64 -- ^The sessionID of the player to retrieve.
                      -> IO (Maybe (Entity Player))
 retrieveOnlinePlayer sessionID = runDB $ do
