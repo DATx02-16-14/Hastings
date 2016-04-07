@@ -48,6 +48,8 @@ createGameDOM api gapi = do
   createStartGameBtnText <- newTextElem "Start game"
   appendChild createStartGameBtn createStartGameBtnText
 
+  (tableDiv, tableBody) <- createTable "game-player-list" 500 ["Players"]
+
   leaveGameButton <- newElem "button" `with`
     [
       attr "class" =: "btn btn-danger"
@@ -59,19 +61,9 @@ createGameDOM api gapi = do
 
   addChildrenToParent' buttonGroup [leaveGameButton, createStartGameBtn]
 
+  addPlayersToPlayerList api tableBody players
 
-  list <- newElem "div" `with`
-    [
-      attr "id" =: "game-player-list"
-    ]
-  listhead <- newTextElem "Players: "
-  br <- newElem "br"
-  appendChild list listhead
-  appendChild list br
-
-  addPlayersToPlayerList api list players
-
-  addChildrenToParent' parentDiv [header, list, buttonGroup]
+  addChildrenToParent' parentDiv [header, tableDiv, buttonGroup]
   addChildrenToCenterColumn [parentDiv]
 
 -- |Creates DOM for changing game settings
@@ -135,34 +127,42 @@ createSetPasswordDOM api = createInputFieldWithButton "set-password" "Set passwo
 -- |Adds the list of 'Name' to the list of players with
 -- Also adds a kick button if the current player is owner of the game
 addPlayersToPlayerList :: LobbyAPI -> Elem -> [Name] -> Client ()
-addPlayersToPlayerList api parent = addPlayersToPlayerList' 0
+addPlayersToPlayerList api parent names = do
+  isOwner <- onServer $ isOwnerOfCurrentGame api
+  addPlayersToPlayerList' 0 isOwner names
   where
-    addPlayersToPlayerList' :: Int -> [Name] -> Client ()
-    addPlayersToPlayerList' i []     = return ()
-    addPlayersToPlayerList' i (name:names) = do
+    addPlayersToPlayerList' :: Int -> Bool -> [Name] -> Client ()
+    addPlayersToPlayerList' i isOwner []           = return ()
+    addPlayersToPlayerList' i isOwner (name:names) = do
+      tr <- newElem "tr"
+      tdText <- newElem "td"
       textElem <- newTextElem name
-      br <- newElem "br"
-      kickBtn <- newElem "button" `with`
-        [
-          attr "class" =: "btn btn-default"
-        ]
-      kick <- newTextElem "kick"
-      clickEventElem kickBtn $ onServer $ kickPlayer api <.> i
-      appendChild kickBtn kick
-      addChildrenToParent' parent [textElem, kickBtn, br]
-      addPlayersToPlayerList' (i+1) names
+      appendChild tdText textElem
+      appendChild tr tdText
+      when isOwner $ do
+        tdBtn <- newElem "td"
+        kickBtn <- newElem "button" `with`
+          [
+            attr "class" =: "btn btn-warning"
+          ]
+        kick <- newTextElem "Kick"
+        clickEventElem kickBtn $ onServer $ kickPlayer api <.> i
+        appendChild kickBtn kick
+        appendChild tdBtn kickBtn
+        appendChild tr tdBtn
+
+      appendChild parent tr
+
+      addPlayersToPlayerList' (i+1) isOwner names
 
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()
 updatePlayerListGame api = do
-  playerDiv <- elemById "game-player-list"
+  playerDiv <- elemById "game-player-list-table-body"
   case playerDiv of
     Just parent -> do
       players <- onServer $ findPlayersInGame api
       clearChildren parent
-      br <- newElem "br"
-      text <- newTextElem "Players:"
-      addChildrenToParent "game-player-list" [text, br]
       addPlayersToPlayerList api parent players
     Nothing     -> return ()
 
