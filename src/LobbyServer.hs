@@ -47,6 +47,9 @@ import Hastings.ServerUtils
 #ifndef __HASTE__
 import Data.UUID
 import System.Random
+import Hastings.Database.Player
+import qualified Hastings.Database.Fields as Fields
+import Database.Persist (entityKey, entityVal, Entity)
 #endif
 
 
@@ -226,10 +229,8 @@ changeNickName remoteClientList remoteGames newName = do
   mVarClientList <- remoteClientList
   clientList <- liftIO $ CC.readMVar mVarClientList
   sid <- getSessionID
-  let oldName = maybe
-                  "NO_SUCH_CLIENT"
-                  name
-                  $ sid `lookupClientEntry` clientList
+  player <- liftIO $ retrieveOnlinePlayer sid
+  liftIO $ changeUserName (oldName player) newName
 
   liftIO $ CC.modifyMVar_ mVarClientList $ \cs ->
     return $ updateNick sid cs
@@ -242,10 +243,11 @@ changeNickName remoteClientList remoteGames newName = do
     clients <- CC.readMVar mVarClientList
     messageClients NickChange clients
   -- Notify all chats about nick update
-  notifyClientChats remoteClientList $ oldName ++ " changed nick to " ++ newName
+  notifyClientChats remoteClientList $ oldName player ++ " changed nick to " ++ newName
 
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
+    oldName = maybe "NO_SUCH_CLIENT" (Fields.playerUserName . entityVal)
 
 -- | Sends a server notification to all chats the client has joined
 notifyClientChats :: Server ConcurrentClientList -> String -> Server ()
