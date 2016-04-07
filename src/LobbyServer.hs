@@ -47,7 +47,7 @@ import Hastings.ServerUtils
 #ifndef __HASTE__
 import Data.UUID
 import System.Random
-import Hastings.Database.Player
+import qualified Hastings.Database.Player as PlayerDB
 import qualified Hastings.Database.Fields as Fields
 import Database.Persist (entityKey, entityVal, Entity)
 #endif
@@ -66,7 +66,7 @@ connect remoteClientList remoteChats name = do
       lobbyChannel <- CC.newChan
       return $ ClientEntry sid name [] lobbyChannel : clients
 
-    liftIO $ saveOnlinePlayer name sid
+    liftIO $ PlayerDB.saveOnlinePlayer name sid
     clientList <- CC.readMVar concurrentClientList
     messageClients ClientJoined clientList
 
@@ -83,7 +83,7 @@ disconnect (clientList, games, chats) sid = do
 
   leaveGame games
   disconnectPlayerFromLobby clientList sid
-  liftIO $ deleteOnlinePlayer sid
+  liftIO $ PlayerDB.deleteOnlinePlayer sid
 
   mVarClients <- clientList
   liftIO $ do
@@ -229,8 +229,8 @@ changeNickName remoteClientList remoteGames newName = do
   mVarClientList <- remoteClientList
   clientList <- liftIO $ CC.readMVar mVarClientList
   sid <- getSessionID
-  player <- liftIO $ retrieveOnlinePlayer sid
-  liftIO $ changeUserName (oldName player) newName
+  player <- liftIO $ PlayerDB.retrieveOnlinePlayer sid
+  liftIO $ PlayerDB.changeUserName (oldName player) newName
 
   liftIO $ CC.modifyMVar_ mVarClientList $ \cs ->
     return $ updateNick sid cs
