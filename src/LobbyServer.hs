@@ -63,6 +63,7 @@ connect remoteClientList remoteChats name = do
       lobbyChannel <- CC.newChan
       return $ ClientEntry sid name [] lobbyChannel : clients
 
+    liftIO $ saveOnlinePlayer name sid
     clientList <- CC.readMVar concurrentClientList
     messageClients ClientJoined clientList
 
@@ -79,6 +80,7 @@ disconnect (clientList, games, chats) sid = do
 
   leaveGame games
   disconnectPlayerFromLobby clientList sid
+  liftIO $ deleteOnlinePlayer sid
 
   mVarClients <- clientList
   liftIO $ do
