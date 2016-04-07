@@ -16,7 +16,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   build-depends:
-    base >= 4.7 && < 5
+    base >= 4.7 && < 5,
+    bytestring
   exposed-modules: Views.Chat, Views.Lobby, Views.Common, Views.Game, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, GameAPI
   if impl(haste)
     build-depends: haste-lib >= 0.5 && < 0.6
@@ -30,7 +31,8 @@ library
       persistent-mysql,
       persistent-template,
       esqueleto,
-      monad-logger
+      monad-logger,
+      pwstore-fast
   --  build-depends: containers
   default-language:    Haskell2010
 
@@ -41,14 +43,16 @@ executable Hastings-exe
   build-depends:
    base      >= 4.8 && < 4.9,
    Hastings,
-   haste-standalone
+   haste-standalone,
+   bytestring
  if impl(haste)
    build-depends: haste-lib >= 0.5 && < 0.6
  else
    build-depends:
     haste-compiler >= 0.5 && < 0.6,
     uuid,
-    random
+    random,
+    pwstore-fast
   default-language:    Haskell2010
 
 test-suite Hastings-test
@@ -61,7 +65,8 @@ test-suite Hastings-test
     haste-compiler,
     test-framework,
     test-framework-quickcheck2,
-    QuickCheck
+    QuickCheck,
+    bytestring
   other-modules:       Utils, Hastings.ServerUtilsTests
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010

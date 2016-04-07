@@ -7,7 +7,7 @@ import LobbyTypes
 #ifdef __HASTE__
 #define REMOTE(x) (remote undefined)
 #else
-import LobbyServer as Server
+import qualified LobbyServer as Server
 #define REMOTE(x) (remote x)
 #endif
 -- |The api provided by the server.
@@ -15,11 +15,12 @@ data LobbyAPI = LobbyAPI
   { connect :: Remote (String -> Server ())
     -- |Creates a game on the server with the current client as host.
     -- |The 'Int' represents the default max number of players
-  , createGame :: Remote (Int -> Server (Maybe (String)))
+  , createGame :: Remote (Int -> Server (Maybe String))
   , getGamesList :: Remote (Server [String])
     -- |Joins a game with the 'UUID' representetd by the 'String'.
+    -- |The second 'String' is the password for the game, can be left as "" if there is no password.
     -- |Returns if the client successfully joined or not.
-  , joinGame :: Remote (String -> Server Bool)
+  , joinGame :: Remote (String -> String -> Server Bool)
   , findPlayersInGame :: Remote (Server [String])
     -- |Finds the name of the game with String as identifier
   , findGameNameWithID :: Remote (String -> Server String)
@@ -41,10 +42,25 @@ data LobbyAPI = LobbyAPI
   , getClientName :: Remote (Server String)
     -- |Join named chat
   , joinChat :: Remote (Name -> Server ())
+    -- |Leave named chat
+  , leaveChat :: Remote (Name -> Server ())
     -- |Send ChatMessage over Named channel
   , sendChatMessage :: Remote (Name -> ChatMessage -> Server ())
     -- |Reads next ChatMessage from named chat channel.
   , readChatChannel :: Remote (Name -> Server ChatMessage)
+    -- |Get list of chats the client is in
+  , getJoinedChats :: Remote (Server [String])
+    -- |Get list of all chat names
+  , getChats :: Remote (Server [String])
+    -- |Sets a password to the game the client is in as 'ByteString'
+    -- |Only allowed if the current player is owner of it's game
+  , setPassword :: Remote (String -> Server ())
+    -- |Returns if the game is protected by a password or not. 'String' is the Game ID
+  , isGamePasswordProtected :: Remote (String -> Server Bool)
+    -- |Returns whether or not the current player is owner of the game it's in
+  , isOwnerOfCurrentGame :: Remote (Server Bool)
+    -- |Leaves the game the player is in
+  , leaveGame :: Remote (Server ())
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -65,5 +81,12 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.changeMaxNumberOfPlayers gamesList))
             <*> REMOTE((Server.getClientName playersList))
             <*> REMOTE((Server.joinChat playersList chatList))
+            <*> REMOTE((Server.leaveChat playersList))
             <*> REMOTE((Server.sendChatMessage playersList chatList))
             <*> REMOTE((Server.readChatChannel playersList))
+            <*> REMOTE((Server.getJoinedChats playersList))
+            <*> REMOTE((Server.getChats chatList))
+            <*> REMOTE((Server.setPasswordToGame gamesList))
+            <*> REMOTE((Server.isGamePasswordProtected gamesList))
+            <*> REMOTE((Server.remoteIsOwnerOfGame gamesList))
+            <*> REMOTE((Server.leaveGame gamesList))
