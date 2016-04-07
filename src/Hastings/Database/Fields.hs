@@ -20,6 +20,9 @@ Game
     maxAmountOfPlayers Int
 Player
     userName String
-    session Word64
-    UniqueSession session
+    UniqueUsername userName
+OnlinePlayer
+    player PlayerId
+    sessionID Word64
+    UniqueSession sessionID
 |]
