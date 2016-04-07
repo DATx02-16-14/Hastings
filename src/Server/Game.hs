@@ -155,7 +155,7 @@ setPasswordToGame mVarGames sid passwordString = do
           (\(guuid, gData) -> (guuid, gData {gamePassword = hashedPassword}))
           (== game)
           games
-    (Just (_,gameData), False) -> do
+    (Just (_,gameData), False) ->
       maybe
         (return ())
         (\client -> messageClients (LobbyError "Not owner of the game") [client])

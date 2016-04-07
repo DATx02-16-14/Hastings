@@ -54,7 +54,7 @@ announceChatJoin mVarClients mVarChats sid chatName = do
   clientList <- readMVar mVarClients
   case chatName `lookup` chatList of
     Nothing      -> return ()
-    Just channel -> do
+    Just channel ->
       maybe
         (return ())
         (writeChan channel . ChatAnnounceJoin . name)
