@@ -19,7 +19,8 @@ retrievePlayerbyUsername :: String -- ^The username of the player to retrieve.
                          -> IO (Maybe (Entity Player))
 retrievePlayerbyUsername name = runDB $ getBy $ UniqueUsername name
 
--- |Save an an online player to the database.
+-- |Save an new online player to the database.
+--  Creates a new player with the specified username if the player doesn't exist.
 saveOnlinePlayer :: String -- ^The name of the player to save.
                  -> Word64 -- ^The sessionID of the player to save.
                  -> IO (Key OnlinePlayer)
