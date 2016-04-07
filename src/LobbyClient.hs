@@ -27,10 +27,9 @@ clientMain lapi gapi = do
   createChatDOM lapi
   createLobbyDOM lapi gapi
 
-
   fork $ listenForLobbyChanges lapi gapi
-  onServer $ joinChat lapi <.> "main"
-  fork $ listenForChatMessages lapi "main" chatMessageCallback
+  clientJoinChat lapi "main"
+  
   return ()
 
 listenForLobbyChanges :: LobbyAPI -> GameAPI -> Client ()

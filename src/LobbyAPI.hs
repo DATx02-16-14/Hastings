@@ -42,10 +42,16 @@ data LobbyAPI = LobbyAPI
   , getClientName :: Remote (Server String)
     -- |Join named chat
   , joinChat :: Remote (Name -> Server ())
+    -- |Leave named chat
+  , leaveChat :: Remote (Name -> Server ())
     -- |Send ChatMessage over Named channel
   , sendChatMessage :: Remote (Name -> ChatMessage -> Server ())
     -- |Reads next ChatMessage from named chat channel.
   , readChatChannel :: Remote (Name -> Server ChatMessage)
+    -- |Get list of chats the client is in
+  , getJoinedChats :: Remote (Server [String])
+    -- |Get list of all chat names
+  , getChats :: Remote (Server [String])
     -- |Sets a password to the game the client is in as 'ByteString'
     -- |Only allowed if the current player is owner of it's game
   , setPassword :: Remote (String -> Server ())
@@ -53,6 +59,8 @@ data LobbyAPI = LobbyAPI
   , isGamePasswordProtected :: Remote (String -> Server Bool)
     -- |Returns whether or not the current player is owner of the game it's in
   , isOwnerOfCurrentGame :: Remote (Server Bool)
+    -- |Leaves the game the player is in
+  , leaveGame :: Remote (Server ())
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -73,8 +81,12 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.changeMaxNumberOfPlayers gamesList))
             <*> REMOTE((Server.getClientName playersList))
             <*> REMOTE((Server.joinChat playersList chatList))
+            <*> REMOTE((Server.leaveChat playersList))
             <*> REMOTE((Server.sendChatMessage playersList chatList))
             <*> REMOTE((Server.readChatChannel playersList))
+            <*> REMOTE((Server.getJoinedChats playersList))
+            <*> REMOTE((Server.getChats chatList))
             <*> REMOTE((Server.setPasswordToGame gamesList))
             <*> REMOTE((Server.isGamePasswordProtected gamesList))
             <*> REMOTE((Server.remoteIsOwnerOfGame gamesList))
+            <*> REMOTE((Server.leaveGame gamesList))

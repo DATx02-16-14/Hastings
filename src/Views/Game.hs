@@ -35,19 +35,35 @@ createGameDOM api gapi = do
     ]
   appendChild header nameOfGame
 
+  buttonGroup <- newElem "div" `with`
+    [
+      attr "class" =: "btn-group",
+      attr "role"  =: "group"
+    ]
   createStartGameBtn <- newElem "button" `with`
     [
       attr "id"    =: "start-game-button",
-      attr "class" =: "btn btn-default"
+      attr "class" =: "btn btn-primary"
     ]
   createStartGameBtnText <- newTextElem "Start game"
   appendChild createStartGameBtn createStartGameBtnText
 
   (tableDiv, tableBody) <- createTable "game-player-list" 500 ["Players"]
 
+  leaveGameButton <- newElem "button" `with`
+    [
+      attr "class" =: "btn btn-danger"
+    ]
+  leaveGameText <- newTextElem "Leave"
+  appendChild leaveGameButton leaveGameText
+  clickEventElem leaveGameButton $ onServer $ leaveGame api
+
+
+  addChildrenToParent' buttonGroup [leaveGameButton, createStartGameBtn]
+
   addPlayersToPlayerList api tableBody players
 
-  addChildrenToParent' parentDiv [header, tableDiv, createStartGameBtn]
+  addChildrenToParent' parentDiv [header, tableDiv, buttonGroup]
   addChildrenToCenterColumn [parentDiv]
 
 -- |Creates DOM for changing game settings
