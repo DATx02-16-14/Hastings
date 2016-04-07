@@ -24,6 +24,14 @@ retrievePlayerbyUsername :: String -- ^The username of the player to retrieve.
                          -> IO (Maybe (Entity Player))
 retrievePlayerbyUsername name = runDB $ getBy $ UniqueUsername name
 
+-- |Change the username of a player.
+changeUserName :: String -- ^The old username.
+               -> String -- ^The new username.
+               -> IO (Key Player)
+changeUserName oldName newName = do
+  deletePlayer oldName
+  savePlayer newName
+
 -- |Save an new online player to the database.
 --  Creates a new player with the specified username if the player doesn't exist.
 saveOnlinePlayer :: String -- ^The name of the player to save.
