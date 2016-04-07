@@ -38,8 +38,6 @@ data LobbyAPI = LobbyAPI
   , readLobbyChannel :: Remote (Server LobbyMessage)
    -- |Changes the maximum amount of players
    , changeMaxNumberOfPlayers :: Remote (Int -> Server ())
-    -- |Get clients name based on sid
-  , getClientName :: Remote (Server String)
     -- |Join named chat
   , joinChat :: Remote (Name -> Server ())
     -- |Leave named chat
@@ -66,7 +64,7 @@ data LobbyAPI = LobbyAPI
 -- |Creates an instance of the api used by the client to communicate with the server.
 newLobbyAPI :: LobbyState -> App LobbyAPI
 newLobbyAPI (playersList, gamesList, chatList) =
-   LobbyAPI <$> REMOTE((Server.connect playersList chatList))
+   LobbyAPI <$> REMOTE((Server.connect playersList))
             <*> REMOTE((Server.createGame gamesList playersList))
             <*> REMOTE((Server.getGamesList gamesList))
             <*> REMOTE((Server.playerJoinGame playersList gamesList))
@@ -79,7 +77,6 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.changeGameNameWithSid gamesList playersList))
             <*> REMOTE((Server.readLobbyChannel playersList))
             <*> REMOTE((Server.changeMaxNumberOfPlayers gamesList))
-            <*> REMOTE((Server.getClientName playersList))
             <*> REMOTE((Server.joinChat playersList chatList))
             <*> REMOTE((Server.leaveChat playersList))
             <*> REMOTE((Server.sendChatMessage playersList chatList))
