@@ -14,6 +14,11 @@ savePlayer :: String -- ^The name of the player to save.
            -> IO (Key Player)
 savePlayer name = runDB $ insert $ Player name
 
+-- |Delete a player from the database.
+deletePlayer :: String -- ^The username of the player to delete.
+             -> IO ()
+deletePlayer userName = runDB $ deleteBy $ UniqueUsername userName
+
 -- |Retrieve a player from the database by their username.
 retrievePlayerbyUsername :: String -- ^The username of the player to retrieve.
                          -> IO (Maybe (Entity Player))
