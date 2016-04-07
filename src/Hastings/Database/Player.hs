@@ -43,3 +43,7 @@ retrieveOnlinePlayer sessionID = runDB $ do
          return p
   return $ listToMaybe playerList
 
+-- |Delete an online player from the database.
+deleteOnlinePlayer :: Word64 -- ^The sessionID of the player to delete.
+                   -> IO ()
+deleteOnlinePlayer sessionID = runDB $ deleteBy $ UniqueSession sessionID
