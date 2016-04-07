@@ -6,6 +6,7 @@ import Hastings.Database.Common (runDB)
 import Hastings.Database.Fields
 
 import qualified Database.Esqueleto as Esql
+
 import Data.Word (Word64)
 import Data.Maybe (listToMaybe)
 
@@ -28,10 +29,11 @@ retrievePlayerbyUsername name = runDB $ Esql.getBy $ UniqueUsername name
 -- |Change the username of a player.
 changeUserName :: String -- ^The old username.
                -> String -- ^The new username.
-               -> IO (Esql.Key Player)
-changeUserName oldName newName = do
-  deletePlayer oldName
-  savePlayer newName
+               -> IO ()
+changeUserName oldName newName = runDB $ do
+  Esql.update $ \player -> do
+    Esql.set player [PlayerUserName Esql.=. Esql.val newName]
+    Esql.where_ (player Esql.^. PlayerUserName Esql.==. Esql.val oldName)
 
 -- |Save an new online player to the database.
 --  Creates a new player with the specified username if the player doesn't exist.
