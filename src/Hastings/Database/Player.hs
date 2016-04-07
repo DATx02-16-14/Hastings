@@ -27,14 +27,11 @@ saveOnlinePlayer :: String -- ^The name of the player to save.
 saveOnlinePlayer name sessionID = do
   player <- retrievePlayerbyUsername name
   case player of
-    Just entity -> saveOnlinePlayer' (entityKey entity) sessionID
-    _           -> do
-      key <- savePlayer name
-      saveOnlinePlayer' key sessionID
+    Just entity -> saveOnlinePlayer' sessionID (entityKey entity)
+    _           -> savePlayer name >>= saveOnlinePlayer' sessionID
 
     where
-      saveOnlinePlayer' key sessionID = runDB $ insert $ OnlinePlayer key sessionID
-
+      saveOnlinePlayer' sessionID key = runDB $ insert $ OnlinePlayer key sessionID
 
 -- |Retrieve an online player from the database.
 retrieveOnlinePlayer :: Word64 -- ^The sessionID of the player to retrieve.
