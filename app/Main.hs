@@ -21,7 +21,7 @@ import LobbyClient
 #define migrateDatabase (return ())
 #define clearOnlinePlayers (return ())
 #else
-import LobbyServer
+import Server (disconnect)
 import Hastings.Database.Common (migrateDatabase)
 import Hastings.Database.Player (clearOnlinePlayers)
 #define clientMain (\_ _ -> return ())
