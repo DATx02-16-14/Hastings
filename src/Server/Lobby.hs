@@ -3,7 +3,10 @@ module Server.Lobby where
 import Haste.App (SessionID)
 import Control.Concurrent (modifyMVar_, newChan, readMVar, readChan)
 import Data.List (find)
+import Database.Persist (entityVal)
 
+import qualified Hastings.Database.Player as PlayerDB
+import qualified Hastings.Database.Fields as Fields
 import Hastings.ServerUtils
 import Server.Game as Game
 import Server.Chat as Chat
@@ -12,6 +15,7 @@ import Hastings.Utils
 
 connect :: ConcurrentClientList -> Name -> SessionID -> IO ()
 connect mVarClients name sid = do
+  PlayerDB.saveOnlinePlayer name sid
   modifyMVar_ mVarClients  $ \clients -> do
     lobbyChannel <- newChan
     return $ ClientEntry sid name [] lobbyChannel : clients
@@ -21,6 +25,7 @@ connect mVarClients name sid = do
 
 disconnect :: ConcurrentClientList -> GamesList-> SessionID -> IO ()
 disconnect mVarClients mVarGames sid = do
+  PlayerDB.deleteOnlinePlayer sid
   disconnectPlayerFromLobby mVarClients sid
   Game.leaveGame mVarGames sid
 
@@ -43,23 +48,30 @@ getConnectedPlayerNames mVarClients = do
 changeNickName :: ConcurrentClientList -> GamesList -> SessionID -> Name -> IO ()
 changeNickName mVarClients mVarGames sid newName = do
   clientList <- readMVar mVarClients
-  let oldName = maybe
-                  "NO_SUCH_CLIENT"
-                  name
-                  $ sid `lookupClientEntry` clientList
+  player <- PlayerDB.retrieveOnlinePlayer sid
+  playerWithNewName <- PlayerDB.retrievePlayerByUsername newName
+  case playerWithNewName of
+    Just plr -> do
+      let client = lookupClientEntry sid clientList
+      case client of
+        Just c  -> messageClients (LobbyError "That username already exists" ) [c]
+        Nothing -> return ()
+    Nothing  -> do
+      PlayerDB.changeUserName (getName player) newName
 
-  modifyMVar_ mVarClients $ \cs ->
-    return $ updateNick sid cs
-  modifyMVar_ mVarGames $ \gs ->
-    return $ map (\(uuid, gameData) -> (uuid, gameData {players = updateNick sid $ players gameData})) gs
+      modifyMVar_ mVarClients $ \cs ->
+        return $ updateNick sid cs
+      modifyMVar_ mVarGames $ \gs ->
+        return $ map (\(uuid, gameData) -> (uuid, gameData {players = updateNick sid $ players gameData})) gs
 
-  -- Update the clients with this new information
-  messageClients NickChange clientList
-  -- Notify all chats about nick update
-  Chat.notifyClientChats mVarClients sid $ oldName ++ " changed nick to " ++ newName
+      -- Update the clients with this new information
+      messageClients NickChange clientList
+      -- Notify all chats about nick update
+      Chat.notifyClientChats mVarClients sid $ getName player ++ " changed nick to " ++ newName
 
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
+    getName = maybe "NO_SUCH_CLIENT" (Fields.playerUserName . entityVal)
 
 -- |Reads the lobby channel of the current client and returns the message.
 -- |Blocking method if the channel is empty

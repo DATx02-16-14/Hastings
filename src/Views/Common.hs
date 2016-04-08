@@ -199,3 +199,43 @@ fadeOutElem e = fadeOutElem' 1
       setStyle e "filter" $ "alpha(opacity=" ++ show (op * 100) ++ ")"
       setTimer (Once 10) $ fadeOutElem' (op - op * 0.1)
       return ()
+
+createTable :: String       -- ^The id of the table
+            -> Int          -- ^The height of the table in pixels
+            -> [String]     -- ^The different headers in the table
+            -> Client (Elem, Elem)  -- ^The created table and the body
+createTable identifier height headers = do
+
+  tableDiv <- newElem "div" `with`
+    [
+      attr "id"          =: identifier,
+      style "max-height" =: (show height ++ "px"),
+      style "overflow"   =: "auto"
+    ]
+  table <- newElem "table" `with`
+    [
+      attr "class" =: "table table-striped"
+    ]
+  thead <- newElem "thead"
+  tr <- newElem "tr"
+  mapM_ (thcreate tr) headers
+
+  tbody <- newElem "tbody" `with`
+    [
+      prop "id" =: (identifier ++ "-table-body")
+    ]
+  appendChild thead tr
+  addChildrenToParent' table [thead, tbody]
+  appendChild tableDiv table
+  return (tableDiv, tbody)
+
+  where
+    thcreate :: Elem -> String -> Client ()
+    thcreate parent value = do
+      th <- newElem "th" `with`
+        [
+          attr "colspan" =: "2"
+        ]
+      thText <- newTextElem value
+      appendChild th thText
+      appendChild parent th
