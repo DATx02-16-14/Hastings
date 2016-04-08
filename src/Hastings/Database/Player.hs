@@ -31,7 +31,7 @@ retrievePlayerByUsername name = runDB $ Esql.getBy $ UniqueUsername name
 changeUserName :: String -- ^The old username.
                -> String -- ^The new username.
                -> IO ()
-changeUserName oldName newName = runDB $ do
+changeUserName oldName newName = runDB $
   Esql.update $ \player -> do
     Esql.set player [PlayerUserName Esql.=. Esql.val newName]
     Esql.where_ (player Esql.^. PlayerUserName Esql.==. Esql.val oldName)
