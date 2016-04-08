@@ -8,7 +8,7 @@ import Hastings.Database.Fields
 import qualified Database.Esqueleto as Esql
 import qualified Database.Persist.Sql as Pers
 
-import Data.Word (Word64)
+import Haste.App (SessionID)
 import Data.Maybe (listToMaybe)
 
 
@@ -39,7 +39,7 @@ changeUserName oldName newName = runDB $ do
 -- |Save an new online player to the database.
 --  Creates a new player with the specified username if the player doesn't exist.
 saveOnlinePlayer :: String -- ^The name of the player to save.
-                 -> Word64 -- ^The sessionID of the player to save.
+                 -> SessionID -- ^The sessionID of the player to save.
                  -> IO (Esql.Key OnlinePlayer)
 saveOnlinePlayer name sessionID = do
   player <- retrievePlayerByUsername name
@@ -59,7 +59,7 @@ saveOnlinePlayer name sessionID = do
 -- SELECT OnlinePlayer.*, Player.*
 -- WHERE OnlinePlayer.Player == Player.Id && OnlinePlayer.sessionID == sessionID
 -- @
-retrieveOnlinePlayer :: Word64 -- ^The sessionID of the player to retrieve.
+retrieveOnlinePlayer :: SessionID -- ^The sessionID of the player to retrieve.
                      -> IO (Maybe (Esql.Entity Player))
 retrieveOnlinePlayer sessionID = runDB $ do
   playerList <- Esql.select $
@@ -70,7 +70,7 @@ retrieveOnlinePlayer sessionID = runDB $ do
   return $ listToMaybe playerList
 
 -- |Delete an online player from the database.
-deleteOnlinePlayer :: Word64 -- ^The sessionID of the player to delete.
+deleteOnlinePlayer :: SessionID -- ^The sessionID of the player to delete.
                    -> IO ()
 deleteOnlinePlayer sessionID = runDB $ Esql.deleteBy $ UniqueSession sessionID
 

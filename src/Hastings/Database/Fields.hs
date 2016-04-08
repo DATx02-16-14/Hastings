@@ -12,7 +12,7 @@
 module Hastings.Database.Fields where
 
 import Database.Persist.TH
-import Data.Word (Word64)
+import Haste.App (SessionID)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Game
@@ -23,6 +23,6 @@ Player
     UniqueUsername userName
 OnlinePlayer
     player        PlayerId
-    sessionID     Word64
+    sessionID     SessionID
     UniqueSession sessionID
 |]
