@@ -22,9 +22,9 @@ deletePlayer :: String -- ^The username of the player to delete.
 deletePlayer userName = runDB $ Esql.deleteBy $ UniqueUsername userName
 
 -- |Retrieve a player from the database by their username.
-retrievePlayerbyUsername :: String -- ^The username of the player to retrieve.
+retrievePlayerByUsername :: String -- ^The username of the player to retrieve.
                          -> IO (Maybe (Esql.Entity Player))
-retrievePlayerbyUsername name = runDB $ Esql.getBy $ UniqueUsername name
+retrievePlayerByUsername name = runDB $ Esql.getBy $ UniqueUsername name
 
 -- |Change the username of a player.
 changeUserName :: String -- ^The old username.
@@ -41,7 +41,7 @@ saveOnlinePlayer :: String -- ^The name of the player to save.
                  -> Word64 -- ^The sessionID of the player to save.
                  -> IO (Esql.Key OnlinePlayer)
 saveOnlinePlayer name sessionID = do
-  player <- retrievePlayerbyUsername name
+  player <- retrievePlayerByUsername name
   case player of
     Just entity -> saveOnlinePlayer' sessionID (Esql.entityKey entity)
     _           -> savePlayer name >>= saveOnlinePlayer' sessionID
