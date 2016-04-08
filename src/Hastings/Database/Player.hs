@@ -56,16 +56,17 @@ saveOnlinePlayer name sessionID = do
 --  Runs this query on the database.
 --
 -- @
--- SELECT OnlinePlayer.*, Player.Id
--- WHERE OnlinePlayer.Player == Player.Id
+-- SELECT OnlinePlayer.*, Player.*
+-- WHERE OnlinePlayer.Player == Player.Id && OnlinePlayer.sessionID == sessionID
 -- @
 retrieveOnlinePlayer :: Word64 -- ^The sessionID of the player to retrieve.
                      -> IO (Maybe (Esql.Entity Player))
 retrieveOnlinePlayer sessionID = runDB $ do
   playerList <- Esql.select $
-       Esql.from $ \(b, p) -> do
-         Esql.where_ (b Esql.^. OnlinePlayerPlayer Esql.==. p Esql.^. PlayerId)
-         return p
+       Esql.from $ \(onlinePlayers, players) -> do
+         Esql.where_ (onlinePlayers Esql.^. OnlinePlayerPlayer Esql.==. players Esql.^. PlayerId
+             Esql.&&. onlinePlayers Esql.^. OnlinePlayerSessionID Esql.==. Esql.val sessionID)
+         return players
   return $ listToMaybe playerList
 
 -- |Delete an online player from the database.
