@@ -230,24 +230,32 @@ changeNickName remoteClientList remoteGames newName = do
   clientList <- liftIO $ CC.readMVar mVarClientList
   sid <- getSessionID
   player <- liftIO $ PlayerDB.retrieveOnlinePlayer sid
-  liftIO $ PlayerDB.changeUserName (oldName player) newName
+  playerWithNewName <- liftIO $ PlayerDB.retrievePlayerByUsername newName
+  case playerWithNewName of
+    Just plr -> do
+      let client = lookupClientEntry sid clientList
+      case client of
+        Just c  -> liftIO $ messageClients (LobbyError "That username already exists" ) [c]
+        Nothing -> return ()
+    Nothing  -> do
+      liftIO $ PlayerDB.changeUserName (getName player) newName
 
-  liftIO $ CC.modifyMVar_ mVarClientList $ \cs ->
-    return $ updateNick sid cs
-  mVarGamesList <- remoteGames
-  liftIO $ CC.modifyMVar_ mVarGamesList $ \gs ->
-    return $ map (\(uuid, gameData) -> (uuid, gameData {players = updateNick sid $ players gameData})) gs
+      liftIO $ CC.modifyMVar_ mVarClientList $ \cs ->
+        return $ updateNick sid cs
+      mVarGamesList <- remoteGames
+      liftIO $ CC.modifyMVar_ mVarGamesList $ \gs ->
+        return $ map (\(uuid, gameData) -> (uuid, gameData {players = updateNick sid $ players gameData})) gs
 
-  -- Update the clients with this new information
-  liftIO $ do
-    clients <- CC.readMVar mVarClientList
-    messageClients NickChange clients
-  -- Notify all chats about nick update
-  notifyClientChats remoteClientList $ oldName player ++ " changed nick to " ++ newName
+      -- Update the clients with this new information
+      liftIO $ do
+        clients <- CC.readMVar mVarClientList
+        messageClients NickChange clients
+      -- Notify all chats about nick update
+      notifyClientChats remoteClientList $ getName player ++ " changed nick to " ++ newName
 
   where
     updateNick sid = updateListElem (\c -> c {name = newName}) (\c -> sid == sessionID c)
-    oldName = maybe "NO_SUCH_CLIENT" (Fields.playerUserName . entityVal)
+    getName = maybe "NO_SUCH_CLIENT" (Fields.playerUserName . entityVal)
 
 -- | Sends a server notification to all chats the client has joined
 notifyClientChats :: Server ConcurrentClientList -> String -> Server ()
