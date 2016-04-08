@@ -32,3 +32,17 @@ stack exec -- Hastings-exe --embed dist/build/Hastings-exe/Hastings-exe --force
 stack exec Hastings-exe
 ```
 
+#### Database
+This application uses a MySQL database to store some of its data.
+The development version connects to the database with this connection information by default:
+```
+Host = "localhost",
+Port = 3306,
+User = "root",
+Password = "",
+Database = "hastings"
+```
+
+The schema hastings must be created manually before running the application for the first time, to do so execute this query on your database.
+```CREATE SCHEMA 'hastings'; ```
+
