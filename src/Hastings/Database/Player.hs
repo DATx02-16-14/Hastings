@@ -6,6 +6,7 @@ import Hastings.Database.Common (runDB)
 import Hastings.Database.Fields
 
 import qualified Database.Esqueleto as Esql
+import qualified Database.Persist.Sql as Pers
 
 import Data.Word (Word64)
 import Data.Maybe (listToMaybe)
@@ -71,3 +72,7 @@ retrieveOnlinePlayer sessionID = runDB $ do
 deleteOnlinePlayer :: Word64 -- ^The sessionID of the player to delete.
                    -> IO ()
 deleteOnlinePlayer sessionID = runDB $ Esql.deleteBy $ UniqueSession sessionID
+
+-- |Delete all entries in the online players table
+clearOnlinePlayers :: IO ()
+clearOnlinePlayers = runDB $ Pers.deleteWhere ([] :: [Pers.Filter OnlinePlayer])

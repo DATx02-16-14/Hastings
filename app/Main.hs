@@ -19,9 +19,11 @@ import GameAPI
 import LobbyClient
 #define disconnect(x) (\_ -> return ())
 #define migrateDatabase (return ())
+#define clearOnlinePlayers (return ())
 #else
 import LobbyServer
 import Hastings.Database.Common (migrateDatabase)
+import Hastings.Database.Player (clearOnlinePlayers)
 #define clientMain (\_ _ -> return ())
 #endif
 
@@ -34,6 +36,7 @@ main = runStandaloneApp $ do
 
   let serverState = (playersList, gamesList, chatList)
   liftServerIO $ migrateDatabase
+  liftServerIO $ clearOnlinePlayers
 
   onSessionEnd $ disconnect(serverState)
   api <- newLobbyAPI (playersList, gamesList, chatList)
