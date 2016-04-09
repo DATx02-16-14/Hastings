@@ -19,6 +19,9 @@ Game
     name               String
     maxAmountOfPlayers Int
     UniqueName name
+PlayerInGame
+    game          GameId
+    player        SessionID
 Player
     userName       String
     UniqueUsername userName
