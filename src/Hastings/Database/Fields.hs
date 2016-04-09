@@ -18,6 +18,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Game
     name               String
     maxAmountOfPlayers Int
+    UniqueName name
 Player
     userName       String
     UniqueUsername userName
