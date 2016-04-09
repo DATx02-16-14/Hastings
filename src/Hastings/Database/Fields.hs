@@ -16,17 +16,22 @@ import Haste.App (SessionID)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Game
+    uuid               String
     name               String
     maxAmountOfPlayers Int
     UniqueName name
+    UniqueUUID uuid
 PlayerInGame
     game          GameId
     player        SessionID
+    deriving Show
 Player
     userName       String
     UniqueUsername userName
+    deriving Show
 OnlinePlayer
     player        PlayerId
     sessionID     SessionID
     UniqueSession sessionID
+    deriving Show
 |]

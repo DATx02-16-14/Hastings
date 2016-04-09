@@ -13,10 +13,11 @@ retrieveGameByName :: String -- ^The name of the game to retrieve.
 retrieveGameByName name = runDB $ Esql.getBy $ UniqueName name
 
 -- |Save a game to the database.
-saveGame :: String -- ^The name of the game to save.
+saveGame :: String -- ^The UUID of the game to save.
+         -> String -- ^The name of the game to save.
          -> Int    -- ^Maximum amount of players for this game.
          -> IO (Esql.Key Game)
-saveGame name maxAmountOfPlayers = runDB $ Esql.insert $ Game name maxAmountOfPlayers
+saveGame uuid name maxAmountOfPlayers = runDB $ Esql.insert $ Game uuid name maxAmountOfPlayers
 
 -- |Add a player to a game
 addPlayerToGame :: SessionID -- ^The sessionID of the player.
