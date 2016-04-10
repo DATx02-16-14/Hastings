@@ -7,6 +7,7 @@ import qualified Database.Esqueleto as Esql
 
 import Haste.App (SessionID)
 import Data.Maybe (listToMaybe)
+import Control.Monad (liftM)
 
 -- |Retrieve a game from the database.
 retrieveGameByName :: String -- ^The name of the game to retrieve.
@@ -66,3 +67,12 @@ retrievePlayersInGame gameKey = runDB $
     onlinePlayerInGame = Esql.from $ \(playerInGame `Esql.InnerJoin` onlinePlayers) -> do
         Esql.on (playerInGame Esql.^. PlayerInGamePlayer Esql.==. onlinePlayers Esql.^. OnlinePlayerSessionID)
         return (playerInGame, onlinePlayers)
+
+-- |Retrieves the number of players currently in a game.
+retrieveNumberOfPlayersInGame :: String -- ^The UUID of the game
+                              -> IO Int
+retrieveNumberOfPlayersInGame uuid = do
+  g <- retrieveGameByUUID uuid
+  case g of
+    Just game -> liftM length $ retrievePlayersInGame (Esql.entityKey game)
+    Nothing   -> return 0
