@@ -38,6 +38,14 @@ saveGame :: String    -- ^The UUID of the game to save.
          -> IO (Esql.Key Game)
 saveGame uuid name maxAmountOfPlayers owner password = runDB $ Esql.insert $ Game uuid name maxAmountOfPlayers owner password
 
+-- |Set password on game
+setPasswordOnGame :: String -- ^The UUID of the game
+                  -> String -- ^The password of the game
+                  -> IO ()
+setPasswordOnGame uuid password = runDB $
+  Esql.update $ \games -> do
+    Esql.set games [GamePassword Esql.=. Esql.val password]
+    Esql.where_ (games Esql.^. GameUuid Esql.==. Esql.val uuid)
 
 -- |Add a player to a game
 addPlayerToGame :: SessionID -- ^The sessionID of the player.
