@@ -6,6 +6,7 @@ import Hastings.Database.Fields
 import qualified Database.Esqueleto as Esql
 
 import Haste.App (SessionID)
+import Data.Maybe (listToMaybe)
 
 -- |Retrieve a game from the database.
 retrieveGameByName :: String -- ^The name of the game to retrieve.
@@ -17,6 +18,16 @@ retrieveGameByUUID :: String -- ^The UUID of the game
                    -> IO (Maybe (Esql.Entity Game))
 retrieveGameByUUID uuid = runDB $ Esql.getBy $ UniqueUUID uuid
 
+-- |Retrieves the game from the database that the player is currently in.
+retrieveGameBySid :: SessionID -- ^The sessionID of the player.
+                  -> IO (Maybe (Esql.Entity Game))
+retrieveGameBySid sid = runDB $ do
+  games <- Esql.select $
+    Esql.from $ \(games, playersInGame) -> do
+      Esql.where_ (games Esql.^. GameId Esql.==. playersInGame Esql.^. PlayerInGameGame
+          Esql.&&. playersInGame Esql.^. PlayerInGamePlayer Esql.==. Esql.val sid)
+      return games
+  return $ listToMaybe games
 
 -- |Save a game to the database.
 saveGame :: String -- ^The UUID of the game to save.
