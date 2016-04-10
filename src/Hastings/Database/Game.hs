@@ -30,11 +30,14 @@ retrieveGameBySid sid = runDB $ do
   return $ listToMaybe games
 
 -- |Save a game to the database.
-saveGame :: String -- ^The UUID of the game to save.
-         -> String -- ^The name of the game to save.
-         -> Int    -- ^Maximum amount of players for this game.
+saveGame :: String    -- ^The UUID of the game to save.
+         -> String    -- ^The name of the game to save.
+         -> Int       -- ^Maximum amount of players for this game.
+         -> SessionID -- ^The sessionID of the owner of the game.
+         -> String    -- ^The password of the game, empty if the game has no password.
          -> IO (Esql.Key Game)
-saveGame uuid name maxAmountOfPlayers = runDB $ Esql.insert $ Game uuid name maxAmountOfPlayers
+saveGame uuid name maxAmountOfPlayers owner password = runDB $ Esql.insert $ Game uuid name maxAmountOfPlayers owner password
+
 
 -- |Add a player to a game
 addPlayerToGame :: SessionID -- ^The sessionID of the player.
