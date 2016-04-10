@@ -54,6 +54,15 @@ addPlayerToGame :: SessionID -- ^The sessionID of the player.
                 -> IO (Esql.Key PlayerInGame)
 addPlayerToGame sessionID gameKey = runDB $ Esql.insert $ PlayerInGame gameKey sessionID
 
+-- |Remove a player from a game
+removePlayerFromGame :: SessionID -- ^The sessionID od the player.
+                     -> Esql.Key Game -- ^The key of the game.
+                     -> IO ()
+removePlayerFromGame sessionID gameKey = runDB $
+  Esql.delete $ Esql.from $ \playersInGame -> do
+    Esql.where_ (playersInGame Esql.^. PlayerInGameGame Esql.==. Esql.val gameKey
+        Esql.&&. playersInGame Esql.^. PlayerInGamePlayer Esql.==. Esql.val sessionID)
+
 -- |Retrieves a players that are currently in a game.
 retrievePlayersInGame :: Esql.Key Game -- ^The key of the game.
                       -> IO [Esql.Entity Player]
