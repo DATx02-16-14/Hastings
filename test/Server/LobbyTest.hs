@@ -43,3 +43,11 @@ prop_disconnect i clientList gameList = monadicIO $ do
   assert $
     (all (client /=) newClientList) &&
     (all (\(_,gd) -> all (client /=) $ players gd) newGameList)
+
+-- |Property for getting the names of connected players.
+-- Might seem trivial right now.
+prop_getConnectedPlayerNames :: [ClientEntry] -> Property
+prop_getConnectedPlayerNames list = monadicIO $ do
+  clientMVar <- run $ newMVar list
+  nameList <- run $ Server.Lobby.getConnectedPlayerNames clientMVar
+  assert $ nameList == map name list
