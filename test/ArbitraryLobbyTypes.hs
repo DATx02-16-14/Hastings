@@ -1,4 +1,4 @@
--- Contains arbitrary declarations of the Data types in LobbyTypes.
+-- |Contains arbitrary declarations of the Data types in LobbyTypes.
 module ArbitraryLobbyTypes where
 
 import Test.QuickCheck
