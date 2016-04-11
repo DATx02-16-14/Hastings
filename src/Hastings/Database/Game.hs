@@ -48,6 +48,15 @@ setPasswordOnGame uuid password = runDB $
     Esql.set games [GamePassword Esql.=. Esql.val password]
     Esql.where_ (games Esql.^. GameUuid Esql.==. Esql.val uuid)
 
+-- |Set the name of the game
+setNameOnGame :: String -- ^The UUID of the game
+              -> String -- ^The new name of the game
+              -> IO ()
+setNameOnGame uuid name = runDB $
+  Esql.update $ \games -> do
+    Esql.set games [GameName Esql.=. Esql.val name]
+    Esql.where_ (games Esql.^. GameUuid Esql.==. Esql.val uuid)
+
 -- |Add a player to a game
 addPlayerToGame :: SessionID -- ^The sessionID of the player.
                 -> Esql.Key Game -- ^The key of the game.
