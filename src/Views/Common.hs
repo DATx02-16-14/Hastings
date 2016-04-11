@@ -53,8 +53,28 @@ deleteLobbyDOM = deleteDOM "lobby" "centerContent"
 -- |Deletes the DOM created for a game in the lobby
 deleteGameDOM :: Client ()
 deleteGameDOM = do
-  deleteDOM "lobbyGame" "centerContent"
-  deleteDOM "changeGameName" "rightContent"
+  deleteDOM "lobby-game" "centerContent"
+  deleteGameOwnerDOM
+
+-- |Deletes the DOM created for changing settings in a game
+deleteGameOwnerDOM :: Client ()
+deleteGameOwnerDOM = do
+  deleteDomSafe "game-name-div" "rightContent"
+  deleteDomSafe "max-number-div" "rightContent"
+  deleteDomSafe "set-password-div" "rightContent"
+
+-- |Helper function that deletes DOM, but checks if the elements exists first
+deleteDomSafe :: String  -- ^The id of the element to remove
+              -> String  -- ^The id of the parent of the element to remove
+              -> Client ()
+deleteDomSafe child parent = do
+  childElem  <- elemById child
+  parentElem <- elemById parent
+  case (childElem, parentElem) of
+    (Just c, Just p) -> deleteChild p c
+    _                -> return ()
+
+
 
 -- |Helper function that deletes DOM given an identifier from that element and the parent element
 deleteDOM :: String -> String -> Client ()
@@ -91,6 +111,46 @@ addChildrenToParent parent children = do
 
 addChildrenToParent' :: Elem -> [Elem] -> Client ()
 addChildrenToParent' parent = mapM_ (appendChild parent)
+
+-- |Creates an input field and button. Has 'String' as id and '(Client ())' is the function
+-- |That activates when clicking button or pressing enter. Descriptive text is second 'String'
+-- |Div is created with id = identifier ++ "Div". Field is created with id = identifier ++ "Field".
+-- |Button is created with id = identifier ++ "Btn"
+-- |The field and button is then placed in the right sidebar.
+createInputFieldWithButton :: String -> String -> Client () -> Client ()
+createInputFieldWithButton identifier text function = do
+  parentDiv <- createDiv [("id", identifier ++ "-div"),("class","input-group")]
+
+  inputField <- newElem "input" `with`
+    [
+      attr "type"        =: "text",
+      attr "id"          =: (identifier ++ "-field"),
+      attr "placeholder" =: text,
+      attr "class"       =: "form-control"
+    ]
+
+  buttonSpan <- newElem "span" `with`
+    [
+      attr "class" =: "input-group-btn"
+    ]
+  button <- newElem "button" `with`
+    [
+      attr "id"    =: (identifier ++ "-btn"),
+      attr "type"  =: "button",
+      attr "class" =: "btn btn-default"
+    ]
+  buttonText <- newTextElem "Change"
+
+  appendChild button buttonText
+  appendChild buttonSpan button
+  appendChild parentDiv inputField
+  appendChild parentDiv buttonSpan
+  addChildrenToRightColumn [parentDiv]
+
+  onEvent inputField KeyPress $ \13 -> function
+
+  clickEventString (identifier ++ "-btn") function
+  return ()
 
 -- |Displays the error message in 'String'. Fades in the message and then out.
 showError :: String -> Client ()
@@ -139,3 +199,43 @@ fadeOutElem e = fadeOutElem' 1
       setStyle e "filter" $ "alpha(opacity=" ++ show (op * 100) ++ ")"
       setTimer (Once 10) $ fadeOutElem' (op - op * 0.1)
       return ()
+
+createTable :: String       -- ^The id of the table
+            -> Int          -- ^The height of the table in pixels
+            -> [String]     -- ^The different headers in the table
+            -> Client (Elem, Elem)  -- ^The created table and the body
+createTable identifier height headers = do
+
+  tableDiv <- newElem "div" `with`
+    [
+      attr "id"          =: identifier,
+      style "max-height" =: (show height ++ "px"),
+      style "overflow"   =: "auto"
+    ]
+  table <- newElem "table" `with`
+    [
+      attr "class" =: "table table-striped"
+    ]
+  thead <- newElem "thead"
+  tr <- newElem "tr"
+  mapM_ (thcreate tr) headers
+
+  tbody <- newElem "tbody" `with`
+    [
+      prop "id" =: (identifier ++ "-table-body")
+    ]
+  appendChild thead tr
+  addChildrenToParent' table [thead, tbody]
+  appendChild tableDiv table
+  return (tableDiv, tbody)
+
+  where
+    thcreate :: Elem -> String -> Client ()
+    thcreate parent value = do
+      th <- newElem "th" `with`
+        [
+          attr "colspan" =: "2"
+        ]
+      thText <- newTextElem value
+      appendChild th thText
+      appendChild parent th

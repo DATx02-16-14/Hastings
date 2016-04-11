@@ -13,8 +13,12 @@ import GameAPI
 #ifdef __HASTE__
 import LobbyClient
 #define disconnect(x) (\_ -> return ())
+#define migrateDatabase (return ())
+#define clearOnlinePlayers (return ())
 #else
-import LobbyServer
+import Server (disconnect)
+import Hastings.Database.Common (migrateDatabase)
+import Hastings.Database.Player (clearOnlinePlayers)
 #define clientMain (\_ _ -> return ())
 #endif
 
@@ -26,6 +30,8 @@ main = runApp (mkConfig "129.16.23.58" 24601) $ do
   chatList <- liftServerIO $ CC.newMVar []
 
   let serverState = (playersList, gamesList, chatList)
+  liftServerIO $ migrateDatabase
+  liftServerIO $ clearOnlinePlayers
 
   onSessionEnd $ disconnect(serverState)
   api <- newLobbyAPI (playersList, gamesList, chatList)
