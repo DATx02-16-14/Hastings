@@ -24,7 +24,7 @@ library
   build-depends:
     base >= 4.7 && < 5,
     bytestring
-  exposed-modules: Views.Chat, Views.Lobby, Views.Common, Views.Game, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, GameAPI
+  exposed-modules: Hastings.Config, Views.Chat, Views.Lobby, Views.Common, Views.Game, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, GameAPI
   if impl(haste)
     build-depends: haste-lib >= 0.5 && < 0.6
   else

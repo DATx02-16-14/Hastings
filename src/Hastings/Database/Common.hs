@@ -6,7 +6,10 @@ import qualified Database.Persist.MySQL as MySQL
 import qualified Database.Esqueleto as Esql
 import qualified Control.Monad.Logger as Logger
 
+import Data.Word
+
 import Hastings.Database.Fields
+import Hastings.Config
 
 -- |Run database migration, creating all relevant tables.
 migrateDatabase :: IO ()
@@ -14,11 +17,11 @@ migrateDatabase = runDB $ Esql.runMigration migrateAll
 
 
 hastingsConnectionInfo = MySQL.defaultConnectInfo {
-  MySQL.connectHost = "localhost",
-  MySQL.connectPort = 3306,
-  MySQL.connectUser = "root",
-  MySQL.connectPassword = "",
-  MySQL.connectDatabase = "hastings"
+  MySQL.connectHost = databaseHostAddress,
+  MySQL.connectPort = databaseHostPort,
+  MySQL.connectUser = databaseUser,
+  MySQL.connectPassword = databasePassword,
+  MySQL.connectDatabase = databaseName
 }
 
 

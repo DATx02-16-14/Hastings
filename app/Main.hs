@@ -9,6 +9,7 @@ import qualified Control.Concurrent as CC
 import LobbyAPI
 import LobbyTypes
 import GameAPI
+import Hastings.Config
 
 #ifdef __HASTE__
 import LobbyClient
@@ -24,7 +25,7 @@ import Hastings.Database.Player (clearOnlinePlayers)
 
 -- |Main method and entry point for the program
 main :: IO ()
-main = runApp (mkConfig "129.16.23.58" 24601) $ do
+main = runApp (mkConfig backendHostAddress backendHostPort) $ do
   playersList <- liftServerIO $ CC.newMVar []
   gamesList <- liftServerIO $ CC.newMVar []
   chatList <- liftServerIO $ CC.newMVar []
