@@ -4,6 +4,7 @@ module LobbyTest where
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 import Control.Concurrent (readMVar, newMVar)
+import Haste.App (SessionID)
 
 import qualified Server.Lobby
 import ArbitraryLobbyTypes ()
@@ -51,3 +52,37 @@ prop_getConnectedPlayerNames list = monadicIO $ do
   clientMVar <- run $ newMVar list
   nameList <- run $ Server.Lobby.getConnectedPlayerNames clientMVar
   assert $ nameList == map name list
+
+-- |Property that makes sure that after calling changeNickName
+-- there is no player with the old name and sessionID left.
+prop_changeNickName :: Int  -- ^Index of the player to change nick name
+                    -> [ClientEntry] -> [LobbyGame] -> Property
+prop_changeNickName i clientList gameList = monadicIO $ do
+  pre $ not $ null clientList
+  let i' = abs $ mod i $ length clientList
+  let client = clientList !! i'
+  let sid = sessionID client
+  let playerName = name client
+
+  clientMVar <- run $ newMVar clientList
+  gameMVar <- run $ newMVar gameList
+
+  run $ Server.Lobby.changeNickName clientMVar gameMVar sid "new name"
+
+  newClientList <- run $ readMVar clientMVar
+  newGameList <- run $ readMVar gameMVar
+
+  assert $
+    all (changeNickNameAssert playerName "new name" sid) newClientList &&
+    all (\(_,gd) ->
+      all (changeNickNameAssert playerName "new name" sid) $ players gd)
+    newGameList
+
+-- |Helper function to check the lists of ClientEntry
+-- that the player with 'SessionID' has changed name.
+changeNickNameAssert :: Name -> Name -> SessionID -> ClientEntry -> Bool
+changeNickNameAssert oldName newName sid c | sid == sessionID c =
+  oldName /= playerName && newName == playerName
+                                           | otherwise = True
+  where
+    playerName = name c
