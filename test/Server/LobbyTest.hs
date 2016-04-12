@@ -1,5 +1,5 @@
 -- |Contains tests for "Server.Lobby" module.
-module LobbyTest where
+module Server.LobbyTest where
 
 import Test.QuickCheck
 import Test.QuickCheck.Monadic

@@ -11,7 +11,7 @@ import Data.ByteString.Char8 (empty)
 
 import LobbyTypes
 import Hastings.ServerUtils
-
+import ArbitraryLobbyTypes
 -- To run tests in ghci
 -- :l test/Hastings/ServerUtilsTests.hs src/Hastings/ServerUtils.hs src/Hastings/Utils.hs src/LobbyTypes.hs test/ArbitraryLobbyTypes.hs
 
