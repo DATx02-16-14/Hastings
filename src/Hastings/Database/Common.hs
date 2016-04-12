@@ -5,6 +5,8 @@ module Hastings.Database.Common
 import qualified Database.Persist.MySQL as MySQL
 import qualified Database.Esqueleto as Esql
 import qualified Control.Monad.Logger as Logger
+import Data.Maybe (fromMaybe)
+import System.Environment (lookupEnv)
 
 import Hastings.Database.Fields
 import Hastings.Config
@@ -14,11 +16,12 @@ migrateDatabase :: IO ()
 migrateDatabase = runDB $ Esql.runMigration migrateAll
 
 
-hastingsConnectionInfo = MySQL.defaultConnectInfo {
+hastingsConnectionInfo :: String -> MySQL.ConnectInfo
+hastingsConnectionInfo pass = MySQL.defaultConnectInfo {
   MySQL.connectHost = databaseHostAddress,
   MySQL.connectPort = databaseHostPort,
   MySQL.connectUser = databaseUser,
-  MySQL.connectPassword = databasePassword,
+  MySQL.connectPassword = pass,
   MySQL.connectDatabase = databaseName
 }
 
@@ -37,4 +40,6 @@ hastingsConnectionInfo = MySQL.defaultConnectInfo {
 -- saveCar = runDB $ insert $ Car \"Volvo\"
 -- @
 runDB :: MySQL.SqlPersistT (Logger.NoLoggingT IO) a -> IO a
-runDB = Logger.runNoLoggingT . MySQL.withMySQLConn hastingsConnectionInfo . Esql.runSqlConn
+runDB l = do
+  pass <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_PASSWORD"
+  (Logger.runNoLoggingT . MySQL.withMySQLConn (hastingsConnectionInfo pass) . Esql.runSqlConn) l

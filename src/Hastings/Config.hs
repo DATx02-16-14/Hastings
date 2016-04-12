@@ -10,5 +10,4 @@ backendHostPort    = 24601 :: Int
 databaseHostAddress = "localhost"
 databaseHostPort    = 3306 :: Word16
 databaseUser        = "root"
-databasePassword    = ""
 databaseName         = "hastings"
