@@ -57,11 +57,14 @@ executable Hastings-exe
    bytestring
 
   if flag(HasteStandalone)
-    build-depends:
-      haste-standalone
+    build-depends: haste-standalone
+  else
+    if impl(haste)
+      ghc-options: --output-html
 
  if impl(haste)
    build-depends: haste-lib >= 0.5 && < 0.6
+
  else
    build-depends:
     haste-compiler >= 0.5 && < 0.6,

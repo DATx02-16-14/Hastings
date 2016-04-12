@@ -1,22 +1,17 @@
 standalone:
 	stack build --flag Hastings:HasteStandalone
-	mkdir tmp
-	cp -r app/StandaloneApp.hs src/* tmp
-	(cd tmp; hastec StandaloneApp.hs)
-	stack exec -- Hastings-exe --embed tmp/StandaloneApp.js --force
-	rm -rf tmp
+	haste-cabal configure -f HasteStandalone
+	haste-cabal build
+	stack exec -- Hastings-exe --embed app/StandaloneApp.js
 
 server:
 	stack build
-	mkdir tmp
-	cp -r app/Main.hs src/* tmp
-	(cd tmp; hastec --output-html Main.hs)
-	mv tmp/Main.html index.html
-	chmod 644 index.html
-	rm -rf tmp
+	haste-cabal configure
+	haste-cabal build
 
 run:
 	stack exec Hastings-exe
 
 clean:
 	rm -rf dist .stack-work
+	find . -type f ! -name '*.hs' -delete
