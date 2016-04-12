@@ -6,8 +6,6 @@ import qualified Database.Persist.MySQL as MySQL
 import qualified Database.Esqueleto as Esql
 import qualified Control.Monad.Logger as Logger
 
-import Data.Word
-
 import Hastings.Database.Fields
 import Hastings.Config
 
