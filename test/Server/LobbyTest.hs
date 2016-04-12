@@ -9,14 +9,22 @@ import Haste.App (SessionID)
 import qualified Server.Lobby
 import ArbitraryLobbyTypes ()
 import LobbyTypes
+import Hastings.Database.Common (migrateDatabase)
+import Hastings.Database.Player (clearOnlinePlayers)
 
 -- To run in ghci
 -- :l test/Server/LobbyTest.hs src/Hastings/ServerUtils.hs src/Hastings/Utils.hs src/LobbyTypes.hs test/ArbitraryLobbyTypes.hs src/Server/Lobby.hs src/Server/Game.hs src/Server/Chat.hs src/Hastings/Database/Player.hs
+
+preProp :: IO ()
+preProp = do
+  migrateDatabase
+  clearOnlinePlayers
 
 -- |Property for connect that makes sure that after running connect a ClientEntry with
 -- sessionID and name is found in the list.
 prop_connect :: Name -> [ClientEntry] -> Property
 prop_connect playerName list = monadicIO $ do
+  run preProp
   sessionIDWord64 <- pick $ elements [184468..282345]
   mVar <- run $ newMVar list
   run $ Server.Lobby.connect mVar playerName sessionIDWord64
@@ -32,6 +40,7 @@ prop_disconnect i clientList gameList = monadicIO $ do
   let i' = abs $ mod i $ length clientList
   let client = clientList !! i'
   let sid = sessionID client
+  run $ preProp
 
   clientMVar <- run $ newMVar clientList
   gameMVar <- run $ newMVar gameList
@@ -49,6 +58,7 @@ prop_disconnect i clientList gameList = monadicIO $ do
 -- Might seem trivial right now.
 prop_getConnectedPlayerNames :: [ClientEntry] -> Property
 prop_getConnectedPlayerNames list = monadicIO $ do
+  run $ preProp
   clientMVar <- run $ newMVar list
   nameList <- run $ Server.Lobby.getConnectedPlayerNames clientMVar
   assert $ nameList == map name list
@@ -63,6 +73,7 @@ prop_changeNickName i clientList gameList = monadicIO $ do
   let client = clientList !! i'
   let sid = sessionID client
   let playerName = name client
+  run preProp
 
   clientMVar <- run $ newMVar clientList
   gameMVar <- run $ newMVar gameList
