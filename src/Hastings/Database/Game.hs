@@ -57,6 +57,16 @@ setNameOnGame uuid name = runDB $
     Esql.set games [GameName Esql.=. Esql.val name]
     Esql.where_ (games Esql.^. GameUuid Esql.==. Esql.val uuid)
 
+-- |Set the number of players in a game
+setNumberOfPlayersInGame :: String -- ^The UUID of the game.
+                         -> Int    -- ^The new number of players.
+                         -> IO ()
+setNumberOfPlayersInGame uuid numberOfPlayers = runDB $
+  Esql.update $ \games -> do
+      Esql.set games [GameMaxAmountOfPlayers Esql.=. Esql.val numberOfPlayers]
+      Esql.where_ (games Esql.^. GameUuid Esql.==. Esql.val uuid)
+
+
 -- |Add a player to a game
 addPlayerToGame :: SessionID -- ^The sessionID of the player.
                 -> Esql.Key Game -- ^The key of the game.
@@ -68,7 +78,7 @@ removePlayerFromGame :: SessionID -- ^The sessionID od the player.
                      -> Esql.Key Game -- ^The key of the game.
                      -> IO ()
 removePlayerFromGame sessionID gameKey = runDB $
-  Esql.delete $ Esql.from $ \playersInGame -> do
+  Esql.delete $ Esql.from $ \playersInGame ->
     Esql.where_ (playersInGame Esql.^. PlayerInGameGame Esql.==. Esql.val gameKey
         Esql.&&. playersInGame Esql.^. PlayerInGamePlayer Esql.==. Esql.val sessionID)
 
