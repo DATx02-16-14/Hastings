@@ -8,6 +8,8 @@ import qualified Control.Monad.Logger as Logger
 import Data.Maybe (fromMaybe)
 import System.Environment (lookupEnv)
 
+import Data.Word (Word16)
+
 import Hastings.Database.Fields
 import Hastings.Config
 
@@ -15,16 +17,20 @@ import Hastings.Config
 migrateDatabase :: IO ()
 migrateDatabase = runDB $ Esql.runMigration migrateAll
 
-
-hastingsConnectionInfo :: String -> MySQL.ConnectInfo
-hastingsConnectionInfo pass = MySQL.defaultConnectInfo {
-  MySQL.connectHost = databaseHostAddress,
-  MySQL.connectPort = databaseHostPort,
-  MySQL.connectUser = databaseUser,
+-- | Create the ConnectInfo
+hastingsConnectionInfo :: String -- ^Database host address
+                       -> Word16 -- ^Database host port
+                       -> String -- ^Database user
+                       -> String -- ^Database password
+                       -> String -- ^Database name
+                       -> MySQL.ConnectInfo
+hastingsConnectionInfo host port user pass dbName = MySQL.defaultConnectInfo {
+  MySQL.connectHost = host,
+  MySQL.connectPort = port,
+  MySQL.connectUser = user,
   MySQL.connectPassword = pass,
-  MySQL.connectDatabase = databaseName
+  MySQL.connectDatabase = dbName
 }
-
 
 -- |Helper function that should be called before running a query on the database.
 --  It's primary purpose is running the proper prerequisites to be able to excecute an SQL query on the database.
@@ -41,5 +47,10 @@ hastingsConnectionInfo pass = MySQL.defaultConnectInfo {
 -- @
 runDB :: MySQL.SqlPersistT (Logger.NoLoggingT IO) a -> IO a
 runDB l = do
-  pass <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_PASSWORD"
-  (Logger.runNoLoggingT . MySQL.withMySQLConn (hastingsConnectionInfo pass) . Esql.runSqlConn) l
+    address <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_HOST_ADDRESS"
+    port    <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_HOST_PORT"
+    user    <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_USER"
+    pass    <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_PASSWORD"
+    name    <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_NAME"
+    let connectionInfo = hastingsConnectionInfo address (read port :: Word16) user pass name
+    (Logger.runNoLoggingT . MySQL.withMySQLConn connectionInfo . Esql.runSqlConn) l

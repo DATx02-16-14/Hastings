@@ -2,7 +2,7 @@ standalone:
 	stack build --flag Hastings:HasteStandalone
 	haste-cabal configure -f HasteStandalone
 	haste-cabal build
-	stack exec -- Hastings-exe --embed app/StandaloneApp.js
+	stack exec -- Hastings-exe --embed app/StandaloneApp.js --force
 
 server:
 	stack build
