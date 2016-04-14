@@ -49,31 +49,32 @@ createGame mVarClients sid maxPlayers = do
 
 -- |Lets a player join a game
 playerJoinGame :: ConcurrentClientList  -- ^The list of all players connected
-               -> GamesList             -- ^The list of all games
                -> SessionID             -- ^The SessionID of the player
                -> String                -- ^The UUID of the game to join
                -> String                -- ^The password of the game, if no password this can be ""
                -> IO Bool               -- ^Returns if able to join or not
-playerJoinGame mVarClients mVarGames sid gameID passwordString = do
+playerJoinGame mVarClients sid gameID passwordString = do
   clientList <- readMVar mVarClients
-  gamesList <- readMVar mVarGames
-  case (lookupClientEntry sid clientList, findGameWithID gameID gamesList) of
-    (Just player, Just (_,gameData)) -> do
-      let passwordOfGame = gamePassword gameData
+  dbGame <- GameDB.retrieveGameByUUID gameID
+  case dbGame of
+    Just (Esql.Entity gameKey game) -> do
+      let passwordOfGame = pack $ Fields.gamePassword game
+      numberOfPlayersInGame <- GameDB.retrieveNumberOfPlayersInGame gameID
+
       if passwordOfGame == empty || verifyPassword (pack passwordString) passwordOfGame
-        then if maxAmountOfPlayers gameData > length (players gameData)
+        then if Fields.gameMaxAmountOfPlayers game > numberOfPlayersInGame
           then do
-            modifyMVar_ mVarGames $
-              \gList -> return $ addPlayerToGame player gameID gList
-            messageClients PlayerJoinedGame (players gameData)
+            GameDB.addPlayerToGame sid gameKey
+            sessionIds <- GameDB.retrieveSessionIdsInGame gameKey
+            messageClientsWithSid PlayerJoinedGame clientList sessionIds
             return True
           else do
-            messageClients (LobbyError "Game is full") [player]
+            messageClientsWithSid (LobbyError "Game is full") clientList [sid]
             return False
         else do
-          messageClients (LobbyError "Wrong password") [player]
+          messageClientsWithSid (LobbyError "Wrong password") clientList [sid]
           return False
-    _                                -> return False
+    _                              -> return False
 
 -- |Finds the name of a game given it's identifier
 findGameNameWithID :: GamesList -> String -> IO String

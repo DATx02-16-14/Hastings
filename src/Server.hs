@@ -90,12 +90,11 @@ getGamesList remoteGames = do
 
 -- |Lets a player join a 'LobbyGame'. The 'String' represents the UUID for the game.
 -- |The second 'String' is the password for the game, if there is no password it can be left empty.
-playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> String -> Server Bool
-playerJoinGame remoteClientList remoteGameList gameID passwordString = do
+playerJoinGame :: Server ConcurrentClientList -> String -> String -> Server Bool
+playerJoinGame remoteClientList gameID passwordString = do
   mVarClients <- remoteClientList
-  mVarGames <- remoteGameList
   sid <- getSessionID
-  liftIO $ Game.playerJoinGame mVarClients mVarGames sid gameID passwordString
+  liftIO $ Game.playerJoinGame mVarClients sid gameID passwordString
 
 -- |Finds the name of a game given it's identifier
 findGameNameWithID :: Server GamesList -> String -> Server String
