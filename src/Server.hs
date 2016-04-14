@@ -161,12 +161,9 @@ changeMaxNumberOfPlayers newMax = do
   sid <- getSessionID
   liftIO $ Game.changeMaxNumberOfPlayers sid newMax
 
--- |Returns if the current player is owner of the game it's in
-remoteIsOwnerOfGame :: Server GamesList -> Server Bool
-remoteIsOwnerOfGame remoteGames = do
-  gamesList <- remoteGames >>= liftIO . CC.readMVar
-  sid <- getSessionID
-  return $ isOwnerOfGame sid gamesList
+-- |Returns true if the current player is owner of the game they are in
+remoteIsOwnerOfGame :: Server Bool
+remoteIsOwnerOfGame = getSessionID >>= liftIO . isOwnerOfGame
 
 -- |Called by client to join a chat
 joinChat :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()

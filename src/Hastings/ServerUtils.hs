@@ -6,6 +6,9 @@ import Haste.App (SessionID)
 
 import LobbyTypes (LobbyGame, Name, ClientEntry, name, LobbyMessage, players, lobbyChannel, sessionID)
 import Hastings.Utils (updateListElem)
+import qualified Hastings.Database.Game as GameDB
+import qualified Hastings.Database.Fields as Fields
+import qualified Database.Esqueleto as Esql
 
 import qualified Control.Concurrent as CC (writeChan)
 import Data.List (find, nub)
@@ -53,11 +56,12 @@ findGameWithSid sid = find (\(_, gameData) -> sid `elem` sidsInGame gameData)
     sidsInGame gameData = map sessionID $ players gameData
 
 -- |Returns if the current player is owner of the game it's in
-isOwnerOfGame :: SessionID -> [LobbyGame] -> Bool
-isOwnerOfGame sid gamesList =
-  case findGameWithSid sid gamesList of
-    Nothing         -> False
-    Just (_, gData) -> sessionID (last $ players gData) == sid
+isOwnerOfGame :: SessionID -> IO Bool
+isOwnerOfGame sid = do
+  dbGame <- GameDB.retrieveGameBySid sid
+  case dbGame of
+    Just (Esql.Entity _ game) -> return $ Fields.gameOwner game == sid
+    _                         -> return False
 
 -- |Function that finds a 'ClientEntry' based on the 'SessionID'
 lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry
