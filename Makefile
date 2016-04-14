@@ -1,16 +1,17 @@
-all: stack haste-cabal embed run
+standalone:
+	stack build --flag Hastings:HasteStandalone
+	haste-cabal configure -f HasteStandalone
+	haste-cabal build
+	stack exec -- Hastings-exe --embed app/StandaloneApp.js --force
 
-clean:
-	rm -rf dist .stack-work
-
-stack:
+server:
 	stack build
-
-haste-cabal:
-	haste-cabal configure && haste-cabal build && mv app/Main.js dist/build/Main.js
-
-embed:
-	stack exec -- Hastings-exe --embed dist/build/Main.js --force
+	haste-cabal configure
+	haste-cabal build
 
 run:
 	stack exec Hastings-exe
+
+clean:
+	rm -rf dist .stack-work
+	find . -type f ! -name '*.hs' -delete

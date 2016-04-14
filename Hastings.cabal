@@ -13,12 +13,18 @@ build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
 
+Flag HasteStandalone
+  Description: If the HasteStandalone package is available.
+  Default: False
+  -- Cabal checks if the configuration is possible, first
+  -- with this flag set to True and if not it tries with False
+
 library
   hs-source-dirs:      src
   build-depends:
     base >= 4.7 && < 5,
     bytestring
-  exposed-modules: Views.Chat, Views.Lobby, Views.Common, Views.Game, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, GameAPI
+  exposed-modules: Hastings.Config, Views.Chat, Views.Lobby, Views.Common, Views.Game, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, GameAPI
   if impl(haste)
     build-depends: haste-lib >= 0.5 && < 0.6
   else
@@ -38,15 +44,27 @@ library
 
 executable Hastings-exe
   hs-source-dirs:      app
-  main-is:             Main.hs
+
+  if flag(HasteStandalone)
+    main-is:             StandaloneApp.hs
+  else
+    main-is:             Main.hs
+
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:
    base      >= 4.8 && < 4.9,
    Hastings,
-   haste-standalone,
    bytestring
+
+  if flag(HasteStandalone)
+    build-depends: haste-standalone
+  else
+    if impl(haste)
+      ghc-options: --output-html
+
  if impl(haste)
    build-depends: haste-lib >= 0.5 && < 0.6
+
  else
    build-depends:
     haste-compiler >= 0.5 && < 0.6,
