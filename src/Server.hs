@@ -97,24 +97,16 @@ playerJoinGame remoteClientList gameID passwordString = do
   liftIO $ Game.playerJoinGame mVarClients sid gameID passwordString
 
 -- |Finds the name of a game given it's identifier
-findGameNameWithID :: Server GamesList -> String -> Server String
-findGameNameWithID remoteGames gid = do
-  mVarGames <- remoteGames
-  liftIO $ Game.findGameNameWithID mVarGames gid
+findGameNameWithID :: String -> Server String
+findGameNameWithID = liftIO . Game.findGameNameWithID
 
 -- |Finds the name of the game the client is currently in
-findGameNameWithSid :: Server GamesList -> Server String
-findGameNameWithSid remoteGames = do
-  mVarGames <- remoteGames
-  sid <- getSessionID
-  liftIO $ Game.findGameNameWithSid mVarGames sid
+findGameNameWithSid :: Server String
+findGameNameWithSid = getSessionID >>= liftIO . Game.findGameNameWithSid
 
 -- |Finds the name of the players of the game the current client is in
-playerNamesInGameWithSid :: Server GamesList -> Server [String]
-playerNamesInGameWithSid remoteGames = do
-  mVarGames <- remoteGames
-  sid <- getSessionID
-  liftIO $ Game.playerNamesInGameWithSid mVarGames sid
+playerNamesInGameWithSid :: Server [String]
+playerNamesInGameWithSid = getSessionID >>= liftIO . Game.playerNamesInGameWithSid
 
 -- |Returns a list of strings containing all connected players names.
 getConnectedPlayerNames :: Server ConcurrentClientList -> Server [String]

@@ -77,28 +77,30 @@ playerJoinGame mVarClients sid gameID passwordString = do
     _                              -> return False
 
 -- |Finds the name of a game given it's identifier
-findGameNameWithID :: GamesList -> String -> IO String
-findGameNameWithID mVarGames gameID = do
-  gamesList <- readMVar mVarGames
-  case findGameWithID gameID gamesList of
-    Just (_, gameData) -> return $ gameName gameData
-    Nothing            -> return ""
+findGameNameWithID :: String -> IO String
+findGameNameWithID gameID = do
+  dbGame <- GameDB.retrieveGameByUUID gameID
+  case dbGame of
+    Just (Esql.Entity _ game) -> return $ Fields.gameName game
+    _                         -> return ""
 
 -- |Finds the name of the game the client is currently in
-findGameNameWithSid :: GamesList -> SessionID -> IO String
-findGameNameWithSid mVarGames sid = do
-  gamesList <- readMVar mVarGames
-  case findGameWithSid sid gamesList of
-    Just (_, gameData) -> return $ gameName gameData
-    Nothing            -> return ""
+findGameNameWithSid :: SessionID -> IO String
+findGameNameWithSid sid = do
+  dbGame <- GameDB.retrieveGameBySid sid
+  case dbGame of
+    Just (Esql.Entity _ game) -> return $ Fields.gameName game
+    Nothing                   -> return ""
 
 -- |Finds the name of the players of the game the current client is in
-playerNamesInGameWithSid :: GamesList -> SessionID -> IO [String]
-playerNamesInGameWithSid mVarGames sid = do
-  gamesList <- readMVar mVarGames
-  case findGameWithSid sid gamesList of
-    Nothing            -> return []
-    Just (_, gameData) -> return $ map name (players gameData)
+playerNamesInGameWithSid :: SessionID -> IO [String]
+playerNamesInGameWithSid sid = do
+  dbGame <- GameDB.retrieveGameBySid sid
+  case dbGame of
+    Just (Esql.Entity gameKey _) -> do
+      playersInGame <- GameDB.retrievePlayersInGame gameKey
+      return $ map (Fields.playerUserName . Esql.entityVal) playersInGame
+    Nothing                      -> return []
 
 -- |Kicks the player with index 'Int' from the list of players in
 -- the game that the current client is in.
