@@ -116,34 +116,28 @@ kickPlayerWithSid mVarGames sid clientIndex = do
       messageClients PlayerLeftGame $ players gameData
 
 -- |Change the name of a 'LobbyGame' that the connected client is in
-changeGameNameWithSid :: GamesList -> ConcurrentClientList-> SessionID -> Name -> IO ()
-changeGameNameWithSid mVarGames mVarClients sid newName = do
+changeGameNameWithSid :: ConcurrentClientList -> SessionID -> Name -> IO ()
+changeGameNameWithSid mVarClients sid newName = do
   clientList <- readMVar mVarClients
-  gamesList <- readMVar mVarGames
-  case findGameWithSid sid gamesList of
-    Nothing           -> return ()
-    Just game@(_,gameData) -> do
-      modifyMVar_ mVarGames $ \games ->
-        return $ updateListElem
-          (\(guuid, gData) -> (guuid, gData {gameName = newName}))
-          (== game)
-          games
+  dbGame <- GameDB.retrieveGameBySid sid
+  case dbGame of
+    Nothing                   -> return ()
+    Just (Esql.Entity _ game) -> do
+      GameDB.setNameOnGame (Fields.gameUuid game) newName
       messageClients GameNameChange clientList
 
 -- |Changes the maximum number of players for a game
 -- Requires that the player is the last in the player list (i.e. the owner)
-changeMaxNumberOfPlayers :: GamesList -> SessionID -> Int -> IO ()
-changeMaxNumberOfPlayers mVarGames sid newMax = do
-  gamesList <- readMVar mVarGames
-  when (isOwnerOfGame sid gamesList) $
-    case findGameWithSid sid gamesList of
-      Nothing   -> return ()
-      Just game ->
-        modifyMVar_ mVarGames $ \games ->
-          return $ updateListElem
-            (\(guuid, gData) -> (guuid, gData {maxAmountOfPlayers = newMax}))
-            (== game)
-            games
+changeMaxNumberOfPlayers :: SessionID -> Int -> IO ()
+changeMaxNumberOfPlayers sid newMax = do
+  dbGame <- GameDB.retrieveGameBySid sid
+  case dbGame of
+    Nothing                  -> return ()
+    Just (Esql.Entity _ game) ->
+      when (sid == Fields.gameOwner game) $
+        GameDB.setNumberOfPlayersInGame (Fields.gameUuid game) newMax
+
+
 -- |Sets the password (as a 'ByteString') of the game the client is in.
 -- |Only possible if the client is the owner of the game.
 setPasswordToGame :: GamesList -> SessionID -> String -> IO ()

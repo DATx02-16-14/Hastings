@@ -140,12 +140,11 @@ notifyClientChats remoteClients notification = do
   liftIO $ Chat.notifyClientChats mVarClients sid notification
 
 -- |Change the name of a 'LobbyGame' that the connected client is in
-changeGameNameWithSid :: Server GamesList -> Server ConcurrentClientList -> Name -> Server ()
-changeGameNameWithSid remoteGames remoteClients newName = do
+changeGameNameWithSid :: Server ConcurrentClientList -> Name -> Server ()
+changeGameNameWithSid remoteClients newName = do
   mVarClients <- remoteClients
-  mVarGames <- remoteGames
   sid <- getSessionID
-  liftIO $ Game.changeGameNameWithSid mVarGames mVarClients sid newName
+  liftIO $ Game.changeGameNameWithSid mVarClients sid newName
 
 -- |Reads the lobby channel of the current client and returns the message.
 -- |Blocking method if the channel is empty
@@ -157,11 +156,10 @@ readLobbyChannel remoteClientList = do
 
 -- |Changes the maximum number of players for a game
 -- Requires that the player is the last in the player list (i.e. the owner)
-changeMaxNumberOfPlayers :: Server GamesList -> Int -> Server ()
-changeMaxNumberOfPlayers remoteGames newMax = do
-  mVarGamesList <- remoteGames
+changeMaxNumberOfPlayers :: Int -> Server ()
+changeMaxNumberOfPlayers newMax = do
   sid <- getSessionID
-  liftIO $ Game.changeMaxNumberOfPlayers mVarGamesList sid newMax
+  liftIO $ Game.changeMaxNumberOfPlayers sid newMax
 
 -- |Returns if the current player is owner of the game it's in
 remoteIsOwnerOfGame :: Server GamesList -> Server Bool
