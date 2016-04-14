@@ -13,6 +13,7 @@ import Hastings.ServerUtils
 import LobbyTypes
 
 import qualified Hastings.Database.Game as GameDB
+import qualified Hastings.Database.Player as PlayerDB
 import qualified Hastings.Database.Fields as Fields
 import qualified Database.Esqueleto as Esql
 
@@ -104,16 +105,23 @@ playerNamesInGameWithSid sid = do
 
 -- |Kicks the player with index 'Int' from the list of players in
 -- the game that the current client is in.
-kickPlayerWithSid :: GamesList -> SessionID -> Int -> IO ()
-kickPlayerWithSid mVarGames sid clientIndex = do
-  gamesList <- readMVar mVarGames
-  case findGameWithSid sid gamesList of
-    Nothing   -> return ()
-    Just game@(_,gameData) -> do
-      modifyMVar_ mVarGames $ \games ->
-        return $ updateListElem (deletePlayerFromGame clientIndex) (== game) games
-      messageClients KickedFromGame [players gameData !! clientIndex]
-      messageClients PlayerLeftGame $ players gameData
+kickPlayerWithSid :: ConcurrentClientList -> SessionID -> Name -> IO ()
+kickPlayerWithSid mVarClients sid name = do
+  clientList <- readMVar mVarClients
+  dbGame <- GameDB.retrieveGameBySid sid
+  case dbGame of
+    Nothing                   -> return ()
+    Just (Esql.Entity gameKey game) -> do
+
+      kickSessionId <- PlayerDB.retrievePlayerSessionId name
+      case kickSessionId of
+        Just sessionId -> do
+          GameDB.removePlayerFromGame sessionId gameKey
+          sessionIdsInGame <- GameDB.retrieveSessionIdsInGame gameKey
+
+          messageClientsWithSid KickedFromGame clientList [sessionId]
+          messageClientsWithSid PlayerLeftGame clientList sessionIdsInGame
+        _              -> return ()
 
 -- |Change the name of a 'LobbyGame' that the connected client is in
 changeGameNameWithSid :: ConcurrentClientList -> SessionID -> Name -> IO ()

@@ -115,15 +115,15 @@ getConnectedPlayerNames remoteClientList = do
   mVarClients <- remoteClientList
   liftIO $ Lobby.getConnectedPlayerNames mVarClients
 
--- |Kicks the player with index 'Int' from the list of players in
+-- |Kicks the player with a specified name from
 -- the game that the current client is in.
-kickPlayerWithSid :: Server GamesList
-                  -> Int  -- ^The index in the list of players of the player to kick
+kickPlayerWithSid :: Server ConcurrentClientList
+                  -> Name  -- ^The name of the player to kick
                   -> Server ()
-kickPlayerWithSid remoteGames clientIndex = do
-  mVarGamesList <- remoteGames
+kickPlayerWithSid remoteClientList name = do
+  mVarClients <- remoteClientList
   sid <- getSessionID
-  liftIO $ Game.kickPlayerWithSid mVarGamesList sid clientIndex
+  liftIO $ Game.kickPlayerWithSid mVarClients sid name
 
 -- |Change the nick name of the current player to that given.
 changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()

@@ -129,11 +129,11 @@ createSetPasswordDOM api = createInputFieldWithButton "set-password" "Set passwo
 addPlayersToPlayerList :: LobbyAPI -> Elem -> [Name] -> Client ()
 addPlayersToPlayerList api parent names = do
   isOwner <- onServer $ isOwnerOfCurrentGame api
-  addPlayersToPlayerList' 0 isOwner names
+  addPlayersToPlayerList' isOwner names
   where
-    addPlayersToPlayerList' :: Int -> Bool -> [Name] -> Client ()
-    addPlayersToPlayerList' i isOwner []           = return ()
-    addPlayersToPlayerList' i isOwner (name:names) = do
+    addPlayersToPlayerList' :: Bool -> [Name] -> Client ()
+    addPlayersToPlayerList' isOwner []           = return ()
+    addPlayersToPlayerList' isOwner (name:names) = do
       tr <- newElem "tr"
       tdText <- newElem "td"
       textElem <- newTextElem name
@@ -146,14 +146,14 @@ addPlayersToPlayerList api parent names = do
             attr "class" =: "btn btn-warning"
           ]
         kick <- newTextElem "Kick"
-        clickEventElem kickBtn $ onServer $ kickPlayer api <.> i
+        clickEventElem kickBtn $ onServer $ kickPlayer api <.> name
         appendChild kickBtn kick
         appendChild tdBtn kickBtn
         appendChild tr tdBtn
 
       appendChild parent tr
 
-      addPlayersToPlayerList' (i+1) isOwner names
+      addPlayersToPlayerList' isOwner names
 
 -- |Updates the list of players in a game on the client
 updatePlayerListGame :: LobbyAPI -> Client ()
