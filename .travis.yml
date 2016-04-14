@@ -11,7 +11,7 @@ before_install:
 services:
 -  mysql
 
-before-script:
+before_script:
 - mysql -e 'create database hastings;'
 
 script:
