@@ -4,6 +4,7 @@ import Hastings.Database.Common (runDB)
 import Hastings.Database.Fields
 
 import qualified Database.Esqueleto as Esql
+import qualified Database.Persist.Sql as Pers
 
 import Haste.App (SessionID)
 import Data.Maybe (listToMaybe)
@@ -29,6 +30,10 @@ retrieveGameBySid sid = runDB $ do
           Esql.&&. playersInGame Esql.^. PlayerInGamePlayer Esql.==. Esql.val sid)
       return games
   return $ listToMaybe games
+
+-- |Retrieves all games from the database
+retrieveAllGames :: IO [Esql.Entity Game]
+retrieveAllGames = runDB $ Pers.selectList ([] :: [Pers.Filter Game]) []
 
 -- |Save a game to the database.
 saveGame :: String    -- ^The UUID of the game to save.
