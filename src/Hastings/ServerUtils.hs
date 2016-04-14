@@ -22,6 +22,11 @@ findClient clientName = find ((clientName ==).name)
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m = mapM_ (\c -> CC.writeChan (lobbyChannel c) m)
 
+-- |Messages all clients in the list of sessionIDs
+messageClientsWithSid :: LobbyMessage -> [ClientEntry] -> [SessionID] -> IO ()
+messageClientsWithSid message clientEntries sessionIDs =
+  messageClients message $ filter (\c -> sessionID c `elem` sessionIDs) clientEntries
+
 -- |Deletes the player with 'Int' from the game.
 deletePlayerFromGame :: Int  -- ^The index of the player to kick
                      -> LobbyGame  -- ^The game to kick the player from
