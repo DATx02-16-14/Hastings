@@ -228,7 +228,5 @@ setPasswordToGame remoteClientList passwordString = do
   liftIO $ Game.setPasswordToGame mVarClients sid passwordString
 
 -- |Returns True if game is password protected, False otherwise. 'String' is the UUID of the game
-isGamePasswordProtected :: Server GamesList -> String -> Server Bool
-isGamePasswordProtected remoteGames guuid = do
-  mVarGames <- remoteGames
-  liftIO $ Game.isGamePasswordProtected mVarGames guuid
+isGamePasswordProtected :: String -> Server Bool
+isGamePasswordProtected = liftIO . Game.isGamePasswordProtected

@@ -157,9 +157,9 @@ setPasswordToGame mVarClients sid passwordString = do
 
 
 -- |Returns True if game is password protected, False otherwise. 'String' is the UUID of the game
-isGamePasswordProtected :: GamesList -> String -> IO Bool
-isGamePasswordProtected mVarGames guuid = do
-  gamesList <- readMVar mVarGames
-  case findGameWithID guuid gamesList of
-    Nothing           -> return False
-    Just (_,gameData) -> return $ gamePassword gameData /= empty
+isGamePasswordProtected :: String -> IO Bool
+isGamePasswordProtected guuid = do
+  dbGame <- GameDB.retrieveGameByUUID guuid
+  case dbGame of
+    Nothing                   -> return False
+    Just (Esql.Entity _ game) -> return $ Fields.gamePassword game /= pack ""

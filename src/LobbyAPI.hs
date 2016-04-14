@@ -83,6 +83,6 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.getJoinedChats           playersList))
             <*> REMOTE((Server.getChats                 chatList))
             <*> REMOTE((Server.setPasswordToGame        playersList))
-            <*> REMOTE((Server.isGamePasswordProtected  gamesList))
+            <*> REMOTE((Server.isGamePasswordProtected  ))
             <*> REMOTE((Server.remoteIsOwnerOfGame      ))
             <*> REMOTE((Server.leaveGame                playersList))
