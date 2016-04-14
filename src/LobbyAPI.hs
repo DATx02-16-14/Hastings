@@ -72,7 +72,7 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.findGameNameWithSid      ))
             <*> REMOTE((Server.getConnectedPlayerNames  playersList))
             <*> REMOTE((Server.kickPlayerWithSid        playersList))
-            <*> REMOTE((Server.changeNickName           playersList gamesList))
+            <*> REMOTE((Server.changeNickName           playersList))
             <*> REMOTE((Server.changeGameNameWithSid    playersList))
             <*> REMOTE((Server.readLobbyChannel         playersList))
             <*> REMOTE((Server.changeMaxNumberOfPlayers ))

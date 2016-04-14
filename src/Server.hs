@@ -126,12 +126,11 @@ kickPlayerWithSid remoteClientList name = do
   liftIO $ Game.kickPlayerWithSid mVarClients sid name
 
 -- |Change the nick name of the current player to that given.
-changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()
-changeNickName remoteClientList remoteGames newName = do
+changeNickName :: Server ConcurrentClientList -> Name -> Server ()
+changeNickName remoteClientList newName = do
   mVarClients <- remoteClientList
-  mVarGames <- remoteGames
   sid <- getSessionID
-  liftIO $ Lobby.changeNickName mVarClients mVarGames sid newName
+  liftIO $ Lobby.changeNickName mVarClients sid newName
 
 -- | Sends a server notification to all chats the client has joined
 notifyClientChats :: Server ConcurrentClientList -> String -> Server ()
