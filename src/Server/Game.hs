@@ -1,7 +1,7 @@
 module Server.Game where
 
 import Haste.App (SessionID)
-import Control.Concurrent (modifyMVar_, readMVar)
+import Control.Concurrent (modifyMVar_, readMVar, newChan)
 import Data.UUID
 import System.Random
 import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
@@ -41,8 +41,9 @@ createGame mVarGames mVarClients sid maxPlayers = do
   maybe
     (return Nothing)
     (\c -> do
-      modifyMVar_ mVarGames $ \gs ->
-        return $ (uuidStr, GameData [c] "GameName" maxPlayers empty) : gs
+      modifyMVar_ mVarGames $ \gs -> do
+        gameChan <- newChan
+        return $ (uuidStr, GameData [c] gameChan "GameName" maxPlayers empty) : gs
       messageClients GameAdded clientList
       return $ Just uuidStr)
     (lookupClientEntry sid clientList)

@@ -36,11 +36,12 @@ type LobbyGame = (String, GameData)
 -- |The name of the game
 -- |The maximum allowed players, can be changed by the owner
 data GameData = GameData { players            :: [ClientEntry]
+                         , gameChan           :: CC.Chan GameAction
                          , gameName           :: Name
                          , maxAmountOfPlayers :: Int
                          , gamePassword       :: ByteString}
 
-  deriving (Eq, Show)
+  deriving (Eq)
 
 -- |A list of all the 'LobbyGame's that have been started inside the Lobby.
 type GamesList = CC.MVar [LobbyGame]
