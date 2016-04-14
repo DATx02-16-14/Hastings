@@ -2,7 +2,7 @@ module Server.Game where
 
 import Haste.App (SessionID)
 import Control.Concurrent (modifyMVar_, readMVar)
-import Data.UUID
+import Data.UUID (toString)
 import System.Random
 import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
 import Crypto.PasswordStore (makePassword, verifyPassword)
@@ -23,13 +23,15 @@ leaveGame mVarClients sid = do
   clientList <- readMVar mVarClients
   dbGame <- GameDB.retrieveGameBySid sid
   case dbGame of
-     Just (Esql.Entity gameKey _) -> do
+     Just (Esql.Entity gameKey game) -> do
       GameDB.removePlayerFromGame sid gameKey
       sessionIds <- GameDB.retrieveSessionIdsInGame gameKey
 
+      when (sid == Fields.gameOwner game && (not . null) sessionIds) $
+        GameDB.setGameOwner gameKey $ head sessionIds
+
       messageClientsWithSid KickedFromGame clientList [sid]
       messageClientsWithSid PlayerLeftGame clientList sessionIds
-
      _                            -> return ()
 
 createGame :: ConcurrentClientList -> SessionID -> Int -> IO (Maybe String)
@@ -67,6 +69,8 @@ playerJoinGame mVarClients sid gameID passwordString = do
           then do
             GameDB.addPlayerToGame sid gameKey
             sessionIds <- GameDB.retrieveSessionIdsInGame gameKey
+            when (length sessionIds == 1) $
+              GameDB.setGameOwner gameKey sid
             messageClientsWithSid PlayerJoinedGame clientList sessionIds
             return True
           else do
