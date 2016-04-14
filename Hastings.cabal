@@ -39,6 +39,7 @@ library
     , ChineseCheckers.ChineseGraphics
     , ChineseCheckers.ChineseCheckers
     , ChineseCheckers.ChineseGame
+    , ChineseCheckers.ChineseBitmaps
   if impl(haste)
     build-depends: haste-lib >= 0.5 && < 0.6
   else
