@@ -34,6 +34,7 @@ import qualified Control.Concurrent as CC
 import Data.List
 import Data.Maybe
 import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
+import Control.Monad (liftM)
 
 import LobbyTypes
 import Hastings.Utils
@@ -41,6 +42,8 @@ import Hastings.ServerUtils
 import qualified Server.Lobby as Lobby
 import qualified Server.Game as Game
 import qualified Server.Chat as Chat
+
+import qualified Hastings.Database.Game as GameDB
 
 
 -- |Initial connection with the server
@@ -83,10 +86,8 @@ createGame remoteClientList maxPlayers = do
   liftIO $ Game.createGame mVarClients sid maxPlayers
 
 -- |Returns a list of the each game's uuid as a String
-getGamesList :: Server GamesList -> Server [String]
-getGamesList remoteGames = do
-  gameList <- remoteGames >>= liftIO . CC.readMVar
-  return $ getUUIDFromGamesList gameList
+getGamesList :: Server [String]
+getGamesList = liftM getUUIDFromGamesList (liftIO GameDB.retrieveAllGames)
 
 -- |Lets a player join a 'LobbyGame'. The 'String' represents the UUID for the game.
 -- |The second 'String' is the password for the game, if there is no password it can be left empty.

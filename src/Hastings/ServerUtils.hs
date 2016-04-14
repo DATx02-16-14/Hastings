@@ -14,8 +14,8 @@ import qualified Control.Concurrent as CC (writeChan)
 import Data.List (find, nub)
 
 -- |Get's the uuid from a list of lobby games
-getUUIDFromGamesList :: [LobbyGame] -> [String]
-getUUIDFromGamesList = map fst
+getUUIDFromGamesList :: [Esql.Entity Fields.Game] -> [String]
+getUUIDFromGamesList = map $ Fields.gameUuid . Esql.entityVal
 
 -- |Finds the client with 'Name' from the list of 'ClientEntry'
 findClient :: Name -> [ClientEntry] -> Maybe ClientEntry
