@@ -5,12 +5,14 @@ import Test.QuickCheck
 import Test.QuickCheck.Monadic
 import Control.Concurrent (readMVar, newMVar)
 import Haste.App (SessionID)
+import Data.Maybe (isNothing, isJust)
 
 import qualified Server.Lobby
 import ArbitraryLobbyTypes ()
 import LobbyTypes
 import Hastings.Database.Common (migrateDatabase)
-import Hastings.Database.Player (clearOnlinePlayers)
+import qualified Hastings.Database.Player as PlayerDB
+
 
 -- To run in ghci
 -- :l test/Server/LobbyTest.hs src/Hastings/ServerUtils.hs src/Hastings/Utils.hs src/LobbyTypes.hs test/ArbitraryLobbyTypes.hs src/Server/Lobby.hs src/Server/Game.hs src/Server/Chat.hs src/Hastings/Database/Player.hs
@@ -18,7 +20,7 @@ import Hastings.Database.Player (clearOnlinePlayers)
 preProp :: IO ()
 preProp = do
   migrateDatabase
-  clearOnlinePlayers
+  PlayerDB.clearOnlinePlayers
 
 -- |Property for connect that makes sure that after running connect a ClientEntry with
 -- sessionID and name is found in the list.
@@ -34,25 +36,27 @@ prop_connect playerName list = monadicIO $ do
 -- |Property for disconnect that checks that after disconnecting, the cliententry
 -- is removed from all games and the list of clients.
 prop_disconnect :: Int  -- ^The index of player to remove
-                -> [ClientEntry] -> [LobbyGame] -> Property
-prop_disconnect i clientList gameList = monadicIO $ do
+                -> [ClientEntry] -> Property
+prop_disconnect i clientList = monadicIO $ do
   pre $ not $ null clientList
   let i' = abs $ mod i $ length clientList
   let client = clientList !! i'
   let sid = sessionID client
+  let testName = "testName5939723012395"
   run $ preProp
 
   clientMVar <- run $ newMVar clientList
-  gameMVar <- run $ newMVar gameList
+  run $ PlayerDB.saveOnlinePlayer testName sid
 
-  run $ Server.Lobby.disconnect clientMVar gameMVar sid
+  run $ Server.Lobby.disconnect clientMVar sid
 
   newClientList <- run $ readMVar clientMVar
-  newGameList <- run $ readMVar gameMVar
+  player <- run $ PlayerDB.retrieveOnlinePlayer sid
+  run $ PlayerDB.deletePlayer testName
 
   assert $
     (all (client /=) newClientList) &&
-    (all (\(_,gd) -> all (client /=) $ players gd) newGameList)
+    isNothing player
 
 -- |Property for getting the names of connected players.
 -- Might seem trivial right now.
@@ -66,34 +70,27 @@ prop_getConnectedPlayerNames list = monadicIO $ do
 -- |Property that makes sure that after calling changeNickName
 -- there is no player with the old name and sessionID left.
 prop_changeNickName :: Int  -- ^Index of the player to change nick name
-                    -> [ClientEntry] -> [LobbyGame] -> Property
-prop_changeNickName i clientList gameList = monadicIO $ do
+                    -> [ClientEntry] -> Property
+prop_changeNickName i clientList = monadicIO $ do
   pre $ not $ null clientList
   let i' = abs $ mod i $ length clientList
   let client = clientList !! i'
   let sid = sessionID client
   let playerName = name client
+  let newName = "new name"
   run preProp
 
+  run $ PlayerDB.saveOnlinePlayer playerName sid
   clientMVar <- run $ newMVar clientList
-  gameMVar <- run $ newMVar gameList
 
-  run $ Server.Lobby.changeNickName clientMVar gameMVar sid "new name"
+  run $ Server.Lobby.changeNickName clientMVar sid newName
 
-  newClientList <- run $ readMVar clientMVar
-  newGameList <- run $ readMVar gameMVar
+  newNamePlayer <- run $ PlayerDB.retrievePlayerByUsername newName
+  oldNamePlayer <- run $ PlayerDB.retrievePlayerByUsername playerName
+
+  run $ PlayerDB.deleteOnlinePlayer sid
+  run $ PlayerDB.deletePlayer newName
 
   assert $
-    all (changeNickNameAssert playerName "new name" sid) newClientList &&
-    all (\(_,gd) ->
-      all (changeNickNameAssert playerName "new name" sid) $ players gd)
-    newGameList
-
--- |Helper function to check the lists of ClientEntry
--- that the player with 'SessionID' has changed name.
-changeNickNameAssert :: Name -> Name -> SessionID -> ClientEntry -> Bool
-changeNickNameAssert oldName newName sid c | sid == sessionID c =
-  oldName /= playerName && newName == playerName
-                                           | otherwise = True
-  where
-    playerName = name c
+    isJust newNamePlayer &&
+    isNothing oldNamePlayer
