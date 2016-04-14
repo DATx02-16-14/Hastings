@@ -6,6 +6,7 @@ import Data.List
 import Data.Word
 import Haste.Binary (Binary, Get)
 import Data.ByteString.Char8 (ByteString)
+import ChineseCheckers.Table (GameAction)
 
 -- |A type synonym to clarify that some Strings are Names.
 type Name = String
@@ -13,7 +14,10 @@ type Name = String
 data ClientEntry = ClientEntry {sessionID    :: SessionID
                                ,name         :: Name
                                ,chats        :: [Chat]
-                               ,lobbyChannel :: CC.Chan LobbyMessage}
+                               ,lobbyChannel :: CC.Chan LobbyMessage
+                               ,gameChannel  :: CC.Chan GameAction}
+clientEntry sid name lobbyChannel gameChannel = ClientEntry sid name [] lobbyChannel gameChannel
+
 
 instance Show ClientEntry where
   show c = "sessionID: " ++ show (sessionID c) ++ " name: " ++ show (name c)
