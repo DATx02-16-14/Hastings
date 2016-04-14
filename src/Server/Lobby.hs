@@ -18,8 +18,8 @@ connect mVarClients name sid = do
   PlayerDB.saveOnlinePlayer name sid
   modifyMVar_ mVarClients  $ \clients -> do
     lobbyChannel <- newChan
-    gameChannel <- newChan
-    return $ clientEntry sid name lobbyChannel gameChannel : clients
+    placeHolderGameChan <- newChan
+    return $ clientEntry sid name lobbyChannel placeHolderGameChan : clients
 
   clientList <- readMVar mVarClients
   messageClients ClientJoined clientList
