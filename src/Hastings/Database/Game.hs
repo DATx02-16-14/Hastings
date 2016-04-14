@@ -101,6 +101,15 @@ retrievePlayersInGame gameKey = runDB $
         Esql.on (playerInGame Esql.^. PlayerInGamePlayer Esql.==. onlinePlayers Esql.^. OnlinePlayerSessionID)
         return (playerInGame, onlinePlayers)
 
+-- |Retrieves the sessionID of all players in a game.
+retrieveSessionIdsInGame :: Esql.Key Game -- ^The key of the game.
+                         -> IO [SessionID]
+retrieveSessionIdsInGame gameKey = runDB $ do
+  players <- Esql.select $ Esql.from $ \playersInGame -> do
+    Esql.where_ (playersInGame Esql.^. PlayerInGameGame Esql.==. Esql.val gameKey)
+    return playersInGame
+  return $ map (playerInGamePlayer . Esql.entityVal) players
+
 -- |Retrieves the number of players currently in a game.
 retrieveNumberOfPlayersInGame :: String -- ^The UUID of the game
                               -> IO Int
