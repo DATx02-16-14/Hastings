@@ -9,6 +9,7 @@ import qualified Database.Persist.Sql as Pers
 import Haste.App (SessionID)
 import Data.Maybe (listToMaybe)
 import Control.Monad (liftM)
+import Data.ByteString.Char8 (ByteString)
 
 -- |Retrieve a game from the database.
 retrieveGameByName :: String -- ^The name of the game to retrieve.
@@ -36,17 +37,17 @@ retrieveAllGames :: IO [Esql.Entity Game]
 retrieveAllGames = runDB $ Pers.selectList ([] :: [Pers.Filter Game]) []
 
 -- |Save a game to the database.
-saveGame :: String    -- ^The UUID of the game to save.
-         -> String    -- ^The name of the game to save.
-         -> Int       -- ^Maximum amount of players for this game.
-         -> SessionID -- ^The sessionID of the owner of the game.
-         -> String    -- ^The password of the game, empty if the game has no password.
+saveGame :: String        -- ^The UUID of the game to save.
+         -> String        -- ^The name of the game to save.
+         -> Int           -- ^Maximum amount of players for this game.
+         -> SessionID     -- ^The sessionID of the owner of the game.
+         -> ByteString    -- ^The password of the game, empty if the game has no password.
          -> IO (Esql.Key Game)
 saveGame uuid name maxAmountOfPlayers owner password = runDB $ Esql.insert $ Game uuid name maxAmountOfPlayers owner password
 
 -- |Set password on game
-setPasswordOnGame :: String -- ^The UUID of the game
-                  -> String -- ^The password of the game
+setPasswordOnGame :: String     -- ^The UUID of the game
+                  -> ByteString -- ^The password of the game
                   -> IO ()
 setPasswordOnGame uuid password = runDB $
   Esql.update $ \games -> do

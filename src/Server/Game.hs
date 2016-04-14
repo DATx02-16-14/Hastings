@@ -42,7 +42,7 @@ createGame mVarClients sid maxPlayers = do
   case existingGame of
     Just _  -> return Nothing
     Nothing -> do
-      gameKey <- GameDB.saveGame uuidStr uuidStr maxPlayers sid ""
+      gameKey <- GameDB.saveGame uuidStr uuidStr maxPlayers sid $ pack ""
       GameDB.addPlayerToGame sid gameKey
       messageClients GameAdded clientList
       return $ Just uuidStr
@@ -58,7 +58,7 @@ playerJoinGame mVarClients sid gameID passwordString = do
   dbGame <- GameDB.retrieveGameByUUID gameID
   case dbGame of
     Just (Esql.Entity gameKey game) -> do
-      let passwordOfGame = pack $ Fields.gamePassword game
+      let passwordOfGame = Fields.gamePassword game
       numberOfPlayersInGame <- GameDB.retrieveNumberOfPlayersInGame gameID
 
       if passwordOfGame == empty || verifyPassword (pack passwordString) passwordOfGame
@@ -140,23 +140,21 @@ changeMaxNumberOfPlayers sid newMax = do
 
 -- |Sets the password (as a 'ByteString') of the game the client is in.
 -- |Only possible if the client is the owner of the game.
-setPasswordToGame :: GamesList -> SessionID -> String -> IO ()
-setPasswordToGame mVarGames sid passwordString = do
+setPasswordToGame :: ConcurrentClientList -> SessionID -> String -> IO ()
+setPasswordToGame mVarClients sid passwordString = do
   let password = pack passwordString
   hashedPassword <- makePassword password 17
-  gamesList <- readMVar mVarGames
-  case (findGameWithSid sid gamesList, isOwnerOfGame sid gamesList) of
-    (Just game, True)          ->
-      modifyMVar_ mVarGames $ \games ->
-        return $ updateListElem
-          (\(guuid, gData) -> (guuid, gData {gamePassword = hashedPassword}))
-          (== game)
-          games
-    (Just (_,gameData), False) ->
-      maybe
-        (return ())
-        (\client -> messageClients (LobbyError "Not owner of the game") [client])
-        (lookupClientEntry sid (players gameData))
+
+  clientList <- readMVar mVarClients
+  ownerOfGame <- isOwnerOfGame sid
+
+  dbGame <- GameDB.retrieveGameBySid sid
+  case (dbGame, ownerOfGame) of
+    (_, False)                         ->
+      messageClientsWithSid (LobbyError "Not owner of the game") clientList [sid]
+    (Just (Esql.Entity _ game), True)  ->
+      GameDB.setPasswordOnGame (Fields.gameUuid game) hashedPassword
+
 
 -- |Returns True if game is password protected, False otherwise. 'String' is the UUID of the game
 isGamePasswordProtected :: GamesList -> String -> IO Bool

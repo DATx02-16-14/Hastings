@@ -224,11 +224,11 @@ getChats remoteChatList = do
 
 -- |Sets the password (as a 'ByteString') of the game the client is in.
 -- |Only possible if the client is the owner of the game.
-setPasswordToGame :: Server GamesList -> String -> Server ()
-setPasswordToGame remoteGames passwordString = do
-  mVarGames <- remoteGames
+setPasswordToGame :: Server ConcurrentClientList -> String -> Server ()
+setPasswordToGame remoteClientList passwordString = do
+  mVarClients <- remoteClientList
   sid <- getSessionID
-  liftIO $ Game.setPasswordToGame mVarGames sid passwordString
+  liftIO $ Game.setPasswordToGame mVarClients sid passwordString
 
 -- |Returns True if game is password protected, False otherwise. 'String' is the UUID of the game
 isGamePasswordProtected :: Server GamesList -> String -> Server Bool
