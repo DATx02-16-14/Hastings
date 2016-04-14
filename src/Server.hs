@@ -57,9 +57,8 @@ connect remoteClientList name = do
 
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
-disconnect (clientList, games, chats) sid = do
+disconnect (clientList, chats) sid = do
   mVarClients <- clientList
-  mVarGames <- games
   cs <- clientList >>= liftIO . CC.readMVar
   sid <- getSessionID
   maybe
@@ -69,7 +68,7 @@ disconnect (clientList, games, chats) sid = do
       return ())
     $ sid `lookupClientEntry` cs
 
-  liftIO $ Lobby.disconnect mVarClients mVarGames sid
+  liftIO $ Lobby.disconnect mVarClients sid
 
 -- |Removes a player that has disconnected from it's game
 leaveGame :: Server ConcurrentClientList -> Server ()

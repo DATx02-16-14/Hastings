@@ -23,8 +23,8 @@ connect mVarClients name sid = do
   clientList <- readMVar mVarClients
   messageClients ClientJoined clientList
 
-disconnect :: ConcurrentClientList -> GamesList-> SessionID -> IO ()
-disconnect mVarClients mVarGames sid = do
+disconnect :: ConcurrentClientList -> SessionID -> IO ()
+disconnect mVarClients sid = do
   PlayerDB.deleteOnlinePlayer sid
   disconnectPlayerFromLobby mVarClients sid
   Game.leaveGame mVarClients sid
