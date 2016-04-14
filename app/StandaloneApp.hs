@@ -3,36 +3,31 @@
 module Main
     where
 import Haste.App
+import Haste.App.Standalone
 import Haste.App.Concurrent
-import Views.Lobby
 import qualified Control.Concurrent as CC
+import Views.Lobby
+
 import LobbyAPI
-import LobbyTypes
 import GameAPI
-import Hastings.Config
 
 #ifdef __HASTE__
-import LobbyClient
+import LobbyClient (clientMain)
 #define disconnect(x) (\_ -> return ())
-#define migrateDatabase (return ())
-#define clearOnlinePlayers (return ())
 #else
 import Server (disconnect)
-import Hastings.Database.Common (migrateDatabase)
-import Hastings.Database.Player (clearOnlinePlayers)
 #define clientMain (\_ _ -> return ())
 #endif
 
 -- |Main method and entry point for the program
 main :: IO ()
-main = runApp (mkConfig backendHostAddress backendHostPort) $ do
+main = runStandaloneApp $ do
   playersList <- liftServerIO $ CC.newMVar []
+  gamesList <- liftServerIO $ CC.newMVar []
   chatList <- liftServerIO $ CC.newMVar []
 
-  let serverState = (playersList, chatList)
-  liftServerIO $ migrateDatabase
-  liftServerIO $ clearOnlinePlayers
+  let serverState = (playersList, gamesList, chatList)
 
   onSessionEnd $ disconnect(serverState)
-  api <- newLobbyAPI (playersList, chatList)
+  api <- newLobbyAPI (playersList, gamesList, chatList)
   runClient $ clientMain api newGameAPI

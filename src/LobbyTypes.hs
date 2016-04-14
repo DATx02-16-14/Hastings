@@ -19,7 +19,7 @@ instance Show ClientEntry where
 
 instance Eq ClientEntry where
   c1 == c2 = sessionID c1 == sessionID c2
-  c1 /= c2 = sessionID c1 == sessionID c2
+  c1 /= c2 = sessionID c1 /= sessionID c2
 
 -- |A list with all the players connected to the game.
 type ConcurrentClientList = CC.MVar [ClientEntry]
