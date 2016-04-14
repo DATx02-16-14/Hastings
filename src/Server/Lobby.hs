@@ -27,7 +27,7 @@ disconnect :: ConcurrentClientList -> GamesList-> SessionID -> IO ()
 disconnect mVarClients mVarGames sid = do
   PlayerDB.deleteOnlinePlayer sid
   disconnectPlayerFromLobby mVarClients sid
-  Game.leaveGame mVarGames sid
+  Game.leaveGame mVarClients sid
 
   clients <- readMVar mVarClients
   messageClients ClientLeft clients

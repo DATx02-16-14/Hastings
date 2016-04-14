@@ -64,7 +64,7 @@ data LobbyAPI = LobbyAPI
 newLobbyAPI :: LobbyState -> App LobbyAPI
 newLobbyAPI (playersList, gamesList, chatList) =
    LobbyAPI <$> REMOTE((Server.connect                  playersList))
-            <*> REMOTE((Server.createGame               gamesList   playersList))
+            <*> REMOTE((Server.createGame               playersList))
             <*> REMOTE((Server.getGamesList             gamesList))
             <*> REMOTE((Server.playerJoinGame           playersList gamesList))
             <*> REMOTE((Server.playerNamesInGameWithSid gamesList))
@@ -85,4 +85,4 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.setPasswordToGame        gamesList))
             <*> REMOTE((Server.isGamePasswordProtected  gamesList))
             <*> REMOTE((Server.remoteIsOwnerOfGame      gamesList))
-            <*> REMOTE((Server.leaveGame                gamesList))
+            <*> REMOTE((Server.leaveGame                playersList))

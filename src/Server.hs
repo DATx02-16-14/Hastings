@@ -69,20 +69,18 @@ disconnect (clientList, games, chats) sid = do
   liftIO $ Lobby.disconnect mVarClients mVarGames sid
 
 -- |Removes a player that has disconnected from it's game
-leaveGame :: Server GamesList -> Server ()
-leaveGame remoteGames = do
-  mVarGames <- remoteGames
-  gamesList <- liftIO $ CC.readMVar mVarGames
+leaveGame :: Server ConcurrentClientList -> Server ()
+leaveGame remoteClientList = do
+  mVarClients <- remoteClientList
   sid <- getSessionID
-  liftIO $ Game.leaveGame mVarGames sid
+  liftIO $ Game.leaveGame mVarClients sid
 
 -- |Creates a new game on the server. The 'Int' represents the max number of players.
-createGame :: Server GamesList -> Server ConcurrentClientList -> Int -> Server (Maybe String)
-createGame remoteGames remoteClientList maxPlayers = do
+createGame :: Server ConcurrentClientList -> Int -> Server (Maybe String)
+createGame remoteClientList maxPlayers = do
   mVarClients <- remoteClientList
-  mVarGames <- remoteGames
   sid <- getSessionID
-  liftIO $ Game.createGame mVarGames mVarClients sid maxPlayers
+  liftIO $ Game.createGame mVarClients sid maxPlayers
 
 -- |Returns a list of the each game's uuid as a String
 getGamesList :: Server GamesList -> Server [String]

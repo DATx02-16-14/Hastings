@@ -12,40 +12,40 @@ import Hastings.Utils
 import Hastings.ServerUtils
 import LobbyTypes
 
--- |Removes a player from it's game
-leaveGame :: GamesList -> SessionID -> IO ()
-leaveGame mVarGames sid = do
-  gamesList <- readMVar mVarGames
-  case findGameWithSid sid gamesList of
-    Nothing                 -> return ()
-    Just game@(_, gameData) -> do
-      modifyMVar_ mVarGames $ \games ->
-        return $ updateListElem (removePlayer sid) (== game) games
-      maybe
-        (return ())
-        (\p -> messageClients KickedFromGame [p])
-        (lookupClientEntry sid $ players gameData)
-      messageClients PlayerLeftGame $ players gameData
-  where
-    removePlayer sid (uuid, gameData) =
-      let newClientList = filter ((sid /=) . sessionID) $ players gameData in
-      (uuid, gameData {players = newClientList})
+import qualified Hastings.Database.Game as GameDB
+import qualified Hastings.Database.Fields as Fields
+import qualified Database.Esqueleto as Esql
 
-createGame :: GamesList -> ConcurrentClientList -> SessionID -> Int -> IO (Maybe String)
-createGame mVarGames mVarClients sid maxPlayers = do
+-- |Removes a player from it's game
+leaveGame :: ConcurrentClientList -> SessionID -> IO ()
+leaveGame mVarClients sid = do
+  clientList <- readMVar mVarClients
+  dbGame <- GameDB.retrieveGameBySid sid
+  case dbGame of
+     Just (Esql.Entity gameKey _) -> do
+      GameDB.removePlayerFromGame sid gameKey
+      sessionIds <- GameDB.retrieveSessionIdsInGame gameKey
+
+      messageClientsWithSid KickedFromGame clientList [sid]
+      messageClientsWithSid PlayerLeftGame clientList sessionIds
+
+     _                            -> return ()
+
+createGame :: ConcurrentClientList -> SessionID -> Int -> IO (Maybe String)
+createGame mVarClients sid maxPlayers = do
   clientList <- readMVar mVarClients
   gen <- newStdGen
   let (uuid, g) = random gen
   let uuidStr = Data.UUID.toString uuid
 
-  maybe
-    (return Nothing)
-    (\c -> do
-      modifyMVar_ mVarGames $ \gs ->
-        return $ (uuidStr, GameData [c] "GameName" maxPlayers empty) : gs
+  existingGame <- GameDB.retrieveGameByUUID uuidStr
+  case existingGame of
+    Just _  -> return Nothing
+    Nothing -> do
+      gameKey <- GameDB.saveGame uuidStr uuidStr maxPlayers sid ""
+      GameDB.addPlayerToGame sid gameKey
       messageClients GameAdded clientList
-      return $ Just uuidStr)
-    (lookupClientEntry sid clientList)
+      return $ Just uuidStr
 
 -- |Lets a player join a game
 playerJoinGame :: ConcurrentClientList  -- ^The list of all players connected
