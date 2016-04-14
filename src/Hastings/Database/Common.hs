@@ -47,10 +47,10 @@ hastingsConnectionInfo host port user pass dbName = MySQL.defaultConnectInfo {
 -- @
 runDB :: MySQL.SqlPersistT (Logger.NoLoggingT IO) a -> IO a
 runDB l = do
-    address <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_HOST_ADDRESS"
-    port    <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_HOST_PORT"
-    user    <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_USER"
+    address <- fromMaybe "localhost" <$> lookupEnv "HASTINGS_DATABASE_HOST_ADDRESS"
+    port    <- fromMaybe "3306" <$> lookupEnv "HASTINGS_DATABASE_HOST_PORT"
+    user    <- fromMaybe "root" <$> lookupEnv "HASTINGS_DATABASE_USER"
     pass    <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_PASSWORD"
-    name    <- fromMaybe "" <$> lookupEnv "HASTINGS_DATABASE_NAME"
+    name    <- fromMaybe "hastings" <$> lookupEnv "HASTINGS_DATABASE_NAME"
     let connectionInfo = hastingsConnectionInfo address (read port :: Word16) user pass name
     (Logger.runNoLoggingT . MySQL.withMySQLConn connectionInfo . Esql.runSqlConn) l
