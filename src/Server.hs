@@ -26,6 +26,7 @@ module Server(
   , setPasswordToGame
   , isGamePasswordProtected
   , remoteIsOwnerOfGame
+  , getClientName
   ) where
 
 import Haste.App
@@ -248,3 +249,9 @@ isGamePasswordProtected :: Server GamesList -> String -> Server Bool
 isGamePasswordProtected remoteGames guuid = do
   mVarGames <- remoteGames
   liftIO $ Game.isGamePasswordProtected mVarGames guuid
+
+getClientName :: Server ConcurrentClientList -> Server String
+getClientName remoteClientList = do
+  sid <- getSessionID
+  clientList <- remoteClientList >>= liftIO . CC.readMVar
+  return . maybe "No such sessionID" name $ sid `lookupClientEntry` clientList
