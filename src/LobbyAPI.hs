@@ -4,6 +4,7 @@ module LobbyAPI where
 import Haste.App
 import qualified Control.Concurrent as CC
 import LobbyTypes
+import ChineseCheckers.Table (GameAction)
 #ifdef __HASTE__
 #define REMOTE(x) (remote undefined)
 #else
@@ -60,6 +61,10 @@ data LobbyAPI = LobbyAPI
   , leaveGame                 :: Remote (Server ())
     -- |Looksup the clients name using sessionID
   , getClientName             :: Remote (Server String)
+    -- |Write to the clients current game chan
+  , writeGameChan             :: Remote (GameAction -> Server ())
+    -- |Read from the clients current game chan
+  , readGameChan              :: Remote (Server GameAction)
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -89,3 +94,5 @@ newLobbyAPI (playersList, gamesList, chatList) =
             <*> REMOTE((Server.remoteIsOwnerOfGame      gamesList))
             <*> REMOTE((Server.leaveGame                gamesList))
             <*> REMOTE((Server.getClientName            playersList))
+            <*> REMOTE((Server.writeGameChan            playersList))
+            <*> REMOTE((Server.readGameChan             playersList))

@@ -13,7 +13,7 @@ data Content = Empty | Piece Color
 data Square = Square Content Color Coord
     deriving (Show, Eq)
 
-data GameAction = StartGame | Move Coord Coord | RotatePlayer
+data GameAction = StartGame | Move Coord Coord | RotatePlayer | GameActionError String
     deriving (Show)
 
 type Player = String

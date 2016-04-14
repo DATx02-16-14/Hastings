@@ -27,6 +27,8 @@ module Server(
   , isGamePasswordProtected
   , remoteIsOwnerOfGame
   , getClientName
+  , writeGameChan
+  , readGameChan
   ) where
 
 import Haste.App
@@ -42,6 +44,7 @@ import Hastings.ServerUtils
 import qualified Server.Lobby as Lobby
 import qualified Server.Game as Game
 import qualified Server.Chat as Chat
+import ChineseCheckers.Table (GameAction(GameActionError))
 
 
 -- |Initial connection with the server
@@ -255,3 +258,26 @@ getClientName remoteClientList = do
   sid <- getSessionID
   clientList <- remoteClientList >>= liftIO . CC.readMVar
   return . maybe "No such sessionID" name $ sid `lookupClientEntry` clientList
+
+  -- |Write to the clients current game chan
+writeGameChan :: Server ConcurrentClientList -> GameAction -> Server ()
+writeGameChan remoteClientList action = do
+  clientList <- remoteClientList >>= liftIO . CC.readMVar
+  sid <- getSessionID
+  maybe
+    (return ())
+    (\client -> liftIO $ CC.writeChan (gameChannel client) action)
+    $ sid `lookupClientEntry` clientList
+
+  -- |Read from the clients current game chan
+readGameChan :: Server ConcurrentClientList -> Server GameAction
+readGameChan remoteClientList = do
+  clientList <- remoteClientList >>= liftIO . CC.readMVar
+  sid <- getSessionID
+  case sid `lookupClientEntry` clientList of
+    Nothing -> do
+      liftIO . print $ "readGameChan > No such sessionid in client list"
+      return $ GameActionError "readGameChan > No such sessionid in client list"
+    Just client -> do
+      action <- liftIO . CC.readChan $ gameChannel client
+      return action
