@@ -3,6 +3,7 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 
 import Utils
 import Hastings.ServerUtilsTests
+import Server.LobbyTest
 
 main = defaultMain tests
 
@@ -30,6 +31,12 @@ tests = [
     ],
     testGroup "isOwnerOfGame" [
       testProperty "Checks that the function returns the correct result (True if the client is last in the players list, False otherwise)" prop_isOwnerOfGame
+    ],
+    testGroup "Server.Lobby" [
+      testProperty "Checks that connect successfully adds a client" prop_connect ,
+      testProperty "Checks that disconnect successfully disconnects a player from both games and lobby" prop_disconnect,
+      testProperty "Checks that the list of player names is correct" prop_getConnectedPlayerNames,
+      testProperty "Checks that the name of the player is changed everywhere" prop_changeNickName
     ]
 
   ]

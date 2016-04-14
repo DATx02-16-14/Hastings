@@ -8,6 +8,12 @@ before_install:
 - export PATH=/opt/ghc/7.10.3/bin:$PATH
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
+services:
+-  mysql
+
+before_script:
+- mysql -e 'create database hastings;'
+
 script:
 - stack --no-terminal setup
 - stack --no-terminal build
