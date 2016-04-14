@@ -72,6 +72,14 @@ setNumberOfPlayersInGame uuid numberOfPlayers = runDB $
       Esql.set games [GameMaxAmountOfPlayers Esql.=. Esql.val numberOfPlayers]
       Esql.where_ (games Esql.^. GameUuid Esql.==. Esql.val uuid)
 
+-- |Set the owner of a game.
+setGameOwner :: Esql.Key Game -- ^The key of the game.
+             -> SessionID     -- ^The sessionID of the new owner.
+             -> IO ()
+setGameOwner gameKey sid = runDB $
+  Esql.update $ \games -> do
+    Esql.set games [GameOwner Esql.=. Esql.val sid]
+    Esql.where_ (games Esql.^. GameId Esql.==. Esql.val gameKey)
 
 -- |Add a player to a game
 addPlayerToGame :: SessionID -- ^The sessionID of the player.
