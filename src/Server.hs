@@ -37,6 +37,7 @@ import qualified Control.Concurrent as CC
 import Data.List
 import Data.Maybe
 import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
+import Control.Monad (liftM)
 
 import LobbyTypes
 import Hastings.Utils
@@ -45,6 +46,8 @@ import qualified Server.Lobby as Lobby
 import qualified Server.Game as Game
 import qualified Server.Chat as Chat
 import ChineseCheckers.Table (GameAction(GameActionError))
+
+import qualified Hastings.Database.Game as GameDB
 
 
 -- |Initial connection with the server
@@ -58,9 +61,8 @@ connect remoteClientList name = do
 
 -- |Disconnect client from server.
 disconnect :: LobbyState -> SessionID -> Server()
-disconnect (clientList, games, chats) sid = do
+disconnect (clientList, chats) sid = do
   mVarClients <- clientList
-  mVarGames <- games
   cs <- clientList >>= liftIO . CC.readMVar
   sid <- getSessionID
   maybe
@@ -70,58 +72,45 @@ disconnect (clientList, games, chats) sid = do
       return ())
     $ sid `lookupClientEntry` cs
 
-  liftIO $ Lobby.disconnect mVarClients mVarGames sid
+  liftIO $ Lobby.disconnect mVarClients sid
 
 -- |Removes a player that has disconnected from it's game
-leaveGame :: Server GamesList -> Server ()
-leaveGame remoteGames = do
-  mVarGames <- remoteGames
-  gamesList <- liftIO $ CC.readMVar mVarGames
+leaveGame :: Server ConcurrentClientList -> Server ()
+leaveGame remoteClientList = do
+  mVarClients <- remoteClientList
   sid <- getSessionID
-  liftIO $ Game.leaveGame mVarGames sid
+  liftIO $ Game.leaveGame mVarClients sid
 
 -- |Creates a new game on the server. The 'Int' represents the max number of players.
-createGame :: Server GamesList -> Server ConcurrentClientList -> Int -> Server (Maybe String)
-createGame remoteGames remoteClientList maxPlayers = do
+createGame :: Server ConcurrentClientList -> Int -> Server (Maybe String)
+createGame remoteClientList maxPlayers = do
   mVarClients <- remoteClientList
-  mVarGames <- remoteGames
   sid <- getSessionID
-  liftIO $ Game.createGame mVarGames mVarClients sid maxPlayers
+  liftIO $ Game.createGame mVarClients sid maxPlayers
 
 -- |Returns a list of the each game's uuid as a String
-getGamesList :: Server GamesList -> Server [String]
-getGamesList remoteGames = do
-  gameList <- remoteGames >>= liftIO . CC.readMVar
-  return $ getUUIDFromGamesList gameList
+getGamesList :: Server [String]
+getGamesList = liftM getUUIDFromGamesList (liftIO GameDB.retrieveAllGames)
 
 -- |Lets a player join a 'LobbyGame'. The 'String' represents the UUID for the game.
 -- |The second 'String' is the password for the game, if there is no password it can be left empty.
-playerJoinGame :: Server ConcurrentClientList -> Server GamesList -> String -> String -> Server Bool
-playerJoinGame remoteClientList remoteGameList gameID passwordString = do
+playerJoinGame :: Server ConcurrentClientList -> String -> String -> Server Bool
+playerJoinGame remoteClientList gameID passwordString = do
   mVarClients <- remoteClientList
-  mVarGames <- remoteGameList
   sid <- getSessionID
-  liftIO $ Game.playerJoinGame mVarClients mVarGames sid gameID passwordString
+  liftIO $ Game.playerJoinGame mVarClients sid gameID passwordString
 
 -- |Finds the name of a game given it's identifier
-findGameNameWithID :: Server GamesList -> String -> Server String
-findGameNameWithID remoteGames gid = do
-  mVarGames <- remoteGames
-  liftIO $ Game.findGameNameWithID mVarGames gid
+findGameNameWithID :: String -> Server String
+findGameNameWithID = liftIO . Game.findGameNameWithID
 
 -- |Finds the name of the game the client is currently in
-findGameNameWithSid :: Server GamesList -> Server String
-findGameNameWithSid remoteGames = do
-  mVarGames <- remoteGames
-  sid <- getSessionID
-  liftIO $ Game.findGameNameWithSid mVarGames sid
+findGameNameWithSid :: Server String
+findGameNameWithSid = getSessionID >>= liftIO . Game.findGameNameWithSid
 
 -- |Finds the name of the players of the game the current client is in
-playerNamesInGameWithSid :: Server GamesList -> Server [String]
-playerNamesInGameWithSid remoteGames = do
-  mVarGames <- remoteGames
-  sid <- getSessionID
-  liftIO $ Game.playerNamesInGameWithSid mVarGames sid
+playerNamesInGameWithSid :: Server [String]
+playerNamesInGameWithSid = getSessionID >>= liftIO . Game.playerNamesInGameWithSid
 
 -- |Returns a list of strings containing all connected players names.
 getConnectedPlayerNames :: Server ConcurrentClientList -> Server [String]
@@ -129,23 +118,22 @@ getConnectedPlayerNames remoteClientList = do
   mVarClients <- remoteClientList
   liftIO $ Lobby.getConnectedPlayerNames mVarClients
 
--- |Kicks the player with index 'Int' from the list of players in
+-- |Kicks the player with a specified name from
 -- the game that the current client is in.
-kickPlayerWithSid :: Server GamesList
-                  -> Int  -- ^The index in the list of players of the player to kick
+kickPlayerWithSid :: Server ConcurrentClientList
+                  -> Name  -- ^The name of the player to kick
                   -> Server ()
-kickPlayerWithSid remoteGames clientIndex = do
-  mVarGamesList <- remoteGames
+kickPlayerWithSid remoteClientList name = do
+  mVarClients <- remoteClientList
   sid <- getSessionID
-  liftIO $ Game.kickPlayerWithSid mVarGamesList sid clientIndex
+  liftIO $ Game.kickPlayerWithSid mVarClients sid name
 
 -- |Change the nick name of the current player to that given.
-changeNickName :: Server ConcurrentClientList -> Server GamesList -> Name -> Server ()
-changeNickName remoteClientList remoteGames newName = do
+changeNickName :: Server ConcurrentClientList -> Name -> Server ()
+changeNickName remoteClientList newName = do
   mVarClients <- remoteClientList
-  mVarGames <- remoteGames
   sid <- getSessionID
-  liftIO $ Lobby.changeNickName mVarClients mVarGames sid newName
+  liftIO $ Lobby.changeNickName mVarClients sid newName
 
 -- | Sends a server notification to all chats the client has joined
 notifyClientChats :: Server ConcurrentClientList -> String -> Server ()
@@ -155,12 +143,11 @@ notifyClientChats remoteClients notification = do
   liftIO $ Chat.notifyClientChats mVarClients sid notification
 
 -- |Change the name of a 'LobbyGame' that the connected client is in
-changeGameNameWithSid :: Server GamesList -> Server ConcurrentClientList -> Name -> Server ()
-changeGameNameWithSid remoteGames remoteClients newName = do
+changeGameNameWithSid :: Server ConcurrentClientList -> Name -> Server ()
+changeGameNameWithSid remoteClients newName = do
   mVarClients <- remoteClients
-  mVarGames <- remoteGames
   sid <- getSessionID
-  liftIO $ Game.changeGameNameWithSid mVarGames mVarClients sid newName
+  liftIO $ Game.changeGameNameWithSid mVarClients sid newName
 
 -- |Reads the lobby channel of the current client and returns the message.
 -- |Blocking method if the channel is empty
@@ -172,18 +159,14 @@ readLobbyChannel remoteClientList = do
 
 -- |Changes the maximum number of players for a game
 -- Requires that the player is the last in the player list (i.e. the owner)
-changeMaxNumberOfPlayers :: Server GamesList -> Int -> Server ()
-changeMaxNumberOfPlayers remoteGames newMax = do
-  mVarGamesList <- remoteGames
+changeMaxNumberOfPlayers :: Int -> Server ()
+changeMaxNumberOfPlayers newMax = do
   sid <- getSessionID
-  liftIO $ Game.changeMaxNumberOfPlayers mVarGamesList sid newMax
+  liftIO $ Game.changeMaxNumberOfPlayers sid newMax
 
--- |Returns if the current player is owner of the game it's in
-remoteIsOwnerOfGame :: Server GamesList -> Server Bool
-remoteIsOwnerOfGame remoteGames = do
-  gamesList <- remoteGames >>= liftIO . CC.readMVar
-  sid <- getSessionID
-  return $ isOwnerOfGame sid gamesList
+-- |Returns true if the current player is owner of the game they are in
+remoteIsOwnerOfGame :: Server Bool
+remoteIsOwnerOfGame = getSessionID >>= liftIO . isOwnerOfGame
 
 -- |Called by client to join a chat
 joinChat :: Server ConcurrentClientList -> Server ConcurrentChatList -> String -> Server ()
@@ -241,17 +224,15 @@ getChats remoteChatList = do
 
 -- |Sets the password (as a 'ByteString') of the game the client is in.
 -- |Only possible if the client is the owner of the game.
-setPasswordToGame :: Server GamesList -> String -> Server ()
-setPasswordToGame remoteGames passwordString = do
-  mVarGames <- remoteGames
+setPasswordToGame :: Server ConcurrentClientList -> String -> Server ()
+setPasswordToGame remoteClientList passwordString = do
+  mVarClients <- remoteClientList
   sid <- getSessionID
-  liftIO $ Game.setPasswordToGame mVarGames sid passwordString
+  liftIO $ Game.setPasswordToGame mVarClients sid passwordString
 
 -- |Returns True if game is password protected, False otherwise. 'String' is the UUID of the game
-isGamePasswordProtected :: Server GamesList -> String -> Server Bool
-isGamePasswordProtected remoteGames guuid = do
-  mVarGames <- remoteGames
-  liftIO $ Game.isGamePasswordProtected mVarGames guuid
+isGamePasswordProtected :: String -> Server Bool
+isGamePasswordProtected = liftIO . Game.isGamePasswordProtected
 
 getClientName :: Server ConcurrentClientList -> Server String
 getClientName remoteClientList = do

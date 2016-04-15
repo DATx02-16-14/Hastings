@@ -24,30 +24,13 @@ instance Show ClientEntry where
 
 instance Eq ClientEntry where
   c1 == c2 = sessionID c1 == sessionID c2
-  c1 /= c2 = sessionID c1 == sessionID c2
+  c1 /= c2 = sessionID c1 /= sessionID c2
 
 -- |A list with all the players connected to the game.
 type ConcurrentClientList = CC.MVar [ClientEntry]
--- |A game inside of the lobby.
-type LobbyGame = (String, GameData)
 
--- |Data relevant to a game. Currently includes:
--- |The players who are in the game (where the last one is the owner)
--- |The name of the game
--- |The maximum allowed players, can be changed by the owner
-data GameData = GameData { players            :: [ClientEntry]
-                         , gameChan           :: CC.Chan GameAction
-                         , gameName           :: Name
-                         , maxAmountOfPlayers :: Int
-                         , gamePassword       :: ByteString}
-
-  deriving (Eq)
-
--- |A list of all the 'LobbyGame's that have been started inside the Lobby.
-type GamesList = CC.MVar [LobbyGame]
 -- | The state of the lobby being passed around.
-
-type LobbyState = (Server ConcurrentClientList, Server GamesList, Server ConcurrentChatList)
+type LobbyState = (Server ConcurrentClientList, Server ConcurrentChatList)
 
 -- |A chat message sent on a channel.
 data ChatMessage = ChatMessage       {from    :: Name
