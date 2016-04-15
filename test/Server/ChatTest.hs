@@ -38,3 +38,23 @@ prop_joinChat i chatNameList clientList = monadicIO $ do
   assert $
     any ((chat == ). fst) clientChats &&
     any ((chat == ). fst) newChatList
+
+-- |Property for leaveChat, tests that the chat is no longer in the players
+-- list.
+prop_leaveChat :: Int -> [ClientEntry] -> Property
+prop_leaveChat i clientList = monadicIO $ do
+  pre $ not $ null clientList
+  let i' = abs $ mod i $ length clientList
+  let client = clientList !! i'
+  let i'' = abs $ mod i $ length $ chats client
+  let chatName = fst $ chats client !! i''
+  let sid = sessionID client
+
+  mVarClients <- run $ newMVar clientList
+  run $ Server.Chat.leaveChat mVarClients sid chatName
+
+  newClientList <- run $ readMVar mVarClients
+  let newClient = newClientList !! i'
+  let clientChats = chats newClient
+
+  assert $ all ((chatName /=) . fst) clientChats
