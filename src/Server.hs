@@ -29,6 +29,7 @@ module Server(
   , getClientName
   , writeGameChan
   , readGameChan
+  , startGame
   ) where
 
 import Haste.App
@@ -262,3 +263,10 @@ readGameChan remoteClientList = do
     Just client -> do
       action <- liftIO . CC.readChan $ gameChannel client
       return action
+
+-- |Read from the clients current game chan
+startGame :: Server ConcurrentClientList -> Server ()
+startGame remoteClientList = do
+  mVarClientList <- remoteClientList
+  sid <- getSessionID
+  liftIO $ Game.startGame mVarClientList sid

@@ -65,6 +65,8 @@ data LobbyAPI = LobbyAPI
   , writeGameChan             :: Remote (GameAction -> Server ())
     -- |Read from the clients current game chan
   , readGameChan              :: Remote (Server GameAction)
+    -- |Read from the clients current game chan
+  , startGame                 :: Remote (Server ())
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -96,3 +98,4 @@ newLobbyAPI (playersList, chatList) =
             <*> REMOTE((Server.getClientName            playersList))
             <*> REMOTE((Server.writeGameChan            playersList))
             <*> REMOTE((Server.readGameChan             playersList))
+            <*> REMOTE((Server.startGame                playersList))

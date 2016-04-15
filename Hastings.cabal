@@ -34,7 +34,6 @@ library
     , Hastings.Utils
     , LobbyClient
     , LobbyAPI
-    , GameAPI
     , ChineseCheckers.Table
     , ChineseCheckers.ChineseGraphics
     , ChineseCheckers.ChineseCheckers

@@ -11,13 +11,12 @@ import Views.Common
 import Views.Lobby
 import Views.Game
 import LobbyAPI
-import GameAPI
 import LobbyTypes
 import Views.Chat
 
 -- |Main mehtod for the client.
-clientMain :: LobbyAPI -> GameAPI -> Client ()
-clientMain lapi gapi = do
+clientMain :: LobbyAPI -> Client ()
+clientMain lapi = do
   name <- prompt "Hello! Please enter your name:"
   onServer $ connect lapi <.> name
 
@@ -25,39 +24,40 @@ clientMain lapi gapi = do
   createBootstrapTemplate "Hastings"
   createChangeNickNameDOM lapi
   createChatDOM lapi
-  createLobbyDOM lapi gapi
+  createLobbyDOM lapi
 
-  fork $ listenForLobbyChanges lapi gapi
+  fork $ listenForLobbyChanges lapi
   clientJoinChat lapi "main"
-  
+
   return ()
 
-listenForLobbyChanges :: LobbyAPI -> GameAPI -> Client ()
-listenForLobbyChanges api gapi = do
+listenForLobbyChanges :: LobbyAPI -> Client ()
+listenForLobbyChanges api = do
   message <- onServer $ readLobbyChannel api
   case message of
     GameNameChange   -> do
       updateGameHeader api
-      updateGamesList api gapi
+      updateGamesList api
     NickChange       -> do
       updatePlayerList api
       updatePlayerListGame api
     KickedFromGame   -> do
       deleteGameDOM
-      createLobbyDOM api gapi
-    GameAdded        -> updateGamesList api gapi
+      createLobbyDOM api
+    GameAdded        -> updateGamesList api
     ClientJoined     -> updatePlayerList api
     ClientLeft       -> do
       updatePlayerList api
       playerLeftGameFun
     PlayerJoinedGame -> updatePlayerListGame api
     PlayerLeftGame   -> playerLeftGameFun
+    StartGame        -> liftIO $ print "StartGame received"
     (LobbyError msg) -> showError msg
-  listenForLobbyChanges api gapi
+  listenForLobbyChanges api
   where
     playerLeftGameFun = do
       updatePlayerListGame api
       isOwner <- onServer $ isOwnerOfCurrentGame api
       when isOwner $ do
         deleteGameOwnerDOM
-        createGameOwnerDOM api gapi
+        createGameOwnerDOM api

@@ -1,7 +1,7 @@
 module Server.Game where
 
 import Haste.App (SessionID)
-import Control.Concurrent (modifyMVar_, readMVar, newChan)
+import Control.Concurrent (modifyMVar_, readMVar, newChan, dupChan, writeChan)
 import Data.UUID (toString)
 import System.Random
 import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
@@ -175,3 +175,20 @@ isGamePasswordProtected guuid = do
   case dbGame of
     Nothing                   -> return False
     Just (Esql.Entity _ game) -> return $ Fields.gamePassword game /= pack ""
+
+startGame :: ConcurrentClientList -> SessionID -> IO ()
+startGame mVarClientList sid = do
+  dbGame <- GameDB.retrieveGameBySid sid
+  case dbGame of
+    Nothing -> return ()
+    Just (Esql.Entity gameKey game) -> do
+      sids <- GameDB.retrieveSessionIdsInGame gameKey
+      gameChan <- newChan
+      modifyMVar_ mVarClientList $ \clientList -> do
+        mapM
+          (\c -> do
+            writeChan (lobbyChannel c) StartGame
+            duplicateChan <- dupChan gameChan
+            return c{gameChannel = duplicateChan}
+          )
+          clientList
