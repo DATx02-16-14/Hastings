@@ -17,6 +17,8 @@ import qualified Hastings.Database.Player as PlayerDB
 -- To run in ghci
 -- :l test/Server/LobbyTest.hs src/Hastings/ServerUtils.hs src/Hastings/Utils.hs src/LobbyTypes.hs test/ArbitraryLobbyTypes.hs src/Server/Lobby.hs src/Server/Game.hs src/Server/Chat.hs src/Hastings/Database/Player.hs
 
+-- | Run database setup functions that makes sure the database
+--   table is up to date.
 preProp :: IO ()
 preProp = do
   migrateDatabase
@@ -45,6 +47,7 @@ prop_disconnect i clientList = monadicIO $ do
   let testName = "testName5939723012395"
   run $ preProp
 
+  --Setup test preconditions
   clientMVar <- run $ newMVar clientList
   run $ PlayerDB.saveOnlinePlayer testName sid
 
@@ -52,6 +55,8 @@ prop_disconnect i clientList = monadicIO $ do
 
   newClientList <- run $ readMVar clientMVar
   player <- run $ PlayerDB.retrieveOnlinePlayer sid
+
+  --Cleanup test data
   run $ PlayerDB.deletePlayer testName
 
   assert $
@@ -80,6 +85,7 @@ prop_changeNickName i clientList = monadicIO $ do
   let newName = "new name"
   run preProp
 
+  --Setup test preconditions
   run $ PlayerDB.saveOnlinePlayer playerName sid
   clientMVar <- run $ newMVar clientList
 
@@ -88,6 +94,7 @@ prop_changeNickName i clientList = monadicIO $ do
   newNamePlayer <- run $ PlayerDB.retrievePlayerByUsername newName
   oldNamePlayer <- run $ PlayerDB.retrievePlayerByUsername playerName
 
+  --Cleanup test data
   run $ PlayerDB.deleteOnlinePlayer sid
   run $ PlayerDB.deletePlayer newName
 
