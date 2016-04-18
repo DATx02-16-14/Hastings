@@ -8,10 +8,12 @@ import Haste.DOM
 import Haste.Graphics.Canvas
 import Haste.Events
 import qualified Haste.Concurrent as HC
-import Control.Concurrent as CC
+import qualified Control.Concurrent as CC
+import LobbyAPI
+import Haste.App
+import Haste.App.Concurrent
 
 parseGameAction :: GameAction -> GameState -> GameState
-parseGameAction StartGame _ = undefined
 parseGameAction RotatePlayer gs = rotatePlayer gs
 parseGameAction m@(Move c1 c2) gs = mkState m gs
 
@@ -21,31 +23,42 @@ mkState (Move c1 c2) state = GameState {gameTable = movePiece (gameTable state) 
                                              , players = players state
                                              , fromCoord = Nothing
                                              , playerMoveAgain = playerMoveAgain state}
+mkState _ _ = error "Unable to create GameState from GameAction"
 
 
-runGame :: parent -> CC.MVar GameState -> CC.MVar GameAction -> [String] -> IO HandlerInfo
-runGame parent gameState outbox players = do
-                                CC.putMVar gameState $ initGame players
-                                drawGame gameState outbox documentBody
+runGame :: Elem -> CC.MVar GameState -> [String] -> String -> LobbyAPI -> Client ()
+runGame parent gameState players name api = do
+                                drawGame gameState documentBody api name
+                                HC.fork $ listenForGameAction api gameState
+                                liftIO $ do
+                                    CC.putMVar gameState $ initGame players
+                                 -- add function for communication handling
 --                                gameLoop chan gameState
+
+listenForGameAction :: LobbyAPI -> CC.MVar GameState -> Client ()
+listenForGameAction api state = do
+                        ga <- onServer $ readGameChan api
+                        name <- onServer $ getClientName api
+                        liftIO $ do
+                          gs <- CC.takeMVar state
+                          CC.putMVar state (parseGameAction ga gs)
+
+                        listenForGameAction api state
+        where   function :: LobbyAPI -> Remote (Server GameAction)
+                function = undefined -- todo
+
 
 
 -- | The inbox, outbox and list of names will be supplied by the server
-main = do
-    state <- CC.newEmptyMVar
-    inbox <- CC.newEmptyMVar
-    outbox <- CC.newEmptyMVar
-    forkIO $ updateState inbox state
-    runGame documentBody state outbox ["pelle","lars","erich","Per"]
 
-
-gameLoop :: GameChan -> MVar GameState -> IO ()
+{-
+gameLoop :: GameChan -> CC.MVar GameState -> IO ()
 gameLoop chan state = do
                  action <- readChan chan
                  gs <- takeMVar state
                  putMVar state $ parseGameAction action gs
 
-
+-}
 -- | Loop to update the current GameState in use of the client, meant to be forked
 updateState :: CC.MVar GameAction -> CC.MVar GameState -> IO ()
 updateState inbox stateOfGame = do

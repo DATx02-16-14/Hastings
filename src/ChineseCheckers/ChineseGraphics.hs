@@ -9,6 +9,8 @@ import ChineseCheckers.Table
 import ChineseCheckers.ChineseBitmaps
 import qualified Control.Concurrent as CC
 import qualified Haste.Concurrent as HC
+import Haste.App
+import LobbyAPI
 
 
 radius :: Double
@@ -35,7 +37,7 @@ initTableCoord2 space size (Square _ _ (x,y)) = ((x,y), (size/2 + size*fromInteg
 
 
 -- | Generate a canvas with the specified width and height in pixels
-makeCanvas :: Int -> Int -> IO Elem
+makeCanvas :: Int -> Int -> Client Elem
 makeCanvas width height = do
     canvas <- newElem "canvas"
     setStyle canvas "border" "1px solid black"
@@ -47,67 +49,70 @@ makeCanvas width height = do
     return canvas
 
 -- | Generate a button with the given text
-mkButton :: String -> IO Elem
+mkButton :: String -> Client Elem
 mkButton text = do
     button <- newElem "button"
     set button [prop "innerHTML" =: text]
     return button
 
 
---drawGame :: CC.MVar GameState -> CC.Chan (GameState) -> parent -> IO HandlerInfo
+drawGame :: CC.MVar GameState -> Elem -> LobbyAPI -> String -> Client HandlerInfo
 -- | Inits the graphics
-drawGame stateOfGame outbox par = do
-    gameState <- CC.takeMVar stateOfGame
+drawGame stateOfGame par api name = do
+    gameState <- liftIO $ CC.takeMVar stateOfGame
     canvas <- makeCanvas 1400 800
     appendChild par canvas
     canvas2 <- makeCanvas 500 800
     appendChild par canvas2
-    Just can <- fromElem canvas :: IO (Maybe Canvas)
-    Just can2 <- fromElem canvas2 :: IO (Maybe Canvas)
+    Just can <- liftIO $ fromElem canvas --  :: Client (Maybe Canvas)
+    Just can2 <- liftIO $ fromElem canvas2 -- :: Client (Maybe Canvas)
     button <- mkButton "Rotate player"
     appendChild par button
     initTable2' can $ gameTable gameState
-    CC.putMVar stateOfGame gameState
+    liftIO $ CC.putMVar stateOfGame gameState
     onEvent can Click $ \mouse ->
-     do
-      state <- CC.readMVar stateOfGame
-      case currentPlayer state == "pelle" of  -- must save the clients name somehow
-        True ->
-         let (x,y) = mouseCoords mouse
-            in
-              case mapCoords (fromIntegral x,fromIntegral y) of
-                Nothing            -> return ()
-                Just (x1,y1)       ->
-                           do
-                            gameState <- CC.takeMVar stateOfGame
-                            let newState = playerAction gameState (x1,y1)
-                            case fromCoord newState of
+      do
+       state <- liftIO $ CC.takeMVar stateOfGame
+       case currentPlayer state == currentPlayer state of  -- must save the clients name somehow
+         True ->
+          let (x,y) = mouseCoords mouse
+             in
+               case mapCoords (fromIntegral x,fromIntegral y) of
+                 Nothing            ->
+                  do
+                   liftIO $ CC.putMVar stateOfGame state
+                   return ()
+                 Just (x1,y1)       ->
+                            do
+                             let newState = playerAction state (x1,y1)
+                             case fromCoord newState of
 
-                             Just (x,y) -> do
-                              CC.putMVar stateOfGame newState
-                              CC.putMVar outbox $ Move (x1,y1) (x,y)
-                              initTable2' can (gameTable newState)
-  --                            renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
-                              renderOnTop can2 $ text (50,50) "hejsan2"
-                              case playerDone (players newState) newState of
-                                Nothing -> graphicGameOver can
-                                Just x  -> CC.putMVar stateOfGame x
+                              Just (x,y) -> do
+                               liftIO $ CC.putMVar stateOfGame newState
+                               initTable2' can (gameTable newState)
+                               renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y) ) (x,y)
+                               renderOnTop can2 $ text (50,50) "hejsan2"
+                               case playerDone (players newState) newState of
+                                 Nothing -> graphicGameOver can
+                                 Just x  -> liftIO $ CC.putMVar stateOfGame x
 
-                             Nothing -> do
-                              CC.putMVar stateOfGame newState
-                              initTable2' can (gameTable $ playerAction gameState (x1,y1))
-  --                            render can2 $ text (50,50) ((currentPlayer $ playerAction gameState (x1,y1)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
-                              renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
-                            where colors = map snd
-        False -> return ()
+                              Nothing -> do
+                               liftIO $ CC.putMVar stateOfGame newState
+                               initTable2' can (gameTable $ playerAction state (x1,y1))
+                               renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
+                             where colors = map snd
+         False -> do
+          liftIO $ CC.putMVar stateOfGame state
+          return ()
     onEvent button Click $ \_ ->
      do
-      gameState <- CC.takeMVar stateOfGame
-      let newState = rotatePlayer gameState
-      render can2 $ scale (5,5) $ text (0,10) $ currentPlayer newState ++ "s speltur!!!" ++ (showColor . snd . head) (players newState)
---      render can2 $ text (50,50) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
-      CC.putMVar stateOfGame $ rotatePlayer gameState
---      render can2 $ text (150,150) (currentPlayer $ rotatePlayer gameState)
+      liftIO $ do
+       gameState <- liftIO $ CC.takeMVar stateOfGame
+       let newState = rotatePlayer gameState
+       initTable2' can (gameTable newState)
+       render can2 $ scale (5,5) $ text (0,10) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
+       liftIO $ CC.putMVar stateOfGame $ rotatePlayer gameState
+      onServer $ writeGameChan api <.> RotatePlayer 
 
 -- | Render the game over text
 graphicGameOver can = do

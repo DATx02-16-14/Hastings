@@ -3,6 +3,10 @@ import Haste.Graphics.Canvas
 import Control.Concurrent
 import Haste.Binary
 import Data.Word
+import Haste
+import Haste.DOM
+import Haste.Graphics.Canvas
+import Haste.Events
 
 type Table = [Square]
 --data Color = blue | red | purple | green | orange | yellow | white
@@ -14,10 +18,12 @@ data Square = Square Content Color Coord
     deriving (Show, Eq)
 
 data GameAction = StartGame | Move Coord Coord | RotatePlayer | GameActionError String
-    deriving (Show)
 
+
+ 
 type Player = String
 type GameChan = Chan GameAction
+
 
 
 data GameState = GameState { gameTable :: Table
