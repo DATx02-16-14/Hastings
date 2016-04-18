@@ -138,19 +138,17 @@ mkButton text = do
     set button [prop "innerHTML" =: text]
     return button
 
-getRelativeCords :: Elem -> (Int, Int) -> IO (Int, Int)
-getRelativeCords can (absX, absY) = do
-  canId <- getAttr can "id"
-  ffi $ toJSStr $ concat [
-        "(function() {",
-          "const canvas = document.getElementById(", canId, ")",
-          "var rect = canvas.getBoundingClientRect();",
-              "return {",
-                "x:", show absX,"- rect.left,",
-                "y:",show absY,"- rect.top",
-              "};",
-          "})"
-        ]
+    --canId <- getAttr can "id"
+getAbsoluteCords :: Elem -> IO (Int, Int)
+getAbsoluteCords = ffi $ toJSStr "(function(canvas) {\
+          \var rect = canvas.getBoundingClientRect();\
+              \return {\
+                \x: - rect.left,\
+                \y: - rect.top\
+              \};\
+          \})"
+
+
 
 drawGame :: CC.MVar GameState -> Elem -> LobbyAPI -> String -> Client HandlerInfo
 -- | Inits the graphics
