@@ -92,6 +92,9 @@ drawGame stateOfGame par api name = do
                                initTable2' can (gameTable newState)
                                renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y) ) (x,y)
                                renderOnTop can2 $ text (50,50) "hejsan2"
+                               case fromCoord newState of 
+                                Nothing -> onServer $ writeGameChan api <.> Move (x1,y1) (x,y)
+                                _ -> return ()
                                case playerDone (players newState) newState of
                                  Nothing -> graphicGameOver can
                                  Just x  -> liftIO $ CC.putMVar stateOfGame x
