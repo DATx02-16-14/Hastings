@@ -92,7 +92,7 @@ drawGame stateOfGame par api name = do
                                initTable2' can (gameTable newState)
                                renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y) ) (x,y)
                                renderOnTop can2 $ text (50,50) "hejsan2"
-                               case fromCoord newState of 
+                               case fromCoord newState of
                                 Nothing -> onServer $ writeGameChan api <.> Move (x1,y1) (x,y)
                                 _ -> return ()
                                case playerDone (players newState) newState of
@@ -115,7 +115,7 @@ drawGame stateOfGame par api name = do
        initTable2' can (gameTable newState)
        render can2 $ scale (5,5) $ text (0,10) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
        liftIO $ CC.putMVar stateOfGame $ rotatePlayer gameState
-      onServer $ writeGameChan api <.> RotatePlayer 
+      onServer $ writeGameChan api <.> RotatePlayer
 
 -- | Render the game over text
 graphicGameOver can = do

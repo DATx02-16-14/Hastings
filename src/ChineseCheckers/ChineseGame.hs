@@ -26,14 +26,13 @@ mkState (Move c1 c2) state = GameState {gameTable = movePiece (gameTable state) 
 mkState _ _ = error "Unable to create GameState from GameAction"
 
 
-runGame :: Elem -> CC.MVar GameState -> [String] -> String -> LobbyAPI -> Client ()
+runGame :: Elem -> CC.MVar GameState -> [String] -> String -> LobbyAPI -> Client HandlerInfo
 runGame parent gameState players name api = do
-                                drawGame gameState documentBody api name
-                                HC.fork $ listenForGameAction api gameState
-                                liftIO $ do
-                                    CC.putMVar gameState $ initGame players
+                                --HC.fork $ listenForGameAction api gameState
+                                liftIO $ CC.putMVar gameState $ initGame players
                                  -- add function for communication handling
 --                                gameLoop chan gameState
+                                drawGame gameState parent api name
 
 listenForGameAction :: LobbyAPI -> CC.MVar GameState -> Client ()
 listenForGameAction api state = do

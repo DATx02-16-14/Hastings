@@ -6,6 +6,7 @@ import Haste.Concurrent
 
 import Data.Maybe
 import Control.Monad (when)
+import qualified Control.Concurrent as CC
 
 import Views.Common
 import Views.Lobby
@@ -13,6 +14,7 @@ import Views.Game
 import LobbyAPI
 import LobbyTypes
 import Views.Chat
+import ChineseCheckers.ChineseGame
 
 -- |Main mehtod for the client.
 clientMain :: LobbyAPI -> Client ()
@@ -51,7 +53,11 @@ listenForLobbyChanges api = do
       playerLeftGameFun
     PlayerJoinedGame -> updatePlayerListGame api
     PlayerLeftGame   -> playerLeftGameFun
-    StartGame        -> liftIO $ print "StartGame received"
+    StartGame        -> do
+      gameState <- liftIO $ CC.newEmptyMVar
+      "centerContent" `withElem` \centerContent -> do
+          runGame centerContent gameState ["a","b","c","d"] "a" api
+      liftIO $ print "StartGame received"
     (LobbyError msg) -> showError msg
   listenForLobbyChanges api
   where
