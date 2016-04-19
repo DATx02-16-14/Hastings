@@ -17,8 +17,8 @@ squareContent (t:ts) (x,y) = case t of
 -- | puts a checker on the table
 putPiece :: Table -> Content -> Coord -> Table
 putPiece (t:ts) c (x,y) = case t of
-                          (Square _ color coord) | check coord -> (Square c color coord):ts
-                                                 | otherwise -> t:(putPiece ts c (x,y))
+                          (Square _ color coord) | check coord -> Square c color coord : ts
+                                                 | otherwise -> t : putPiece ts c (x,y)
 
              where check (x1,y1) = x1 == x && y1 == y
 
@@ -26,8 +26,8 @@ putPiece (t:ts) c (x,y) = case t of
 -- | removes a checker from the table
 removePiece :: Table -> Coord -> Table
 removePiece (t:ts) (x,y) = case t of
-                        (Square _ color coord) | check coord -> (Square Empty color coord):ts
-                                               | otherwise -> t:(removePiece ts (x,y))
+                        (Square _ color coord) | check coord -> Square Empty color coord : ts
+                                               | otherwise -> t : removePiece ts (x,y)
 
 
              where check (x1,y1) = x1 == x && y1 == y
@@ -40,18 +40,17 @@ movePiece t (x1,y1) (x2,y2) = removePiece (putPiece t content (x2,y2)) (x1,y1)
 
 -- | removes a player (color) from the table
 removePlayer ::  Color -> Table -> Table
-removePlayer c = map (isPlayer)
+removePlayer c = map isPlayer
 
        where isPlayer (Square content col (x,y)) = case content of
                                             Empty -> Square content col (x,y)
                                             Piece color | color == c -> Square Empty col (x,y)
-                                                        | otherwise -> (Square content col (x,y))
+                                                        | otherwise -> Square content col (x,y)
 
 
 
 removePlayers :: [Color] -> Table -> Table
-removePlayers [] t = t
-removePlayers (c:cs) t = removePlayers cs (removePlayer c t)
+removePlayers cs t = foldl (flip removePlayer) t cs
 
 {-
 isReachable :: Coord -> Table -> Table
@@ -106,7 +105,7 @@ pieceHome (Square content col _) = case content of
 
 -- | Checks if a player has all pieces "home"
 playerHome :: Color -> Table -> Bool
-playerHome c1 t = and $ map pieceHome $ filter playerOnly t
+playerHome c1 t = all pieceHome $ filter playerOnly t
 
     where playerOnly (Square cont _ _) = case cont of
                                            Piece col -> col == c1
@@ -114,7 +113,7 @@ playerHome c1 t = and $ map pieceHome $ filter playerOnly t
 
 -- | Game is over when all pieces have reached their "home"
 gameOver :: Table -> Bool
-gameOver t = and $ map pieceHome t
+gameOver = all pieceHome
 
 
 -- | Checks if a square has Empty content
@@ -139,18 +138,19 @@ playerAction gs c1 = case fromCoord gs of
                                                         , players = players gs
                                                         , fromCoord = fromCoord gs
                                                         , playerMoveAgain = playerMoveAgain gs}
-                                (Just table,b) -> case b of
-                                    False ->             GameState {gameTable = table
-                                                        , currentPlayer = fst . head . tail $ players gs
-                                                        , players = (tail $ players gs) ++ [head $ players gs]
-                                                        , fromCoord = Nothing
-                                                        , playerMoveAgain = b}
+                                (Just table,b) -> if b
+                                              then   GameState {gameTable = table
+                                                     , currentPlayer = fst . head $ players gs
+                                                     , players = players gs
+                                                     , fromCoord = Just c1
+                                                     , playerMoveAgain = b}
 
-                                    True  ->            GameState {gameTable = table
-                                                        , currentPlayer = fst . head $ players gs
-                                                        , players = players gs
-                                                        , fromCoord = Just c1
-                                                        , playerMoveAgain = b}
+                                              else   GameState {gameTable = table
+                                                     , currentPlayer = fst . head . tail $ players gs
+                                                     , players = tail (players gs) ++ [head $ players gs]
+                                                     , fromCoord = Nothing
+                                                     , playerMoveAgain = b}
+
 
             where
                 checkValid c  | checkPlayer (color $ head (players gs)) (squareContent (gameTable gs) c) = Just c
@@ -162,8 +162,8 @@ playerAction gs c1 = case fromCoord gs of
 action :: GameState -> Coord -> Coord -> Bool -> (Maybe Table, Bool)
 action gs c1 c2 b = case checkPlayer (color $ head (players gs)) (squareContent (gameTable gs) c1) of
                         False -> (Nothing,False)
-                        True | (b && moveAgain c1 c2) -> (movePlayer' c1 c2 (gameTable gs), moveAgain c1 c2)
-                             | (b && not (moveAgain c1 c2)) -> (Nothing, False)
+                        True | b && moveAgain c1 c2 -> (movePlayer' c1 c2 (gameTable gs), moveAgain c1 c2)
+                             | b && not (moveAgain c1 c2) -> (Nothing, False)
                              | otherwise -> (movePlayer' c1 c2 (gameTable gs), moveAgain c1 c2)
 
 --movePlayer' c1 c2 (gameTable gs)
@@ -177,20 +177,19 @@ allPlayer = [blue,orange,purple,green,red,yellow]
   with a color and generates the inital game state
 -}
 initGame :: [String] -> GameState
-initGame players = case (length players) of
-                      2         -> create (zipWith mkPlayer players [blue,orange]) 2
-                      4         -> create (zipWith mkPlayer players [blue,red,purple,orange]) 4
-                      6         -> create (zipWith mkPlayer players [blue,red,purple,green,orange,yellow]) 6
-                      otherwise -> error "Not correct number of players for game to start"
-
-              where mkPlayer a b = (a,b)
-                    create p i = createProperGame p i
+initGame players
+    | playerCount `elem` [2,4,6] = createProperGame (players `zip` colors) playerCount
+    | otherwise = error "Not correct number of players for game to start"
+      where
+        colors = take playerCount colorList
+        playerCount = length players
+        colorList = [blue,red,purple,green,orange,yellow]
 
 
 rotatePlayer :: GameState -> GameState
 rotatePlayer gs = GameState {gameTable = gameTable gs
                             , currentPlayer = fst . head . tail $ players gs
-                            , players = (tail (players gs)) ++ [(head $ players gs)]
+                            , players = tail (players gs) ++ [head $ players gs]
                             , fromCoord = Nothing
                             , playerMoveAgain = False}
 
