@@ -16,6 +16,7 @@ import Haste.App.Concurrent
 parseGameAction :: GameAction -> GameState -> GameState
 parseGameAction RotatePlayer gs = rotatePlayer gs
 parseGameAction m@(Move c1 c2) gs = mkState m gs
+parseGameAction m@(Coord (x,y)) gs = mkState m gs
 
 mkState :: GameAction -> GameState -> GameState
 mkState (Move c1 c2) state = GameState {gameTable = movePiece (gameTable state) c1 c2
@@ -23,26 +24,43 @@ mkState (Move c1 c2) state = GameState {gameTable = movePiece (gameTable state) 
                                              , players = players state
                                              , fromCoord = Nothing
                                              , playerMoveAgain = playerMoveAgain state}
+mkState (Coord (x,y)) state = playerAction state (x,y)
+
 mkState _ _ = error "Unable to create GameState from GameAction"
 
 
 runGame :: Elem -> CC.MVar GameState -> [String] -> String -> LobbyAPI -> Client HandlerInfo
 runGame parent gameState players name api = do
-                                HC.fork $ listenForGameAction api gameState
                                 liftIO $ CC.putMVar gameState $ initGame players
+                                canvas <- liftIO $ makeCanvas 1400 800 "gameCanvas"
+                                appendChild parent canvas
+
+                                canvas2 <- liftIO $ makeCanvas 500 800 "textCanvas"
+                                appendChild parent canvas2
+                                Just can <- liftIO $ fromElem canvas --  :: Client (Maybe Canvas)
+                                Just can2 <- liftIO $ fromElem canvas2 -- :: Client (Maybe Canvas)
+                                button <- liftIO $ mkButton "Rotate player"
+                                appendChild parent button
+                                HC.fork $ listenForGameAction api gameState can
                                  -- add function for communication handling
 --                                gameLoop chan gameState
-                                drawGame gameState parent api name
+                                drawGame gameState can can2 button api name
 
-listenForGameAction :: LobbyAPI -> CC.MVar GameState -> Client ()
-listenForGameAction api state = do
+listenForGameAction :: LobbyAPI -> CC.MVar GameState -> Canvas -> Client ()
+listenForGameAction api state can = do
                         ga <- onServer $ readGameChan api
                         name <- onServer $ getClientName api
                         liftIO $ do
                           gs <- CC.takeMVar state
-                          CC.putMVar state (parseGameAction ga gs)
-
-                        listenForGameAction api state
+                          let newState = parseGameAction ga gs
+                          case fromCoord newState of 
+                                 Just (x,y) -> do 
+                                    initTable2' can $ gameTable gs
+                                    renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
+                                 Nothing -> initTable2' can $ gameTable gs
+                          CC.putMVar state newState
+                          
+                        listenForGameAction api state can
         where   function :: LobbyAPI -> Remote (Server GameAction)
                 function = undefined -- todo
 

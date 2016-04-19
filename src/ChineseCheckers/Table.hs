@@ -17,7 +17,7 @@ data Content = Empty | Piece Color
 data Square = Square Content Color Coord
     deriving (Show, Eq)
 
-data GameAction = StartGame | Move Coord Coord | RotatePlayer | GameActionError String
+data GameAction = StartGame | Move Coord Coord | RotatePlayer | GameActionError String | Coord (Int,Int)
 
 
  
@@ -43,6 +43,10 @@ instance Show Color where
 instance Binary GameAction where
     put StartGame = put (0 :: Word8)
     put RotatePlayer = put (1 :: Word8)
+    put (Coord (x1,y1)) = do 
+            put (3 :: Word8)
+            put (fromIntegral x1 :: Word8)
+            put (fromIntegral y1 :: Word8)
     put (Move (x1,y1) (x2,y2)) = do
                          put (2 :: Word8)
                          put (fromIntegral x1 :: Word8)
@@ -62,7 +66,12 @@ instance Binary GameAction where
                   x2 <- get :: Get Word8
                   y2 <- get :: Get Word8
                   return $ Move (f x1, f y1) (f x2, f y2)
-                   where f = fromIntegral
+            3 -> do 
+                  x1 <- get :: Get Word8
+                  y1 <- get :: Get Word8
+                  return $ Coord (f x1, f y1)
+
+        where f = fromIntegral
 
 
 -- | Colors used for checkers and squares

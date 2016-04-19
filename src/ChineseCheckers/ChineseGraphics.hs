@@ -121,14 +121,15 @@ starOfDavid = do
     initTable' startTable
 
 
-makeCanvas :: Int -> Int -> IO Elem
-makeCanvas width height = do
+makeCanvas :: Int -> Int -> String -> IO Elem
+makeCanvas width height iden = do
     canvas <- newElem "canvas"
     setStyle canvas "border" "1px solid black"
     setStyle canvas "backgroundColor" "white"
     set canvas
         [ prop "width"  =: show width
         , prop "height" =: show height
+        , prop "id" =: iden
         ]
     return canvas
 
@@ -139,7 +140,7 @@ mkButton text = do
     return button
 
     --canId <- getAttr can "id"
-getAbsoluteCords :: Elem -> IO JSString
+getAbsoluteCords :: Canvas -> IO JSString
 getAbsoluteCords = ffi $ toJSStr "(function(canvas) {\
             \var rect = canvas.getBoundingClientRect();\
             \return (rect.left + ':' + rect.top)\
@@ -155,28 +156,30 @@ intTupleFromString str = (read hInt :: Int, read tInt :: Int)
     (h,(_:t)) = break (==':') str
 
 
-drawGame :: CC.MVar GameState -> Elem -> LobbyAPI -> String -> Client HandlerInfo
+drawGame :: CC.MVar GameState -> Canvas -> Canvas -> Elem -> LobbyAPI -> String -> Client HandlerInfo
 -- | Inits the graphics
-drawGame stateOfGame par api name = do
+drawGame stateOfGame can can2 button api name = do 
     gameState <- liftIO $ CC.takeMVar stateOfGame
-    canvas <- liftIO $ makeCanvas 1400 800
+    {-
+    canvas <- liftIO $ makeCanvas 1400 800 "gameCanvas"
     appendChild par canvas
 
     absCordsCanvas <- liftIO $ getAbsoluteCords canvas
     let (canvasX, canvasY) = intTupleFromString $ fromJSStr absCordsCanvas
 
-    canvas2 <- liftIO $ makeCanvas 500 800
+    canvas2 <- liftIO $ makeCanvas 500 800 "textCanvas"
     appendChild par canvas2
     Just can <- liftIO $ fromElem canvas --  :: Client (Maybe Canvas)
     Just can2 <- liftIO $ fromElem canvas2 -- :: Client (Maybe Canvas)
     button <- liftIO $ mkButton "Rotate player"
     appendChild par button
+    -}
+    absCordsCanvas <- liftIO $ getAbsoluteCords can
+    let (canvasX, canvasY) = intTupleFromString $ fromJSStr absCordsCanvas
     initTable2' can $ gameTable gameState
     liftIO $ CC.putMVar stateOfGame gameState
     onEvent can Click $ \mouse ->
       do
-       liftIO $ print "drawGame onEvent canvas"
-
        state <- liftIO $ CC.takeMVar stateOfGame
        case currentPlayer state == name of  -- must save the clients name somehow
          True ->
@@ -192,6 +195,7 @@ drawGame stateOfGame par api name = do
                             do
                              liftIO $ print $ "(" ++ show x1 ++ "," ++ show y1 ++ ")"
                              let newState = playerAction state (x1,y1)
+                             onServer $ writeGameChan api <.> Coord (x1,y1)
                              case fromCoord newState of
 
                               Just (x,y) -> do
@@ -200,8 +204,8 @@ drawGame stateOfGame par api name = do
                                initTable2' can (gameTable newState)
                                renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y) ) (x,y)
                                renderOnTop can2 $ text (50,50) "hejsan2"
-                               case fromCoord newState of
-                                Nothing -> onServer $ writeGameChan api <.> Move (x1,y1) (x,y)
+                               case fromCoord (playerAction newState (x1,y1)) of
+                                Nothing -> return () --onServer $ writeGameChan api <.> Move (x1,y1) (x,y)
                                 _ -> return ()
                                case playerDone (players newState) newState of
                                  Nothing -> graphicGameOver can
