@@ -56,7 +56,9 @@ listenForLobbyChanges api = do
     StartGame        -> do
       gameState <- liftIO $ CC.newEmptyMVar
       "centerContent" `withElem` \centerContent -> do
-          runGame centerContent gameState ["a","b","c","d"] "a" api
+          clientName <- onServer $ getNickName api
+          playerNames <- onServer $ findPlayersInGame api
+          runGame centerContent gameState playerNames clientName api
       liftIO $ print "StartGame received"
     (LobbyError msg) -> showError msg
   listenForLobbyChanges api
