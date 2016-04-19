@@ -139,15 +139,20 @@ mkButton text = do
     return button
 
     --canId <- getAttr can "id"
-getAbsoluteCords :: Elem -> IO (Int, Int)
+getAbsoluteCords :: Elem -> IO JSString
 getAbsoluteCords = ffi $ toJSStr "(function(canvas) {\
-          \var rect = canvas.getBoundingClientRect();\
-              \return {\
-                \x: - rect.left,\
-                \y: - rect.top\
-              \};\
+            \var rect = canvas.getBoundingClientRect();\
+            \return (rect.left + ':' + rect.top)\
           \})"
 
+
+-- | Converts a JSString on the form x:y to a touple (Int,Int)
+intTupleFromString :: String -> (Int, Int)
+intTupleFromString str = (read hInt :: Int, read tInt :: Int)
+  where
+    hInt = takeWhile (/='.') h
+    tInt = takeWhile (/='.') t
+    (h,(_:t)) = break (==':') str
 
 
 drawGame :: CC.MVar GameState -> Elem -> LobbyAPI -> String -> Client HandlerInfo
@@ -156,6 +161,10 @@ drawGame stateOfGame par api name = do
     gameState <- liftIO $ CC.takeMVar stateOfGame
     canvas <- liftIO $ makeCanvas 1400 800
     appendChild par canvas
+
+    absCordsCanvas <- liftIO $ getAbsoluteCords canvas
+    let (canvasX, canvasY) = intTupleFromString $ fromJSStr absCordsCanvas
+
     canvas2 <- liftIO $ makeCanvas 500 800
     appendChild par canvas2
     Just can <- liftIO $ fromElem canvas --  :: Client (Maybe Canvas)
@@ -167,12 +176,13 @@ drawGame stateOfGame par api name = do
     onEvent can Click $ \mouse ->
       do
        liftIO $ print "drawGame onEvent canvas"
+
        state <- liftIO $ CC.takeMVar stateOfGame
        case currentPlayer state == currentPlayer state of  -- must save the clients name somehow
          True ->
           let (x,y) = mouseCoords mouse
              in
-               case mapCoords (fromIntegral x,fromIntegral y) of
+               case mapCoords (fromIntegral $ x - canvasX, fromIntegral y) of
                  Nothing            ->
                   do
 --                   liftIO $ print $ "(" ++ show x ++ "," ++ show y ++ ")"
