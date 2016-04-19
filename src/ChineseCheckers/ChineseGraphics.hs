@@ -178,7 +178,7 @@ drawGame stateOfGame par api name = do
        liftIO $ print "drawGame onEvent canvas"
 
        state <- liftIO $ CC.takeMVar stateOfGame
-       case currentPlayer state == currentPlayer state of  -- must save the clients name somehow
+       case currentPlayer state == name of  -- must save the clients name somehow
          True ->
           let (x,y) = mouseCoords mouse
              in

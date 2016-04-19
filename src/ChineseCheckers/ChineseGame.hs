@@ -28,7 +28,7 @@ mkState _ _ = error "Unable to create GameState from GameAction"
 
 runGame :: Elem -> CC.MVar GameState -> [String] -> String -> LobbyAPI -> Client HandlerInfo
 runGame parent gameState players name api = do
-                                --HC.fork $ listenForGameAction api gameState
+                                HC.fork $ listenForGameAction api gameState
                                 liftIO $ CC.putMVar gameState $ initGame players
                                  -- add function for communication handling
 --                                gameLoop chan gameState
