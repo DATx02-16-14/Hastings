@@ -153,12 +153,12 @@ intTupleFromString str = (read hInt :: Int, read tInt :: Int)
   where
     hInt = takeWhile (/='.') h
     tInt = takeWhile (/='.') t
-    (h,(_:t)) = break (==':') str
+    (h, _:t) = break (==':') str
 
 
 drawGame :: CC.MVar GameState -> Canvas -> Canvas -> Elem -> LobbyAPI -> String -> Client HandlerInfo
 -- | Inits the graphics
-drawGame stateOfGame can can2 button api name = do 
+drawGame stateOfGame can can2 button api name = do
     gameState <- liftIO $ CC.takeMVar stateOfGame
     {-
     canvas <- liftIO $ makeCanvas 1400 800 "gameCanvas"
@@ -181,8 +181,8 @@ drawGame stateOfGame can can2 button api name = do
     onEvent can Click $ \mouse ->
       do
        state <- liftIO $ CC.takeMVar stateOfGame
-       case currentPlayer state == name of  -- must save the clients name somehow
-         True ->
+       if currentPlayer state == name  -- must save the clients name somehow
+         then
           let (x,y) = mouseCoords mouse
              in
                case mapCoords (fromIntegral $ x - canvasX, fromIntegral y) of
@@ -213,12 +213,12 @@ drawGame stateOfGame can can2 button api name = do
                                initTable2' can (gameTable $ playerAction state (x1,y1))
                                renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
                              where colors = map snd
-         False -> do
+         else do
           liftIO $ CC.putMVar stateOfGame state
           return ()
     onEvent button Click $ \_ -> do
       state <- liftIO $ CC.takeMVar stateOfGame
-      if currentPlayer state == name 
+      if currentPlayer state == name
         then do
                liftIO $ CC.putMVar stateOfGame state
                onServer $ writeGameChan api <.> RotatePlayer
