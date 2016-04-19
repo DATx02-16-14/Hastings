@@ -4,6 +4,7 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Utils
 import Hastings.ServerUtilsTests
 import Server.LobbyTest
+import Server.ChatTest
 
 main = defaultMain tests
 
@@ -37,6 +38,10 @@ tests = [
       testProperty "Checks that disconnect successfully disconnects a player from both games and lobby" prop_disconnect,
       testProperty "Checks that the list of player names is correct" prop_getConnectedPlayerNames,
       testProperty "Checks that the name of the player is changed everywhere" prop_changeNickName
+    ],
+    testGroup "Server.Chat" [
+      testProperty "Checks that joinChat successfully adds a player" prop_joinChat,
+      testProperty "Checks that leaveChat successfully removes the players" prop_leaveChat,
+      testProperty "Checks that sendChatMessage successfully sends to all players" prop_sendChatMessage
     ]
-
   ]
