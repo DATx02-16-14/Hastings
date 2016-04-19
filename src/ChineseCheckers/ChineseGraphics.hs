@@ -204,9 +204,6 @@ drawGame stateOfGame can can2 button api name = do
                                initTable2' can (gameTable newState)
                                renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y) ) (x,y)
                                renderOnTop can2 $ text (50,50) "hejsan2"
-                               case fromCoord (playerAction newState (x1,y1)) of
-                                Nothing -> return () --onServer $ writeGameChan api <.> Move (x1,y1) (x,y)
-                                _ -> return ()
                                case playerDone (players newState) newState of
                                  Nothing -> graphicGameOver can
                                  Just x  -> liftIO $ CC.putMVar stateOfGame x
@@ -219,15 +216,13 @@ drawGame stateOfGame can can2 button api name = do
          False -> do
           liftIO $ CC.putMVar stateOfGame state
           return ()
-    onEvent button Click $ \_ ->
-     do
-      liftIO $ do
-       gameState <- liftIO $ CC.takeMVar stateOfGame
-       let newState = rotatePlayer gameState
-       initTable2' can (gameTable newState)
-       render can2 $ scale (5,5) $ text (0,10) ( (currentPlayer (newState)) ++ "s speltur!!!" ++ ((showColor . snd . head) $ players newState))
-       liftIO $ CC.putMVar stateOfGame $ rotatePlayer gameState
-      onServer $ writeGameChan api <.> RotatePlayer
+    onEvent button Click $ \_ -> do
+      state <- liftIO $ CC.takeMVar stateOfGame
+      if currentPlayer state == name 
+        then do
+               liftIO $ CC.putMVar stateOfGame state
+               onServer $ writeGameChan api <.> RotatePlayer
+        else liftIO $ CC.putMVar stateOfGame state
 
 
 graphicGameOver can = do
