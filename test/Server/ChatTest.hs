@@ -82,7 +82,7 @@ prop_sendChatMessage i j chatNameList clientList = monadicIO $ do
   mVarClients <- run $ newMVar $ clientHead ++ clientsWithChat
 
   -- send message to all
-  let message = (ChatMessage (name c) "prop")
+  let message = ChatMessage (name c) "prop"
   run $ Server.Chat.sendChatMessage mVarClients mVarChats (sessionID c) chatName message
 
   newClients <- run $ readMVar mVarClients
@@ -103,6 +103,6 @@ prop_sendChatMessage i j chatNameList clientList = monadicIO $ do
     makeUnique list = [ name ++ show x | (x, name) <- zip [1..] list ]
 
 makeChatsOfStrings :: [String] -> IO [Chat]
-makeChatsOfStrings list = mapM (\n -> do
+makeChatsOfStrings = mapM (\n -> do
     chan <- newChan
-    return (n, chan)) list
+    return (n, chan))
