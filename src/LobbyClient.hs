@@ -54,7 +54,7 @@ listenForLobbyChanges api = do
     PlayerJoinedGame -> updatePlayerListGame api
     PlayerLeftGame   -> playerLeftGameFun
     StartGame        -> do
-      gameState <- liftIO $ CC.newEmptyMVar
+      gameState <- liftIO CC.newEmptyMVar
       "centerContent" `withElem` \centerContent -> do
           clientName <- onServer $ getNickName api
           playerNames <- onServer $ findPlayersInGame api

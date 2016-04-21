@@ -261,9 +261,8 @@ readGameChan remoteClientList = do
     Nothing -> do
       liftIO . print $ "readGameChan > No such sessionid in client list"
       return $ GameActionError "readGameChan > No such sessionid in client list"
-    Just client -> do
-      action <- liftIO . CC.readChan $ gameChannel client
-      return action
+    Just client ->
+      liftIO . CC.readChan $ gameChannel client
 
 -- |Read from the clients current game chan
 startGame :: Server ConcurrentClientList -> Server ()
