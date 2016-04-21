@@ -65,7 +65,7 @@ createLobbyDOM api gapi = do
       prop "id" =: "player-list"
     ]
 
-  (gamesListDiv, _) <- createTable "games-list" 500 ["Name", ""]
+  (gamesListDiv, _) <- createTable "games-list" 500 ["Name"]
 
   addChildrenToLeftColumn [playerList]
   addChildrenToParent' lobbyDiv [header, gamesListDiv, createGamebtn]
@@ -126,7 +126,6 @@ addGameDOM api gapi gameID = do
       tdBtn <- newElem "td"
       gameEntry <- newElem "button" `with`
         [
-          attr "id"    =: gameName,
           attr "class" =: "btn btn-default"
         ]
       textElemBtn <- newTextElem "Join"
@@ -140,7 +139,7 @@ addGameDOM api gapi gameID = do
       addChildrenToParent' tr [tdName, tdBtn]
       appendChild gameListDiv tr
 
-      clickEventString gameName $ do
+      clickEventElem gameEntry $ do
         hasPassword <- onServer $ isGamePasswordProtected api <.> gameID
         if hasPassword then do
           password <- prompt "Enter password"

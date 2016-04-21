@@ -159,9 +159,10 @@ addInputFieldToInputFieldsContainer api chatName =
   inputContainerId `withElem` \inputFieldContainer -> do
     inputField <- newElem "input" `with`
       [
-        attr "id" =: (inputFieldIdPrefix ++ chatName),
-        attr "type" =: "text",
-        attr "cols" =: "60"
+        attr "id"    =: (inputFieldIdPrefix ++ chatName),
+        attr "type"  =: "text",
+        attr "cols"  =: "60",
+        attr "class" =: "form-control"
 
       ]
     onEvent inputField KeyPress $ \13 -> handleChatInput api chatName
