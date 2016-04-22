@@ -30,6 +30,12 @@ postProp :: IO ()
 postProp = clearDatabase
 
 
+saveGameToDB :: Fields.Game -> IO (Esql.Key Fields.Game)
+saveGameToDB game = GameDB.saveGame (Fields.gameUuid game)
+                                    (Fields.gameName game)
+                                    (Fields.gameMaxAmountOfPlayers game)
+                                    (Fields.gameOwner game)
+                                    (Fields.gamePassword game)
 
 -- |Property that makes sure that after calling leaveGame
 -- there is no player with that sessionID left.
@@ -46,11 +52,7 @@ prop_leaveGame game clientList = monadicIO $ do
   clientMVar <- run $ newMVar clientList
 
   run $ PlayerDB.saveOnlinePlayer playerName sid
-  gameKey <- run $ GameDB.saveGame (Fields.gameUuid game)
-                                   (Fields.gameName game)
-                                   (Fields.gameMaxAmountOfPlayers game)
-                                   (Fields.gameOwner game)
-                                   (Fields.gamePassword game)
+  gameKey <- run $ saveGameToDB game
 
   -- Add all players to the game
   mapM_ (run . (`GameDB.addPlayerToGame` gameKey) . sessionID) clientList
@@ -85,11 +87,7 @@ prop_joinGame game clientList = monadicIO $ do
 
   run $ PlayerDB.saveOnlinePlayer playerName sid
   player <- run $ PlayerDB.retrieveOnlinePlayer sid
-  gameKey <- run $ GameDB.saveGame (Fields.gameUuid game)
-                                   (Fields.gameName game)
-                                   (Fields.gameMaxAmountOfPlayers game)
-                                   (Fields.gameOwner game)
-                                   (Fields.gamePassword game)
+  gameKey <- run $ saveGameToDB game
 
   allowedToJoin <- run $ Server.Game.playerJoinGame clientMVar sid (Fields.gameUuid game) ""
   playersInGame <- run $ GameDB.retrievePlayersInGame gameKey
