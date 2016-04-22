@@ -258,3 +258,37 @@ prop_changeGameNameWithSid clientList game newName = monadicIO $ do
     isJust newGame &&
     --The game has the new name
     (Fields.gameName . Esql.entityVal . fromJust) newGame == newName
+
+-- |Property that checks that changing the max amount of player in a game works
+prop_changeMaxNumberOfPlayers :: [ClientEntry] -> Fields.Game -> Int -> Property
+prop_changeMaxNumberOfPlayers clientList game newAmount' = monadicIO $ do
+  let newAmount = newAmount' `mod` 6
+  let oldAmount = Fields.gameMaxAmountOfPlayers game
+
+  pre $
+    not (null clientList) &&
+    oldAmount /= newAmount
+
+  let sid = sessionID $ head clientList
+  let playerName = name $ head clientList
+
+  run preProp
+
+  --Setup test preconditions.
+  gameKey <- run $ saveGameToDB game
+
+  run $ PlayerDB.saveOnlinePlayer playerName sid
+  run $ GameDB.addPlayerToGame sid gameKey
+  run $ GameDB.setGameOwner gameKey sid
+
+  run $ Server.Game.changeMaxNumberOfPlayers sid newAmount
+
+  newGame <- run $ GameDB.retrieveGameBySid sid
+
+  run postProp
+
+  assert $
+    --The game should still exist.
+    isJust newGame &&
+    --The game has the new max amount of players.
+    (Fields.gameMaxAmountOfPlayers . Esql.entityVal . fromJust) newGame == newAmount
