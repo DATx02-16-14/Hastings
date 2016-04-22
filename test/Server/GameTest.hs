@@ -162,3 +162,27 @@ prop_findGameNameWithSid client game = monadicIO $ do
 
   assert $ gameName == Fields.gameName game
   run postProp
+
+-- |Property that checks that all playerNames are correctly found in a game.
+prop_playerNamesInGameWithSid :: [ClientEntry] -> Fields.Game -> Property
+prop_playerNamesInGameWithSid clientList game = monadicIO $ do
+  pre $ not $ null clientList
+
+  let sid = sessionID $ head clientList
+
+  run preProp
+
+  --Setup test preconditions.
+  clientMVar <- run $ newMVar clientList
+  gameKey <- run $ saveGameToDB game
+
+  -- Add all players to the game
+  run $ mapM_ (\client -> PlayerDB.saveOnlinePlayer (name client) (sessionID client)) clientList
+  run $ mapM_ ((`GameDB.addPlayerToGame` gameKey) . sessionID) clientList
+
+  playerNames <- run $ Server.Game.playerNamesInGameWithSid sid
+
+  run postProp
+  assert $
+    length playerNames == length clientList &&
+    all (\client -> name client `elem` playerNames) clientList
