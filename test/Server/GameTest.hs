@@ -225,3 +225,36 @@ prop_kickPlayerWithSid clientList game index = monadicIO $ do
     length playersInGameBefore - length playersInGame == 1 &&
     --The correct player has been kicked.
     name kickedClient `notElem` playerNamesInGame
+
+-- |Property that checks that the correct game has had its name changed.
+prop_changeGameNameWithSid :: [ClientEntry] -> Fields.Game -> Name -> Property
+prop_changeGameNameWithSid clientList game newName = monadicIO $ do
+  pre $
+    not (null clientList) &&
+    not (null newName)
+
+  let sid = sessionID $ head clientList
+  let playerName = name $ head clientList
+
+  run preProp
+
+  --Setup test preconditions.
+  clientMVar <- run $ newMVar clientList
+  gameKey <- run $ saveGameToDB game
+
+  run $ PlayerDB.saveOnlinePlayer playerName sid
+  run $ GameDB.addPlayerToGame sid gameKey
+
+  let oldName = Fields.gameName game
+
+  run $ Server.Game.changeGameNameWithSid clientMVar sid newName
+
+  newGame <- run $ GameDB.retrieveGameBySid sid
+
+  run postProp
+
+  assert $
+    --The game should still exist.
+    isJust newGame &&
+    --The game has the new name
+    (Fields.gameName . Esql.entityVal . fromJust) newGame == newName

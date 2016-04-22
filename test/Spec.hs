@@ -56,7 +56,8 @@ tests = [
       testProperty "Checks that the game with the correct name is found" prop_findGameNameWithID,
       testProperty "Checks that the game with the correct name is found" prop_findGameNameWithSid,
       testProperty "Checks that all the names of players in a game is found" prop_playerNamesInGameWithSid,
-      testProperty "Checks that the correct player is kicked from a game" prop_kickPlayerWithSid
+      testProperty "Checks that the correct player is kicked from a game" prop_kickPlayerWithSid,
+      testProperty "Checks that the correct game has changed name" prop_changeGameNameWithSid
     ]
 
   ]
