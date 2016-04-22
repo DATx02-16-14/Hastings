@@ -43,8 +43,8 @@ saveGameToDB game = GameDB.saveGame (Fields.gameUuid game)
 
 -- |Property that makes sure that after calling leaveGame
 -- there is no player with that sessionID left.
-prop_leaveGame :: Fields.Game -> [ClientEntry] -> Property
-prop_leaveGame game clientList = monadicIO $ do
+prop_leaveGame :: [ClientEntry] -> Fields.Game -> Property
+prop_leaveGame clientList game = monadicIO $ do
   pre $ not $ null clientList
 
   let sid = sessionID $ head clientList
@@ -77,8 +77,8 @@ prop_leaveGame game clientList = monadicIO $ do
 
 -- |Property that makes sure that after calling joinGame
 -- the player has correctly joined the game.
-prop_joinGame :: Fields.Game -> [ClientEntry] -> Property
-prop_joinGame game clientList = monadicIO $ do
+prop_joinGame :: [ClientEntry] -> Fields.Game -> Property
+prop_joinGame clientList game = monadicIO $ do
   pre $ not $ null clientList
 
   let sid = sessionID $ head clientList
