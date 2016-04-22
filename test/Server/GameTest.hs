@@ -171,6 +171,8 @@ prop_playerNamesInGameWithSid clientList game = monadicIO $ do
   pre $ not $ null clientList
 
   let sid = sessionID $ head clientList
+  --Remove sessionIDs that are not unique.
+  let cleanClientList = nubBy ((==) `on` sessionID) clientList
 
   run preProp
 
