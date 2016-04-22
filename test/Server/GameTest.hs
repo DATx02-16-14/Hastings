@@ -6,6 +6,8 @@ import Test.QuickCheck.Monadic
 import Control.Concurrent (newMVar)
 import Haste.App (SessionID)
 import Data.Maybe (isJust, fromJust)
+import Data.List (nubBy)
+import Data.Function (on)
 import qualified Database.Esqueleto as Esql
 
 import qualified Server.Game
@@ -186,3 +188,38 @@ prop_playerNamesInGameWithSid clientList game = monadicIO $ do
   assert $
     length playerNames == length clientList &&
     all (\client -> name client `elem` playerNames) clientList
+
+prop_kickPlayerWithSid :: [ClientEntry] -> Fields.Game -> Int -> Property
+prop_kickPlayerWithSid clientList game index = monadicIO $ do
+  pre $ not $ null clientList
+
+  --Remove names that are not unique
+  let cleanClientList = nubBy ((==) `on` name) clientList
+
+  let sid = sessionID $ head cleanClientList
+  let kickedClient = cleanClientList !! (index `mod` length cleanClientList)
+
+  run preProp
+
+  --Setup test preconditions.
+  clientMVar <- run $ newMVar cleanClientList
+  gameKey <- run $ saveGameToDB game
+
+  -- Add all players to the game
+  run $ mapM_ (\client -> PlayerDB.saveOnlinePlayer (name client) (sessionID client)) cleanClientList
+  run $ mapM_ ((`GameDB.addPlayerToGame` gameKey) . sessionID) cleanClientList
+
+  playersInGameBefore <- run $ GameDB.retrievePlayersInGame gameKey
+
+  run $ Server.Game.kickPlayerWithSid clientMVar sid (name kickedClient)
+
+  playersInGame <- run $ GameDB.retrievePlayersInGame gameKey
+  playerNamesInGame <- run $ Server.Game.playerNamesInGameWithSid sid
+
+  run postProp
+
+  assert $
+    --Only one player has been kicked.
+    length playersInGameBefore - length playersInGame == 1 &&
+    --The correct player has been kicked.
+    name kickedClient `notElem` playerNamesInGame
