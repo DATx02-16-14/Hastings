@@ -5,6 +5,7 @@ import Test.QuickCheck
 import Test.QuickCheck.Monadic
 import Control.Concurrent (newMVar)
 import Haste.App (SessionID)
+import Data.Maybe (isJust, fromJust)
 import qualified Database.Esqueleto as Esql
 
 import qualified Server.Game
@@ -67,3 +68,45 @@ prop_leaveGame game clientList = monadicIO $ do
 
   --Cleanup test
   run postProp
+
+-- |Property that makes sure that after calling joinGame
+-- the player has correctly joined the game.
+prop_joinGame :: Fields.Game -> [ClientEntry] -> Property
+prop_joinGame game clientList = monadicIO $ do
+  pre $ not $ null clientList
+
+  let sid = sessionID $ head clientList
+  let playerName = name $ head clientList
+
+  run preProp
+
+  --Setup test preconditions.
+  clientMVar <- run $ newMVar clientList
+
+  run $ PlayerDB.saveOnlinePlayer playerName sid
+  player <- run $ PlayerDB.retrieveOnlinePlayer sid
+  gameKey <- run $ GameDB.saveGame (Fields.gameUuid game)
+                                   (Fields.gameName game)
+                                   (Fields.gameMaxAmountOfPlayers game)
+                                   (Fields.gameOwner game)
+                                   (Fields.gamePassword game)
+
+  allowedToJoin <- run $ Server.Game.playerJoinGame clientMVar sid (Fields.gameUuid game) ""
+  playersInGame <- run $ GameDB.retrievePlayersInGame gameKey
+  game <- run $ GameDB.retrieveGameBySid sid
+
+  --Cleanup test.
+  run postProp
+
+  assert $
+    --Player was allowed to join.
+   allowedToJoin &&
+    --Check that both game and player exists(for use of fromJust later).
+   isJust player && isJust game &&
+   --Check that the player is part of the game.
+   (Fields.playerUserName . Esql.entityVal . fromJust) player
+      `elem` map (Fields.playerUserName . Esql.entityVal) playersInGame &&
+   --Only one player should have joined the game.
+   (length playersInGame == 1) &&
+   --The current player should be owner they are the only player in the game.
+   (Fields.gameOwner . Esql.entityVal . fromJust) game == sid
