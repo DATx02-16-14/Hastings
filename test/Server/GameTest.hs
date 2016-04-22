@@ -142,9 +142,23 @@ prop_createGame clientList maxPlayers = monadicIO $ do
 -- |Property that makes sure the game with the correct name is returned.
 prop_findGameNameWithID :: Fields.Game -> Property
 prop_findGameNameWithID game = monadicIO $ do
-
+  run preProp
   run $ saveGameToDB game
 
   gameName <- run $ Server.Game.findGameNameWithID $ Fields.gameUuid game
 
   assert $ gameName == Fields.gameName game
+  run postProp
+
+-- |Property that makes sure the game with the correct name is returned.
+prop_findGameNameWithSid :: ClientEntry -> Fields.Game -> Property
+prop_findGameNameWithSid client game = monadicIO $ do
+  run preProp
+
+  gameKey <- run $ saveGameToDB game
+  run $ GameDB.addPlayerToGame (sessionID client) gameKey
+
+  gameName <- run $ Server.Game.findGameNameWithSid $ sessionID client
+
+  assert $ gameName == Fields.gameName game
+  run postProp
