@@ -19,7 +19,7 @@ mainWithOpts = do
 
   -- We update the empty TestOptions with our desired values.
   let my_test_opts = empty_test_opts {
-    topt_maximum_generated_tests = Just 500
+    topt_maximum_generated_tests = Just 100
   }
 
   -- Now we create an empty RunnerOptions in the same way, and add
