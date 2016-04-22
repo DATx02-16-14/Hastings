@@ -45,7 +45,7 @@ prop_disconnect i clientList = monadicIO $ do
   let client = clientList !! i'
   let sid = sessionID client
   let testName = "testName5939723012395"
-  run $ preProp
+  run preProp
 
   --Setup test preconditions
   clientMVar <- run $ newMVar clientList
@@ -60,14 +60,14 @@ prop_disconnect i clientList = monadicIO $ do
   run $ PlayerDB.deletePlayer testName
 
   assert $
-    (all (client /=) newClientList) &&
+    notElem client newClientList &&
     isNothing player
 
 -- |Property for getting the names of connected players.
 -- Might seem trivial right now.
 prop_getConnectedPlayerNames :: [ClientEntry] -> Property
 prop_getConnectedPlayerNames list = monadicIO $ do
-  run $ preProp
+  run preProp
   clientMVar <- run $ newMVar list
   nameList <- run $ Server.Lobby.getConnectedPlayerNames clientMVar
   assert $ nameList == map name list
