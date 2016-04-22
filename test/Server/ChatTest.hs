@@ -14,14 +14,14 @@ import LobbyTypes
 
 -- |Property that tests that after joining a chat the chat is created
 -- or the player has that chat in it's list
-prop_joinChat :: Int -> [String] -> [ClientEntry] -> Property
-prop_joinChat i chatNameList clientList = monadicIO $ do
+prop_joinChat :: Int -> Int -> [String] -> [ClientEntry] -> Property
+prop_joinChat randomClientIndex randomChatIndex chatNameList clientList = monadicIO $ do
   pre $ not $ null clientList
   pre $ not $ null chatNameList
-  let i' = abs $ mod i $ length clientList
-  let i'' = abs $ mod i $ 1 + length chatNameList
-  let chat = ("new chat" : chatNameList) !! i''
-  let client = clientList !! i'
+  let randomClientIndex' = abs $ randomClientIndex `mod` length clientList
+  let randomChatIndex' = abs $ randomChatIndex `mod` 1 + length chatNameList
+  let chat = ("new chat" : chatNameList) !! randomChatIndex'
+  let client = clientList !! randomClientIndex'
   let sid = sessionID client
   mVarClients <- run $ newMVar clientList
   chatList <- run $ makeChatsOfStrings chatNameList
@@ -31,47 +31,47 @@ prop_joinChat i chatNameList clientList = monadicIO $ do
 
   newClientList <- run $ readMVar mVarClients
   newChatList <- run $ readMVar mVarChats
-  let newClient = newClientList !! i'
+  let newClient = newClientList !! randomClientIndex'
   let clientChats = chats newClient
 
   assert $
-    any ((chat == ). fst) clientChats &&
-    any ((chat == ). fst) newChatList
+    chat `elem` map fst clientChats &&
+    chat `elem` map fst newChatList
 
 -- |Property for leaveChat, tests that the chat is no longer in the players
 -- list.
-prop_leaveChat :: Int -> [ClientEntry] -> Property
-prop_leaveChat i clientList = monadicIO $ do
+prop_leaveChat :: Int -> Int -> [ClientEntry] -> Property
+prop_leaveChat randomClientIndex randomChatIndex clientList = monadicIO $ do
   pre $ not $ null clientList
-  let i' = abs $ mod i $ length clientList
-  let client = clientList !! i'
-  let i'' = abs $ mod i $ length $ chats client
-  let chatName = fst $ chats client !! i''
+  let randomClientIndex' = abs $ randomClientIndex `mod` length clientList
+  let client = clientList !! randomClientIndex'
+  let randomChatIndex' = abs $ randomChatIndex `mod` length (chats client)
+  let chatName = fst $ chats client !! randomChatIndex
   let sid = sessionID client
 
   mVarClients <- run $ newMVar clientList
   run $ Server.Chat.leaveChat mVarClients sid chatName
 
   newClientList <- run $ readMVar mVarClients
-  let newClient = newClientList !! i'
+  let newClient = newClientList !! randomClientIndex'
   let clientChats = chats newClient
 
-  assert $ all ((chatName /=) . fst) clientChats
+  assert $ chatName `notElem` map fst clientChats
 
 -- |Property that tests that if a client has joined a chat
 -- it receives messages sent by sendChatMessage
 prop_sendChatMessage :: Int -> Int -> [String] -> [ClientEntry] -> Property
-prop_sendChatMessage i j chatNameList clientList = monadicIO $ do
+prop_sendChatMessage randomClientIndex randomChatIndex chatNameList clientList = monadicIO $ do
   pre $ not $ null chatNameList
   pre $ not $ null clientList
-  let i' = abs $ mod i $ length chatNameList
-  let j' = abs $ mod j $ length clientList
+  let randomClientIndex' = abs $ randomClientIndex `mod` length chatNameList
+  let randomChatIndex' = abs $ randomChatIndex `mod` length clientList
   -- pick a subset of the clients
-  let (clientHead, clients) = splitAt j' clientList
+  let (clientHead, clients) = splitAt randomChatIndex' clientList
   cLobbyChan <- run newChan
   let c = ClientEntry 123456654321 "Sending client" [] cLobbyChan
   chatList <- run $ makeChatsOfStrings $ makeUnique chatNameList
-  let chat@(chatName, chatChan) = chatList !! i'
+  let chat@(chatName, chatChan) = chatList !! randomClientIndex'
   mVarChats <- run $ newMVar chatList
 
   -- Add the chat to the clients before creating MVar
@@ -86,7 +86,7 @@ prop_sendChatMessage i j chatNameList clientList = monadicIO $ do
   run $ Server.Chat.sendChatMessage mVarClients mVarChats (sessionID c) chatName message
 
   newClients <- run $ readMVar mVarClients
-  let (_, newClientTail) = splitAt j' newClients
+  let (_, newClientTail) = splitAt randomChatIndex' newClients
 
   -- collect all received messages
   messages <- run $ mapM (\cl ->
