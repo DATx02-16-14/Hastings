@@ -326,3 +326,37 @@ prop_setPasswordToGame clientList game newPassword = monadicIO $ do
     isJust newGame &&
     --The game has the correct password
     verifyPassword (pack newPassword) ((Fields.gamePassword . Esql.entityVal . fromJust) newGame)
+
+-- |Property that checks that the game is password protected after a password is set.
+prop_isGamePasswordProtected :: [ClientEntry] -> Fields.Game -> String -> Property
+prop_isGamePasswordProtected clientList game newPassword = monadicIO $ do
+  pre $
+    not (null clientList) &&
+    not (null newPassword)
+
+  let sid = sessionID $ head clientList
+  let playerName = name $ head clientList
+
+  run preProp
+
+  --Setup test preconditions.
+  clientMVar <- run $ newMVar clientList
+  gameKey <- run $ saveGameToDB game
+
+  run $ PlayerDB.saveOnlinePlayer playerName sid
+  run $ GameDB.addPlayerToGame sid gameKey
+  run $ GameDB.setGameOwner gameKey sid
+
+  ispasswordProtectedBefore <- run $ Server.Game.isGamePasswordProtected (Fields.gameUuid game)
+
+  run $ Server.Game.setPasswordToGame clientMVar sid newPassword
+
+  isPasswordProtected <- run $ Server.Game.isGamePasswordProtected (Fields.gameUuid game)
+
+  run postProp
+
+  assert $
+    --The game shouldn't be password protected before.
+    not ispasswordProtectedBefore &&
+    --The game should be password protected after.
+    isPasswordProtected

@@ -59,7 +59,8 @@ tests = [
       testProperty "Checks that the correct player is kicked from a game" prop_kickPlayerWithSid,
       testProperty "Checks that the correct game has changed name" prop_changeGameNameWithSid,
       testProperty "Checks that the correct game has changed max amount of players" prop_changeMaxNumberOfPlayers,
-      testProperty "Checks that the correct password is set on a game" prop_setPasswordToGame
+      testProperty "Checks that the correct password is set on a game" prop_setPasswordToGame,
+      testProperty "Checks that a game is password protected after a password is set" prop_isGamePasswordProtected
     ]
 
   ]
