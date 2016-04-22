@@ -8,6 +8,8 @@ import Haste.App (SessionID)
 import Data.Maybe (isJust, fromJust)
 import Data.List (nubBy)
 import Data.Function (on)
+import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
+import Crypto.PasswordStore (makePassword, verifyPassword)
 import qualified Database.Esqueleto as Esql
 
 import qualified Server.Game
@@ -292,3 +294,35 @@ prop_changeMaxNumberOfPlayers clientList game newAmount' = monadicIO $ do
     isJust newGame &&
     --The game has the new max amount of players.
     (Fields.gameMaxAmountOfPlayers . Esql.entityVal . fromJust) newGame == newAmount
+
+-- |Property that checks that the correct password is set on a game.
+prop_setPasswordToGame :: [ClientEntry] -> Fields.Game -> String -> Property
+prop_setPasswordToGame clientList game newPassword = monadicIO $ do
+  pre $
+    not (null clientList) &&
+    not (null newPassword)
+
+  let sid = sessionID $ head clientList
+  let playerName = name $ head clientList
+
+  run preProp
+
+  --Setup test preconditions.
+  clientMVar <- run $ newMVar clientList
+  gameKey <- run $ saveGameToDB game
+
+  run $ PlayerDB.saveOnlinePlayer playerName sid
+  run $ GameDB.addPlayerToGame sid gameKey
+  run $ GameDB.setGameOwner gameKey sid
+
+  run $ Server.Game.setPasswordToGame clientMVar sid newPassword
+
+  newGame <- run $ GameDB.retrieveGameBySid sid
+
+  run postProp
+
+  assert $
+    --The game should still exist.
+    isJust newGame &&
+    --The game has the correct password
+    verifyPassword (pack newPassword) ((Fields.gamePassword . Esql.entityVal . fromJust) newGame)
