@@ -6,6 +6,7 @@ import Test.Framework.Runners.Options (RunnerOptions, RunnerOptions'(..))
 
 import Utils
 import Server.LobbyTest
+import Server.GameTest
 
 
 mainWithOpts = do
@@ -47,6 +48,9 @@ tests = [
       testProperty "Checks that disconnect successfully disconnects a player from both games and lobby" prop_disconnect,
       testProperty "Checks that the list of player names is correct" prop_getConnectedPlayerNames,
       testProperty "Checks that the name of the player is changed everywhere" prop_changeNickName
+    ],
+    testGroup "Server.Game" [
+      testProperty "Checks that leaveGame removes the correct player" prop_leaveGame
     ]
 
   ]
