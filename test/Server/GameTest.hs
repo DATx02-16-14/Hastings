@@ -138,3 +138,13 @@ prop_createGame clientList maxPlayers = monadicIO $ do
     isJust game &&
     --Check that the max amount of players is correct.
     (Fields.gameMaxAmountOfPlayers . Esql.entityVal . fromJust) game == maxPlayers
+
+-- |Property that makes sure the game with the correct name is returned.
+prop_findGameNameWithID :: Fields.Game -> Property
+prop_findGameNameWithID game = monadicIO $ do
+
+  run $ saveGameToDB game
+
+  gameName <- run $ Server.Game.findGameNameWithID $ Fields.gameUuid game
+
+  assert $ gameName == Fields.gameName game
