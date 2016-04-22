@@ -51,7 +51,8 @@ tests = [
     ],
     testGroup "Server.Game" [
       testProperty "Checks that leaveGame removes the correct player" prop_leaveGame,
-      testProperty "Checks that playerJoinGame correctly adds a player" prop_joinGame
+      testProperty "Checks that playerJoinGame correctly adds a player" prop_joinGame,
+      testProperty "Checks that a game can be properly created" prop_createGame
     ]
 
   ]

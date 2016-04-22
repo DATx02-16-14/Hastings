@@ -110,3 +110,33 @@ prop_joinGame game clientList = monadicIO $ do
    (length playersInGame == 1) &&
    --The current player should be owner they are the only player in the game.
    (Fields.gameOwner . Esql.entityVal . fromJust) game == sid
+
+-- |Property that makes sure a game can be properly created.
+prop_createGame :: [ClientEntry] -> Int -> Property
+prop_createGame clientList maxPlayers = monadicIO $ do
+  pre $
+    not (null clientList) &&
+    maxPlayers /= 0
+
+  let sid = sessionID $ head clientList
+  let playerName = name $ head clientList
+  run preProp
+
+  --Setup test preconditions.
+  clientMVar <- run $ newMVar clientList
+
+  run $ PlayerDB.saveOnlinePlayer playerName sid
+  uuid <- run $ Server.Game.createGame clientMVar sid maxPlayers
+
+  game <- run $ GameDB.retrieveGameBySid sid
+
+  --Cleanup test
+  run postProp
+
+  assert $
+    --Check that the UUID returned exists.
+    isJust uuid &&
+    --Check that the game exists in the database.
+    isJust game &&
+    --Check that the max amount of players is correct.
+    (Fields.gameMaxAmountOfPlayers . Esql.entityVal . fromJust) game == maxPlayers
