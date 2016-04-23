@@ -14,4 +14,3 @@ run:
 
 clean:
 	rm -rf dist .stack-work
-	find . -type f ! -name '*.hs' -delete
