@@ -172,26 +172,26 @@ prop_playerNamesInGameWithSid :: [ClientEntry] -> Fields.Game -> Property
 prop_playerNamesInGameWithSid clientList game = monadicIO $ do
   pre $ not $ null clientList
 
-  let sid = sessionID $ head clientList
-  --Remove sessionIDs that are not unique.
+    --Remove sessionIDs that are not unique.
   let cleanClientList = nubBy ((==) `on` sessionID) clientList
+  let sid = sessionID $ head cleanClientList
 
   run preProp
 
   --Setup test preconditions.
-  clientMVar <- run $ newMVar clientList
+  clientMVar <- run $ newMVar cleanClientList
   gameKey <- run $ saveGameToDB game
 
   -- Add all players to the game
-  run $ mapM_ (\client -> PlayerDB.saveOnlinePlayer (name client) (sessionID client)) clientList
-  run $ mapM_ ((`GameDB.addPlayerToGame` gameKey) . sessionID) clientList
+  run $ mapM_ (\client -> PlayerDB.saveOnlinePlayer (name client) (sessionID client)) cleanClientList
+  run $ mapM_ ((`GameDB.addPlayerToGame` gameKey) . sessionID) cleanClientList
 
   playerNames <- run $ Server.Game.playerNamesInGameWithSid sid
 
   run postProp
   assert $
-    length playerNames == length clientList &&
-    all (\client -> name client `elem` playerNames) clientList
+    length playerNames == length cleanClientList &&
+    all (\client -> name client `elem` playerNames) cleanClientList
 
 prop_kickPlayerWithSid :: [ClientEntry] -> Fields.Game -> Int -> Property
 prop_kickPlayerWithSid clientList game index = monadicIO $ do
