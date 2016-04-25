@@ -3,7 +3,7 @@ module Server.GameTest where
 
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
-import Control.Concurrent (newMVar)
+import Control.Concurrent (newMVar, readMVar)
 import Haste.App (SessionID)
 import Data.Maybe (isJust, fromJust)
 import Data.List (nubBy)
@@ -20,6 +20,7 @@ import qualified Hastings.Database.Player as PlayerDB
 import qualified Hastings.Database.Game as GameDB
 import qualified Hastings.Database.Fields as Fields
 
+type GameKey = Esql.Key Fields.Game
 
 -- | Run database setup functions that makes sure the database
 --   table is up to date.
@@ -41,39 +42,55 @@ saveGameToDB game = GameDB.saveGame (Fields.gameUuid game)
                                     (Fields.gameOwner game)
                                     (Fields.gamePassword game)
 
--- |Property that makes sure that after calling leaveGame
--- there is no player with that sessionID left.
-prop_leaveGame :: [ClientEntry] -> Fields.Game -> Property
-prop_leaveGame clientList game = monadicIO $ do
-  pre $ not $ null clientList
+gameTestWrapper :: [ClientEntry]
+                -> Fields.Game
+                -> (SessionID
+                   -> Name
+                   -> ConcurrentClientList
+                   -> GameKey
+                   -> PropertyM IO a)
+                -> Property
+gameTestWrapper clientList game testFunction = monadicIO $ do
+  let cleanClientList = nubBy ((==) `on` sessionID) clientList
+  pre $ length cleanClientList > 1
 
-  let sid = sessionID $ head clientList
-  let playerName = name $ head clientList
+  let sid = sessionID $ head cleanClientList
+  let playerName = name $ head cleanClientList
 
   run preProp
 
   --Setup test preconditions
-  clientMVar <- run $ newMVar clientList
+  clientMVar <- run $ newMVar $ tail cleanClientList
 
   run $ PlayerDB.saveOnlinePlayer playerName sid
   gameKey <- run $ saveGameToDB game
 
-  -- Add all players to the game
-  mapM_ (run . (`GameDB.addPlayerToGame` gameKey) . sessionID) clientList
+  testFunction sid playerName clientMVar gameKey
 
-  --Run test operations.
-  playersInGameBefore <- run $ GameDB.retrievePlayersInGame gameKey
-  run $ Server.Game.leaveGame clientMVar sid
-  playersInGame <- run $ GameDB.retrievePlayersInGame gameKey
-
-  assert $
-    --The player with the correct username has been removed.
-    playerName `notElem` map (Fields.playerUserName . Esql.entityVal) playersInGame &&
-    --Only one player has been removed
-    length playersInGameBefore - length playersInGame == 1
-
-  --Cleanup test
   run postProp
+
+
+-- |Property that makes sure that after calling leaveGame
+-- there is no player with that sessionID left.
+prop_leaveGame :: [ClientEntry] -> Fields.Game -> Property
+prop_leaveGame clientList game = gameTestWrapper clientList game prop_leaveGame'
+  where
+    prop_leaveGame' :: SessionID -> Name -> ConcurrentClientList -> GameKey -> PropertyM IO ()
+    prop_leaveGame' sid playerName clientMVar gameKey = do
+      -- Add all players to the game
+      clientList <- run $ readMVar clientMVar
+      run $ mapM_ ((`GameDB.addPlayerToGame` gameKey) . sessionID) clientList
+      run $ GameDB.addPlayerToGame sid gameKey
+
+      --Run test operations.
+      playersInGameBefore <- run $ GameDB.retrievePlayersInGame gameKey
+      run $ Server.Game.leaveGame clientMVar sid
+      playersInGame <- run $ GameDB.retrievePlayersInGame gameKey
+      assert $
+        --The player with the correct username has been removed.
+        playerName `notElem` map (Fields.playerUserName . Esql.entityVal) playersInGame &&
+        --Only one player has been removed
+        length playersInGameBefore - length playersInGame == 1
 
 -- |Property that makes sure that after calling joinGame
 -- the player has correctly joined the game.
