@@ -1,13 +1,14 @@
 import Test.Framework.Providers.QuickCheck2 (testProperty)
+import Test.Framework.Options (TestOptions, TestOptions'(..))
+import Test.Framework.Runners.Options (RunnerOptions, RunnerOptions'(..))
 
 import Test.Framework (defaultMain, defaultMainWithOpts, testGroup)
 import Test.Framework.Options (TestOptions, TestOptions'(..))
 import Test.Framework.Runners.Options (RunnerOptions, RunnerOptions'(..))
 
-
 import Utils
-import Hastings.ServerUtilsTests
 import Server.LobbyTest
+import Server.GameTest
 import Server.ChatTest
 
 
@@ -33,7 +34,6 @@ mainWithOpts = do
 
   defaultMainWithOpts tests my_runner_opts
 
-
 main = mainWithOpts
 
 tests = [
@@ -45,27 +45,24 @@ tests = [
       testProperty "Test that exactly one element is updated and that element is updated correctly" prop_updateListElem_correctUpdate,
       testProperty "Test that the list is the same order as before" prop_updateLookup_correctUpdate
     ],
-    testGroup "getUUIDFromGamesList" [
-      testProperty "Tests that the uuids received are the correct ones" prop_getUUIDFromGamesList
-    ],
-    testGroup "deletePlayerFromGame" [
-      testProperty "Checks that a player has been deleted after the function is done" prop_deletePlayerFromGame_length
-    ],
-    testGroup "addPlayerToGame" [
-      testProperty "Checks that only a single player has been added" prop_addPlayerToGame_length,
-      testProperty "Checks that only one LobbyGame has been changed" prop_addPlayerToGame_unique
-    ],
-    testGroup "findGameWithID" [
-      testProperty "Check that the correct game has been found" prop_findGameWithID
-    ],
-    testGroup "isOwnerOfGame" [
-      testProperty "Checks that the function returns the correct result (True if the client is last in the players list, False otherwise)" prop_isOwnerOfGame
-    ],
     testGroup "Server.Lobby" [
       testProperty "Checks that connect successfully adds a client" prop_connect ,
       testProperty "Checks that disconnect successfully disconnects a player from both games and lobby" prop_disconnect,
       testProperty "Checks that the list of player names is correct" prop_getConnectedPlayerNames,
       testProperty "Checks that the name of the player is changed everywhere" prop_changeNickName
+    ],
+    testGroup "Server.Game" [
+      testProperty "Checks that leaveGame removes the correct player" prop_leaveGame,
+      testProperty "Checks that playerJoinGame correctly adds a player" prop_joinGame,
+      testProperty "Checks that a game can be properly created" prop_createGame,
+      testProperty "Checks that the game with the correct name is found" prop_findGameNameWithID,
+      testProperty "Checks that the game with the correct name is found" prop_findGameNameWithSid,
+      testProperty "Checks that all the names of players in a game is found" prop_playerNamesInGameWithSid,
+      testProperty "Checks that the correct player is kicked from a game" prop_kickPlayerWithSid,
+      testProperty "Checks that the correct game has changed name" prop_changeGameNameWithSid,
+      testProperty "Checks that the correct game has changed max amount of players" prop_changeMaxNumberOfPlayers,
+      testProperty "Checks that the correct password is set on a game" prop_setPasswordToGame,
+      testProperty "Checks that a game is password protected after a password is set" prop_isGamePasswordProtected
     ],
     testGroup "Server.Chat" [
       testProperty "Checks that joinChat successfully adds a player" prop_joinChat,

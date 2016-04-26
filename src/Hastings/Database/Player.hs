@@ -69,6 +69,19 @@ retrieveOnlinePlayer sessionID = runDB $ do
          return players
   return $ listToMaybe playerList
 
+-- |Retrieves the sessionID of the specified player.
+retrievePlayerSessionId :: String -- ^The name of the player.
+                        -> IO (Maybe SessionID)
+retrievePlayerSessionId name = runDB $ do
+  player <- Esql.select $
+    Esql.from $ \(onlinePlayers, players) -> do
+      Esql.where_ (players Esql.^. PlayerUserName Esql.==. Esql.val name
+          Esql.&&. onlinePlayers Esql.^. OnlinePlayerPlayer Esql.==. players Esql.^. PlayerId)
+      return $ onlinePlayers Esql.^. OnlinePlayerSessionID
+  case listToMaybe player of
+    Just value -> return $ Just $ Esql.unValue value
+    Nothing    -> return Nothing
+
 -- |Delete an online player from the database.
 deleteOnlinePlayer :: SessionID -- ^The sessionID of the player to delete.
                    -> IO ()

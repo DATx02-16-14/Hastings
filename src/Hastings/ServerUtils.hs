@@ -4,15 +4,18 @@ module Hastings.ServerUtils where
 
 import Haste.App (SessionID)
 
-import LobbyTypes (LobbyGame, Name, ClientEntry, name, LobbyMessage, players, lobbyChannel, sessionID)
+import LobbyTypes (Name, ClientEntry, name, LobbyMessage, lobbyChannel, sessionID)
 import Hastings.Utils (updateListElem)
+import qualified Hastings.Database.Game as GameDB
+import qualified Hastings.Database.Fields as Fields
+import qualified Database.Esqueleto as Esql
 
 import qualified Control.Concurrent as CC (writeChan)
 import Data.List (find, nub)
 
 -- |Get's the uuid from a list of lobby games
-getUUIDFromGamesList :: [LobbyGame] -> [String]
-getUUIDFromGamesList = map fst
+getUUIDFromGamesList :: [Esql.Entity Fields.Game] -> [String]
+getUUIDFromGamesList = map $ Fields.gameUuid . Esql.entityVal
 
 -- |Finds the client with 'Name' from the list of 'ClientEntry'
 findClient :: Name -> [ClientEntry] -> Maybe ClientEntry
@@ -22,37 +25,18 @@ findClient clientName = find ((clientName ==).name)
 messageClients :: LobbyMessage -> [ClientEntry] -> IO ()
 messageClients m = mapM_ (\c -> CC.writeChan (lobbyChannel c) m)
 
--- |Deletes the player with 'Int' from the game.
-deletePlayerFromGame :: Int  -- ^The index of the player to kick
-                     -> LobbyGame  -- ^The game to kick the player from
-                     -> LobbyGame
-deletePlayerFromGame clientIndex (gameID, gameData)  =
-  (gameID, gameData {players = clientHead ++ clientTail})
-  where
-    (clientHead, c:clientTail) = splitAt clientIndex $ players gameData
-
--- |Adds a player to a lobby game with the game ID
--- Doesn't care if the max #players has been reached.
-addPlayerToGame :: ClientEntry -> String -> [LobbyGame] -> [LobbyGame]
-addPlayerToGame client gameID =
-  updateListElem (\(gID, gameData) -> (gID, gameData {players = nub $ client : players gameData})) ((gameID ==) .fst)
-
--- |Finds the 'LobbyGame' matching the first parameter and returns it
-findGameWithID :: String -> [LobbyGame] -> Maybe LobbyGame
-findGameWithID gid = find (\g -> fst g == gid)
-
--- |Finds the 'LobbyGame' that the current connection is in (or the first if there are multiple)
-findGameWithSid :: SessionID -> [LobbyGame] -> Maybe LobbyGame
-findGameWithSid sid = find (\(_, gameData) -> sid `elem` sidsInGame gameData)
-  where
-    sidsInGame gameData = map sessionID $ players gameData
+-- |Messages all clients in the list of sessionIDs
+messageClientsWithSid :: LobbyMessage -> [ClientEntry] -> [SessionID] -> IO ()
+messageClientsWithSid message clientEntries sessionIDs =
+  messageClients message $ filter (\c -> sessionID c `elem` sessionIDs) clientEntries
 
 -- |Returns if the current player is owner of the game it's in
-isOwnerOfGame :: SessionID -> [LobbyGame] -> Bool
-isOwnerOfGame sid gamesList =
-  case findGameWithSid sid gamesList of
-    Nothing         -> False
-    Just (_, gData) -> sessionID (last $ players gData) == sid
+isOwnerOfGame :: SessionID -> IO Bool
+isOwnerOfGame sid = do
+  dbGame <- GameDB.retrieveGameBySid sid
+  case dbGame of
+    Just (Esql.Entity _ game) -> return $ Fields.gameOwner game == sid
+    _                         -> return False
 
 -- |Function that finds a 'ClientEntry' based on the 'SessionID'
 lookupClientEntry :: SessionID -> [ClientEntry] -> Maybe ClientEntry

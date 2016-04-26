@@ -23,11 +23,11 @@ connect mVarClients name sid = do
   clientList <- readMVar mVarClients
   messageClients ClientJoined clientList
 
-disconnect :: ConcurrentClientList -> GamesList-> SessionID -> IO ()
-disconnect mVarClients mVarGames sid = do
+disconnect :: ConcurrentClientList -> SessionID -> IO ()
+disconnect mVarClients sid = do
   PlayerDB.deleteOnlinePlayer sid
   disconnectPlayerFromLobby mVarClients sid
-  Game.leaveGame mVarGames sid
+  Game.leaveGame mVarClients sid
 
   clients <- readMVar mVarClients
   messageClients ClientLeft clients
@@ -45,24 +45,19 @@ getConnectedPlayerNames mVarClients = do
   return $ map name clientList
 
 -- |Changes the nick name currently connected player
-changeNickName :: ConcurrentClientList -> GamesList -> SessionID -> Name -> IO ()
-changeNickName mVarClients mVarGames sid newName = do
+changeNickName :: ConcurrentClientList -> SessionID -> Name -> IO ()
+changeNickName mVarClients sid newName = do
   clientList <- readMVar mVarClients
   player <- PlayerDB.retrieveOnlinePlayer sid
   playerWithNewName <- PlayerDB.retrievePlayerByUsername newName
   case playerWithNewName of
-    Just plr -> do
-      let client = lookupClientEntry sid clientList
-      case client of
-        Just c  -> messageClients (LobbyError "That username already exists" ) [c]
-        Nothing -> return ()
+    Just plr ->
+      messageClientsWithSid (LobbyError "That username already exists" ) clientList [sid]
     Nothing  -> do
       PlayerDB.changeUserName (getName player) newName
 
       modifyMVar_ mVarClients $ \cs ->
         return $ updateNick sid cs
-      modifyMVar_ mVarGames $ \gs ->
-        return $ map (\(uuid, gameData) -> (uuid, gameData {players = updateNick sid $ players gameData})) gs
 
       -- Update the clients with this new information
       messageClients NickChange clientList

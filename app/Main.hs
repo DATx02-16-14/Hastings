@@ -27,13 +27,12 @@ import Hastings.Database.Player (clearOnlinePlayers)
 main :: IO ()
 main = runApp (mkConfig backendHostAddress backendHostPort) $ do
   playersList <- liftServerIO $ CC.newMVar []
-  gamesList <- liftServerIO $ CC.newMVar []
   chatList <- liftServerIO $ CC.newMVar []
 
-  let serverState = (playersList, gamesList, chatList)
+  let serverState = (playersList, chatList)
   liftServerIO $ migrateDatabase
   liftServerIO $ clearOnlinePlayers
 
   onSessionEnd $ disconnect(serverState)
-  api <- newLobbyAPI (playersList, gamesList, chatList)
+  api <- newLobbyAPI serverState
   runClient $ clientMain api newGameAPI
