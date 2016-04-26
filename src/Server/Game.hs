@@ -7,6 +7,7 @@ import System.Random
 import Data.ByteString.Char8 (ByteString, empty, pack, unpack)
 import Crypto.PasswordStore (makePassword, verifyPassword)
 import Control.Monad (when)
+import qualified Database.Esqueleto as Esql
 
 import Hastings.Utils
 import Hastings.ServerUtils
@@ -15,7 +16,6 @@ import LobbyTypes
 import qualified Hastings.Database.Game as GameDB
 import qualified Hastings.Database.Player as PlayerDB
 import qualified Hastings.Database.Fields as Fields
-import qualified Database.Esqueleto as Esql
 
 -- |Removes a player from it's game
 leaveGame :: ConcurrentClientList -> SessionID -> IO ()
