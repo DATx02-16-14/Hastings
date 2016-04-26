@@ -27,7 +27,6 @@ type GameKey = Esql.Key Fields.Game
 preProp :: IO ()
 preProp = do
   migrateDatabase
-  PlayerDB.clearOnlinePlayers
   clearDatabase
 
 -- | Remove all data in DB tables.
@@ -35,19 +34,34 @@ postProp :: IO ()
 postProp = clearDatabase
 
 
+-- | Takes a variable of the type Game and saves it to the database.
 saveGameToDB :: Fields.Game -> IO (Esql.Key Fields.Game)
 saveGameToDB game = GameDB.saveGame (Fields.gameUuid game)
                                     (Fields.gameName game)
                                     (Fields.gameMaxAmountOfPlayers game)
                                     (Fields.gameOwner game)
                                     (Fields.gamePassword game)
+{-|
+ | Wrapper function that runs some common checks and initialisations before running a game test.
+ 'gameTestWrapper' will do the following things before running the test.
 
-gameTestWrapper :: [ClientEntry]
-                -> Fields.Game
-                -> (SessionID
-                   -> Name
-                   -> ConcurrentClientList
-                   -> GameKey
+  * Remove all sessionIds and names that are not unique from the list of clients.
+  * Make sure that there are at least two clients left in that list.
+  * Extract the name and sessionID from the first client in the client list.
+  * run 'preProp'.
+  * Save the player that was extracted from the client list to the OnlinePlayers table.
+  * Save the game to the database.
+
+ 'gameTestWrapper' will do the following things after running the test.
+
+  * run 'postProp'.
+-}
+gameTestWrapper :: [ClientEntry]            -- A list of randomly generated ClientEntries.
+                -> Fields.Game              -- A randomly generated game.
+                -> (SessionID               -- The Session ID of the first ClientEntry in the list of clients.
+                   -> Name                  -- The name of the first ClientEntry in the list of clients.
+                   -> ConcurrentClientList  -- The list of clients.
+                   -> GameKey               -- The key to the game that was saved in the database.
                    -> PropertyM IO a)
                 -> Property
 gameTestWrapper clientList game testFunction = monadicIO $ do
@@ -190,7 +204,7 @@ prop_playerNamesInGameWithSid clientList' game = gameTestWrapper clientList' gam
           all (\client -> name client `elem` playerNames) clientList &&
           playerName `elem` playerNames
 
-
+-- |Property that checks that only the correct player has been kicked from a game.
 prop_kickPlayerWithSid :: Int -> [ClientEntry] -> Fields.Game -> Property
 prop_kickPlayerWithSid index clientList game = gameTestWrapper clientList game (prop_kickPlayerWithSid' index)
   where
