@@ -53,13 +53,13 @@ listenForGameAction api state can = do
                         liftIO $ do
                           gs <- CC.takeMVar state
                           let newState = parseGameAction ga gs
-                          case fromCoord newState of 
-                                 Just (x,y) -> do 
+                          case fromCoord newState of
+                                 Just (x,y) -> do
                                     initTable2' can $ gameTable gs
                                     renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
                                  Nothing -> initTable2' can $ gameTable gs
                           CC.putMVar state newState
-                          
+
                         listenForGameAction api state can
         where   function :: LobbyAPI -> Remote (Server GameAction)
                 function = undefined -- todo
