@@ -6,10 +6,10 @@ import Haste.Graphics.Canvas
 import ChineseCheckers.Table
 
 filepath :: String
-filepath = "file:////home/benjamin/Documents/"
+filepath = "http://hastings.se"
 
 renderTest can = do
-      bitmap <- loadBitmap "file:////home/michael/Documents/cooltext170130995424459.gif"
+      bitmap <- loadBitmap $ filepath ++ "/cooltext170130995424459.gif"
       renderOnTop can $ draw bitmap (10,10)
 
 -- | Render the border
@@ -20,45 +20,45 @@ renderTable can  = do
 -- | Render a high-lighted piece to the specified canvas, color and coordinate. See also renderSquare
 renderSquare2 can space size (Piece col) (x,y)
         |col == blue = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/blue2.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/blue2.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == green = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/green3.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/green3.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == orange = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/orange2.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/orange2.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == yellow = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/yellow2.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/yellow2.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == purple = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/purple2.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/purple2.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == red = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/red2.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/red2.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
 
 
 -- | Render a piece to the specified canvas, color and coordinate.
 renderSquare can space size (Square Empty _ (x,y)) = do
-        bitmap <- loadBitmap "file:////home/michael/Documents/empty.bmp"
+        bitmap <- loadBitmap $ filepath ++ "/empty.bmp"
         renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
 renderSquare can space size (Square (Piece col) _ (x,y))
         |col == blue = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/blue.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/blue.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == green = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/green.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/green.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == orange = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/orange.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/orange.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == yellow = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/yellow.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/yellow.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == purple = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/purple.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/purple.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
         |col == red = do
-                bitmap <- loadBitmap "file:////home/michael/Documents/red.bmp"
+                bitmap <- loadBitmap $ filepath ++ "/red.bmp"
                 renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
