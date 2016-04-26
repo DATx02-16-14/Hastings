@@ -34,5 +34,5 @@ main = runApp (mkConfig backendHostAddress backendHostPort) $ do
   liftServerIO $ clearOnlinePlayers
 
   onSessionEnd $ disconnect(serverState)
-  api <- newLobbyAPI (playersList, chatList)
+  api <- newLobbyAPI serverState
   runClient $ clientMain api newGameAPI

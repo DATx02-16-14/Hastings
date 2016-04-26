@@ -34,5 +34,5 @@ main = runStandaloneApp $ do
   liftServerIO $ clearOnlinePlayers
 
   onSessionEnd $ disconnect(serverState)
-  api <- newLobbyAPI (playersList, chatList)
+  api <- newLobbyAPI serverState
   runClient $ clientMain api newGameAPI
