@@ -45,7 +45,7 @@ createGame mVarClients sid maxPlayers = do
   case existingGame of
     Just _  -> return Nothing
     Nothing -> do
-      gameKey <- GameDB.saveGame uuidStr uuidStr maxPlayers sid $ pack ""
+      gameKey <- GameDB.saveGame uuidStr "Game Name" maxPlayers sid $ pack ""
       GameDB.addPlayerToGame sid gameKey
       messageClients GameAdded clientList
       return $ Just uuidStr
