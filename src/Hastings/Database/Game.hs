@@ -12,11 +12,6 @@ import Control.Monad (liftM)
 import Data.ByteString.Char8 (ByteString)
 
 -- |Retrieve a game from the database.
-retrieveGameByName :: String -- ^The name of the game to retrieve.
-                   -> IO (Maybe (Esql.Entity Game))
-retrieveGameByName name = runDB $ Esql.getBy $ UniqueName name
-
--- |Retrieve a game from the database.
 retrieveGameByUUID :: String -- ^The UUID of the game
                    -> IO (Maybe (Esql.Entity Game))
 retrieveGameByUUID uuid = runDB $ Esql.getBy $ UniqueUUID uuid
