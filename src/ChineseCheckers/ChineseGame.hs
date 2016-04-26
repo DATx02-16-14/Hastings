@@ -32,7 +32,7 @@ mkState _ _ = error "Unable to create GameState from GameAction"
 runGame :: Elem -> CC.MVar GameState -> [String] -> String -> LobbyAPI -> Client HandlerInfo
 runGame parent gameState players name api = do
                                 liftIO $ CC.putMVar gameState $ initGame players
-                                canvas <- liftIO $ makeCanvas 1400 800 "gameCanvas"
+                                canvas <- liftIO $ makeCanvas 1030 750 "gameCanvas"
                                 appendChild parent canvas
 
                                 canvas2 <- liftIO $ makeCanvas 500 800 "textCanvas"
