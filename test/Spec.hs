@@ -1,12 +1,15 @@
-import Test.Framework (defaultMain, defaultMainWithOpts, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.Framework.Options (TestOptions, TestOptions'(..))
 import Test.Framework.Runners.Options (RunnerOptions, RunnerOptions'(..))
 
+import Test.Framework (defaultMain, defaultMainWithOpts, testGroup)
+import Test.Framework.Options (TestOptions, TestOptions'(..))
+import Test.Framework.Runners.Options (RunnerOptions, RunnerOptions'(..))
 
 import Utils
 import Server.LobbyTest
 import Server.GameTest
+import Server.ChatTest
 
 
 mainWithOpts = do
@@ -30,7 +33,6 @@ mainWithOpts = do
   }
 
   defaultMainWithOpts tests my_runner_opts
-
 
 main = mainWithOpts
 
@@ -61,6 +63,10 @@ tests = [
       testProperty "Checks that the correct game has changed max amount of players" prop_changeMaxNumberOfPlayers,
       testProperty "Checks that the correct password is set on a game" prop_setPasswordToGame,
       testProperty "Checks that a game is password protected after a password is set" prop_isGamePasswordProtected
+    ],
+    testGroup "Server.Chat" [
+      testProperty "Checks that joinChat successfully adds a player" prop_joinChat,
+      testProperty "Checks that leaveChat successfully removes the players" prop_leaveChat,
+      testProperty "Checks that sendChatMessage successfully sends to all players" prop_sendChatMessage
     ]
-
   ]
