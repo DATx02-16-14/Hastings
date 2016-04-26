@@ -51,7 +51,8 @@ gameTestWrapper :: [ClientEntry]
                    -> PropertyM IO a)
                 -> Property
 gameTestWrapper clientList game testFunction = monadicIO $ do
-  let cleanClientList = nubBy ((==) `on` sessionID) clientList
+  --Remove all names and sessionIDs that are not unique.
+  let cleanClientList = nubBy ((==) `on` name) $ nubBy ((==) `on` sessionID) clientList
   pre $ length cleanClientList > 1
 
   let sid = sessionID $ head cleanClientList
@@ -95,40 +96,27 @@ prop_leaveGame clientList game = gameTestWrapper clientList game prop_leaveGame'
 -- |Property that makes sure that after calling joinGame
 -- the player has correctly joined the game.
 prop_joinGame :: [ClientEntry] -> Fields.Game -> Property
-prop_joinGame clientList game = monadicIO $ do
-  pre $ not $ null clientList
+prop_joinGame clientList game = gameTestWrapper clientList game prop_joinGame'
+  where
+    prop_joinGame' :: SessionID -> Name -> ConcurrentClientList -> GameKey -> PropertyM IO ()
+    prop_joinGame' sid playerName clientMVar gameKey = do
+      player <- run $ PlayerDB.retrieveOnlinePlayer sid
+      allowedToJoin <- run $ Server.Game.playerJoinGame clientMVar sid (Fields.gameUuid game) ""
+      playersInGame <- run $ GameDB.retrievePlayersInGame gameKey
+      game <- run $ GameDB.retrieveGameBySid sid
 
-  let sid = sessionID $ head clientList
-  let playerName = name $ head clientList
-
-  run preProp
-
-  --Setup test preconditions.
-  clientMVar <- run $ newMVar clientList
-
-  run $ PlayerDB.saveOnlinePlayer playerName sid
-  player <- run $ PlayerDB.retrieveOnlinePlayer sid
-  gameKey <- run $ saveGameToDB game
-
-  allowedToJoin <- run $ Server.Game.playerJoinGame clientMVar sid (Fields.gameUuid game) ""
-  playersInGame <- run $ GameDB.retrievePlayersInGame gameKey
-  game <- run $ GameDB.retrieveGameBySid sid
-
-  --Cleanup test.
-  run postProp
-
-  assert $
-    --Player was allowed to join.
-   allowedToJoin &&
-    --Check that both game and player exists(for use of fromJust later).
-   isJust player && isJust game &&
-   --Check that the player is part of the game.
-   (Fields.playerUserName . Esql.entityVal . fromJust) player
-      `elem` map (Fields.playerUserName . Esql.entityVal) playersInGame &&
-   --Only one player should have joined the game.
-   (length playersInGame == 1) &&
-   --The current player should be owner they are the only player in the game.
-   (Fields.gameOwner . Esql.entityVal . fromJust) game == sid
+      assert $
+        --Player was allowed to join.
+        allowedToJoin &&
+        --Check that both game and player exists(for use of fromJust later).
+        isJust player && isJust game &&
+         --Check that the player is part of the game.
+         (Fields.playerUserName . Esql.entityVal . fromJust) player
+            `elem` map (Fields.playerUserName . Esql.entityVal) playersInGame &&
+         --Only one player should have joined the game.
+         (length playersInGame == 1) &&
+         --The current player should be owner they are the only player in the game.
+         (Fields.gameOwner . Esql.entityVal . fromJust) game == sid
 
 -- |Property that makes sure a game can be properly created.
 prop_createGame :: [ClientEntry] -> Int -> Property
@@ -172,208 +160,145 @@ prop_findGameNameWithID game = monadicIO $ do
   run postProp
 
 -- |Property that makes sure the game with the correct name is returned.
-prop_findGameNameWithSid :: ClientEntry -> Fields.Game -> Property
-prop_findGameNameWithSid client game = monadicIO $ do
-  run preProp
-
-  gameKey <- run $ saveGameToDB game
-  run $ GameDB.addPlayerToGame (sessionID client) gameKey
-
-  gameName <- run $ Server.Game.findGameNameWithSid $ sessionID client
-
-  assert $ gameName == Fields.gameName game
-  run postProp
+prop_findGameNameWithSid :: [ClientEntry] -> Fields.Game -> Property
+prop_findGameNameWithSid clientList game = gameTestWrapper clientList game prop_findGameNameWithSid'
+  where
+    prop_findGameNameWithSid' :: SessionID -> Name -> ConcurrentClientList -> GameKey -> PropertyM IO ()
+    prop_findGameNameWithSid' sid playerName clientMVar gameKey = do
+      run $ GameDB.addPlayerToGame sid gameKey
+      gameName <- run $ Server.Game.findGameNameWithSid sid
+      assert $ gameName == Fields.gameName game
 
 -- |Property that checks that all playerNames are correctly found in a game.
 prop_playerNamesInGameWithSid :: [ClientEntry] -> Fields.Game -> Property
-prop_playerNamesInGameWithSid clientList game = monadicIO $ do
-  pre $ not $ null clientList
+prop_playerNamesInGameWithSid clientList' game = gameTestWrapper clientList' game prop_playerNamesInGameWithSid'
+    where
+      prop_playerNamesInGameWithSid' :: SessionID -> Name -> ConcurrentClientList -> GameKey -> PropertyM IO ()
+      prop_playerNamesInGameWithSid' sid playerName clientMVar gameKey = do
+        -- Add all players to the game
+        clientList <- run $ readMVar clientMVar
+        run $ mapM_ (\client -> PlayerDB.saveOnlinePlayer (name client) (sessionID client)) clientList
+        run $ GameDB.addPlayerToGame sid gameKey
+        run $ mapM_ ((`GameDB.addPlayerToGame` gameKey) . sessionID) clientList
 
-    --Remove sessionIDs that are not unique.
-  let cleanClientList = nubBy ((==) `on` sessionID) clientList
-  let sid = sessionID $ head cleanClientList
+        playerNames <- run $ Server.Game.playerNamesInGameWithSid sid
 
-  run preProp
+        assert $
+          --Add +1 to compensate for adding the player not in the clientList.
+          length playerNames == length clientList + 1 &&
+          --All names in the clientList should occur in playerNames
+          all (\client -> name client `elem` playerNames) clientList &&
+          playerName `elem` playerNames
 
-  --Setup test preconditions.
-  clientMVar <- run $ newMVar cleanClientList
-  gameKey <- run $ saveGameToDB game
 
-  -- Add all players to the game
-  run $ mapM_ (\client -> PlayerDB.saveOnlinePlayer (name client) (sessionID client)) cleanClientList
-  run $ mapM_ ((`GameDB.addPlayerToGame` gameKey) . sessionID) cleanClientList
+prop_kickPlayerWithSid :: Int -> [ClientEntry] -> Fields.Game -> Property
+prop_kickPlayerWithSid index clientList game = gameTestWrapper clientList game (prop_kickPlayerWithSid' index)
+  where
+    prop_kickPlayerWithSid' :: Int -> SessionID -> Name -> ConcurrentClientList -> GameKey -> PropertyM IO ()
+    prop_kickPlayerWithSid' index sid playerName clientMVar gameKey = do
+      clientList <- run $ readMVar clientMVar
+      let kickedClient = clientList !! (index `mod` length clientList)
 
-  playerNames <- run $ Server.Game.playerNamesInGameWithSid sid
+      -- Add all players to the game
+      run $ mapM_ (\client -> PlayerDB.saveOnlinePlayer (name client) (sessionID client)) clientList
+      run $ mapM_ ((`GameDB.addPlayerToGame` gameKey) . sessionID) clientList
+      run $ GameDB.addPlayerToGame sid gameKey
 
-  run postProp
-  assert $
-    length playerNames == length cleanClientList &&
-    all (\client -> name client `elem` playerNames) cleanClientList
+      playersInGameBefore <- run $ GameDB.retrievePlayersInGame gameKey
 
-prop_kickPlayerWithSid :: [ClientEntry] -> Fields.Game -> Int -> Property
-prop_kickPlayerWithSid clientList game index = monadicIO $ do
-  pre $ not $ null clientList
+      run $ Server.Game.kickPlayerWithSid clientMVar sid (name kickedClient)
 
-  --Remove names that are not unique
-  let cleanClientList = nubBy ((==) `on` name) clientList
+      playersInGame <- run $ GameDB.retrievePlayersInGame gameKey
+      playerNamesInGame <- run $ Server.Game.playerNamesInGameWithSid sid
 
-  let sid = sessionID $ head cleanClientList
-  let kickedClient = cleanClientList !! (index `mod` length cleanClientList)
-
-  run preProp
-
-  --Setup test preconditions.
-  clientMVar <- run $ newMVar cleanClientList
-  gameKey <- run $ saveGameToDB game
-
-  -- Add all players to the game
-  run $ mapM_ (\client -> PlayerDB.saveOnlinePlayer (name client) (sessionID client)) cleanClientList
-  run $ mapM_ ((`GameDB.addPlayerToGame` gameKey) . sessionID) cleanClientList
-
-  playersInGameBefore <- run $ GameDB.retrievePlayersInGame gameKey
-
-  run $ Server.Game.kickPlayerWithSid clientMVar sid (name kickedClient)
-
-  playersInGame <- run $ GameDB.retrievePlayersInGame gameKey
-  playerNamesInGame <- run $ Server.Game.playerNamesInGameWithSid sid
-
-  run postProp
-
-  assert $
-    --Only one player has been kicked.
-    length playersInGameBefore - length playersInGame == 1 &&
-    --The correct player has been kicked.
-    name kickedClient `notElem` playerNamesInGame
+      assert $
+        --Only one player has been kicked.
+        length playersInGameBefore - length playersInGame == 1 &&
+        --The correct player has been kicked.
+        name kickedClient `notElem` playerNamesInGame
 
 -- |Property that checks that the correct game has had its name changed.
-prop_changeGameNameWithSid :: [ClientEntry] -> Fields.Game -> Name -> Property
-prop_changeGameNameWithSid clientList game newName = monadicIO $ do
-  pre $
-    not (null clientList) &&
-    not (null newName)
+prop_changeGameNameWithSid :: Name -> [ClientEntry] -> Fields.Game  -> Property
+prop_changeGameNameWithSid newName clientList game = gameTestWrapper clientList game (prop_changeGameNameWithSid' newName)
+  where
+    prop_changeGameNameWithSid' :: Name -> SessionID -> Name -> ConcurrentClientList -> GameKey -> PropertyM IO ()
+    prop_changeGameNameWithSid' newName sid playerName clientMVar gameKey = do
+      pre $ not $ null newName
 
-  let sid = sessionID $ head clientList
-  let playerName = name $ head clientList
+      run $ GameDB.addPlayerToGame sid gameKey
 
-  run preProp
+      let oldName = Fields.gameName game
+      run $ Server.Game.changeGameNameWithSid clientMVar sid newName
+      newGame <- run $ GameDB.retrieveGameBySid sid
 
-  --Setup test preconditions.
-  clientMVar <- run $ newMVar clientList
-  gameKey <- run $ saveGameToDB game
-
-  run $ PlayerDB.saveOnlinePlayer playerName sid
-  run $ GameDB.addPlayerToGame sid gameKey
-
-  let oldName = Fields.gameName game
-
-  run $ Server.Game.changeGameNameWithSid clientMVar sid newName
-
-  newGame <- run $ GameDB.retrieveGameBySid sid
-
-  run postProp
-
-  assert $
-    --The game should still exist.
-    isJust newGame &&
-    --The game has the new name
-    (Fields.gameName . Esql.entityVal . fromJust) newGame == newName
+      assert $
+        --The game should still exist.
+        isJust newGame &&
+        --The game has the new name
+        (Fields.gameName . Esql.entityVal . fromJust) newGame == newName
 
 -- |Property that checks that changing the max amount of player in a game works
-prop_changeMaxNumberOfPlayers :: [ClientEntry] -> Fields.Game -> Int -> Property
-prop_changeMaxNumberOfPlayers clientList game newAmount' = monadicIO $ do
-  let newAmount = newAmount' `mod` 6
-  let oldAmount = Fields.gameMaxAmountOfPlayers game
+prop_changeMaxNumberOfPlayers :: Int -> [ClientEntry] -> Fields.Game -> Property
+prop_changeMaxNumberOfPlayers newAmount clientList game = gameTestWrapper clientList game (prop_changeMaxNumberOfPlayers' newAmount)
+  where
+    prop_changeMaxNumberOfPlayers' :: Int -> SessionID -> Name -> ConcurrentClientList -> GameKey -> PropertyM IO ()
+    prop_changeMaxNumberOfPlayers' newAmount' sid playerName clientMVar gameKey = do
+      let newAmount = newAmount' `mod` 6
+      let oldAmount = Fields.gameMaxAmountOfPlayers game
 
-  pre $
-    not (null clientList) &&
-    oldAmount /= newAmount
+      pre $ oldAmount /= newAmount
 
-  let sid = sessionID $ head clientList
-  let playerName = name $ head clientList
+      run $ GameDB.addPlayerToGame sid gameKey
+      run $ GameDB.setGameOwner gameKey sid
+      run $ Server.Game.changeMaxNumberOfPlayers sid newAmount
 
-  run preProp
+      newGame <- run $ GameDB.retrieveGameBySid sid
 
-  --Setup test preconditions.
-  gameKey <- run $ saveGameToDB game
-
-  run $ PlayerDB.saveOnlinePlayer playerName sid
-  run $ GameDB.addPlayerToGame sid gameKey
-  run $ GameDB.setGameOwner gameKey sid
-
-  run $ Server.Game.changeMaxNumberOfPlayers sid newAmount
-
-  newGame <- run $ GameDB.retrieveGameBySid sid
-
-  run postProp
-
-  assert $
-    --The game should still exist.
-    isJust newGame &&
-    --The game has the new max amount of players.
-    (Fields.gameMaxAmountOfPlayers . Esql.entityVal . fromJust) newGame == newAmount
+      assert $
+        --The game should still exist.
+        isJust newGame &&
+        --The game has the new max amount of players.
+        (Fields.gameMaxAmountOfPlayers . Esql.entityVal . fromJust) newGame == newAmount
 
 -- |Property that checks that the correct password is set on a game.
-prop_setPasswordToGame :: [ClientEntry] -> Fields.Game -> String -> Property
-prop_setPasswordToGame clientList game newPassword = monadicIO $ do
-  pre $
-    not (null clientList) &&
-    not (null newPassword)
+prop_setPasswordToGame :: String -> [ClientEntry] -> Fields.Game -> Property
+prop_setPasswordToGame newPassword clientList game = gameTestWrapper clientList game (prop_setPasswordToGame' newPassword)
+  where
+    prop_setPasswordToGame' :: String -> SessionID -> Name -> ConcurrentClientList -> GameKey -> PropertyM IO ()
+    prop_setPasswordToGame' newPassword sid playerName clientMVar gameKey = do
+      pre $ not $ null newPassword
 
-  let sid = sessionID $ head clientList
-  let playerName = name $ head clientList
+      run $ GameDB.addPlayerToGame sid gameKey
+      run $ GameDB.setGameOwner gameKey sid
 
-  run preProp
+      run $ Server.Game.setPasswordToGame clientMVar sid newPassword
+      newGame <- run $ GameDB.retrieveGameBySid sid
 
-  --Setup test preconditions.
-  clientMVar <- run $ newMVar clientList
-  gameKey <- run $ saveGameToDB game
+      assert $
+        --The game should still exist.
+        isJust newGame &&
+        --The game has the correct password
+        verifyPassword (pack newPassword) ((Fields.gamePassword . Esql.entityVal . fromJust) newGame)
 
-  run $ PlayerDB.saveOnlinePlayer playerName sid
-  run $ GameDB.addPlayerToGame sid gameKey
-  run $ GameDB.setGameOwner gameKey sid
+-- |Property that checks that the game is password protected after a password is set.o
+prop_isGamePasswordProtected :: String -> [ClientEntry] -> Fields.Game -> Property
+prop_isGamePasswordProtected newPassword clientList game = gameTestWrapper clientList game (prop_isGamePasswordProtected' newPassword)
+  where
+    prop_isGamePasswordProtected' :: String -> SessionID -> Name -> ConcurrentClientList -> GameKey -> PropertyM IO ()
+    prop_isGamePasswordProtected' newPassword sid playerName clientMVar gameKey = do
+      pre $ not $ null newPassword
 
-  run $ Server.Game.setPasswordToGame clientMVar sid newPassword
+      run $ GameDB.addPlayerToGame sid gameKey
+      run $ GameDB.setGameOwner gameKey sid
 
-  newGame <- run $ GameDB.retrieveGameBySid sid
+      ispasswordProtectedBefore <- run $ Server.Game.isGamePasswordProtected (Fields.gameUuid game)
 
-  run postProp
+      run $ Server.Game.setPasswordToGame clientMVar sid newPassword
 
-  assert $
-    --The game should still exist.
-    isJust newGame &&
-    --The game has the correct password
-    verifyPassword (pack newPassword) ((Fields.gamePassword . Esql.entityVal . fromJust) newGame)
+      isPasswordProtected <- run $ Server.Game.isGamePasswordProtected (Fields.gameUuid game)
 
--- |Property that checks that the game is password protected after a password is set.
-prop_isGamePasswordProtected :: [ClientEntry] -> Fields.Game -> String -> Property
-prop_isGamePasswordProtected clientList game newPassword = monadicIO $ do
-  pre $
-    not (null clientList) &&
-    not (null newPassword)
-
-  let sid = sessionID $ head clientList
-  let playerName = name $ head clientList
-
-  run preProp
-
-  --Setup test preconditions.
-  clientMVar <- run $ newMVar clientList
-  gameKey <- run $ saveGameToDB game
-
-  run $ PlayerDB.saveOnlinePlayer playerName sid
-  run $ GameDB.addPlayerToGame sid gameKey
-  run $ GameDB.setGameOwner gameKey sid
-
-  ispasswordProtectedBefore <- run $ Server.Game.isGamePasswordProtected (Fields.gameUuid game)
-
-  run $ Server.Game.setPasswordToGame clientMVar sid newPassword
-
-  isPasswordProtected <- run $ Server.Game.isGamePasswordProtected (Fields.gameUuid game)
-
-  run postProp
-
-  assert $
-    --The game shouldn't be password protected before.
-    not ispasswordProtectedBefore &&
-    --The game should be password protected after.
-    isPasswordProtected
+      assert $
+        --The game shouldn't be password protected before.
+        not ispasswordProtectedBefore &&
+        --The game should be password protected after.
+        isPasswordProtected
