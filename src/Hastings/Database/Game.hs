@@ -91,7 +91,9 @@ removePlayerFromGame sessionID gameKey = runDB $
     Esql.where_ (playersInGame Esql.^. PlayerInGameGame Esql.==. Esql.val gameKey
         Esql.&&. playersInGame Esql.^. PlayerInGamePlayer Esql.==. Esql.val sessionID)
 
--- |Retrieves all players that are currently in a specific game.
+-- |Retrieves all players that are currently in a specific game.|
+-- The query first performs a join on the tables PlayerInGame and OnlinePlayers on their sessionID via the "onlinePlayerInGame" local funcion.
+-- Then it uses the resulting table to filter out all players that are not in the specified game and returns a list of all players in that game.
 retrievePlayersInGame :: Esql.Key Game -- ^The key of the game.
                       -> IO [Esql.Entity Player]
 retrievePlayersInGame gameKey = runDB $
