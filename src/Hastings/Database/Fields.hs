@@ -22,7 +22,6 @@ Game
     maxAmountOfPlayers  Int
     owner               SessionID
     password            ByteString
-    UniqueName          name
     UniqueUUID          uuid
     deriving Show
 PlayerInGame

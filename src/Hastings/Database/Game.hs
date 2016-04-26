@@ -12,11 +12,6 @@ import Control.Monad (liftM)
 import Data.ByteString.Char8 (ByteString)
 
 -- |Retrieve a game from the database.
-retrieveGameByName :: String -- ^The name of the game to retrieve.
-                   -> IO (Maybe (Esql.Entity Game))
-retrieveGameByName name = runDB $ Esql.getBy $ UniqueName name
-
--- |Retrieve a game from the database.
 retrieveGameByUUID :: String -- ^The UUID of the game
                    -> IO (Maybe (Esql.Entity Game))
 retrieveGameByUUID uuid = runDB $ Esql.getBy $ UniqueUUID uuid
@@ -82,13 +77,13 @@ setGameOwner gameKey sid = runDB $
     Esql.where_ (games Esql.^. GameId Esql.==. Esql.val gameKey)
 
 -- |Add a player to a game
-addPlayerToGame :: SessionID -- ^The sessionID of the player.
+addPlayerToGame :: SessionID     -- ^The sessionID of the player.
                 -> Esql.Key Game -- ^The key of the game.
                 -> IO (Esql.Key PlayerInGame)
 addPlayerToGame sessionID gameKey = runDB $ Esql.insert $ PlayerInGame gameKey sessionID
 
 -- |Remove a player from a game
-removePlayerFromGame :: SessionID -- ^The sessionID od the player.
+removePlayerFromGame :: SessionID     -- ^The sessionID od the player.
                      -> Esql.Key Game -- ^The key of the game.
                      -> IO ()
 removePlayerFromGame sessionID gameKey = runDB $
@@ -96,7 +91,9 @@ removePlayerFromGame sessionID gameKey = runDB $
     Esql.where_ (playersInGame Esql.^. PlayerInGameGame Esql.==. Esql.val gameKey
         Esql.&&. playersInGame Esql.^. PlayerInGamePlayer Esql.==. Esql.val sessionID)
 
--- |Retrieves a players that are currently in a game.
+-- |Retrieves all players that are currently in a specific game.|
+-- The query first performs a join on the tables PlayerInGame and OnlinePlayers on their sessionID via the "onlinePlayerInGame" local funcion.
+-- Then it uses the resulting table to filter out all players that are not in the specified game and returns a list of all players in that game.
 retrievePlayersInGame :: Esql.Key Game -- ^The key of the game.
                       -> IO [Esql.Entity Player]
 retrievePlayersInGame gameKey = runDB $
