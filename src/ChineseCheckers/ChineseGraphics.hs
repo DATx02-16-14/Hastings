@@ -159,20 +159,6 @@ drawGame :: CC.MVar GameState -> Canvas -> Canvas -> Elem -> LobbyAPI -> String 
 -- | Inits the graphics
 drawGame stateOfGame can can2 button api name = do
     gameState <- liftIO $ CC.takeMVar stateOfGame
-    {-
-    canvas <- liftIO $ makeCanvas 1400 800 "gameCanvas"
-    appendChild par canvas
-
-    absCordsCanvas <- liftIO $ getAbsoluteCords canvas
-    let (canvasX, canvasY) = intTupleFromString $ fromJSStr absCordsCanvas
-
-    canvas2 <- liftIO $ makeCanvas 500 800 "textCanvas"
-    appendChild par canvas2
-    Just can <- liftIO $ fromElem canvas --  :: Client (Maybe Canvas)
-    Just can2 <- liftIO $ fromElem canvas2 -- :: Client (Maybe Canvas)
-    button <- liftIO $ mkButton "Rotate player"
-    appendChild par button
-    -}
     absCordsCanvas <- liftIO $ getAbsoluteCords can
     let (canvasX, canvasY) = intTupleFromString $ fromJSStr absCordsCanvas
     initTable2' can $ gameTable gameState
