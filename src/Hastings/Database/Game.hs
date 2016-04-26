@@ -77,13 +77,13 @@ setGameOwner gameKey sid = runDB $
     Esql.where_ (games Esql.^. GameId Esql.==. Esql.val gameKey)
 
 -- |Add a player to a game
-addPlayerToGame :: SessionID -- ^The sessionID of the player.
+addPlayerToGame :: SessionID     -- ^The sessionID of the player.
                 -> Esql.Key Game -- ^The key of the game.
                 -> IO (Esql.Key PlayerInGame)
 addPlayerToGame sessionID gameKey = runDB $ Esql.insert $ PlayerInGame gameKey sessionID
 
 -- |Remove a player from a game
-removePlayerFromGame :: SessionID -- ^The sessionID od the player.
+removePlayerFromGame :: SessionID     -- ^The sessionID od the player.
                      -> Esql.Key Game -- ^The key of the game.
                      -> IO ()
 removePlayerFromGame sessionID gameKey = runDB $
@@ -91,7 +91,7 @@ removePlayerFromGame sessionID gameKey = runDB $
     Esql.where_ (playersInGame Esql.^. PlayerInGameGame Esql.==. Esql.val gameKey
         Esql.&&. playersInGame Esql.^. PlayerInGamePlayer Esql.==. Esql.val sessionID)
 
--- |Retrieves a players that are currently in a game.
+-- |Retrieves all players that are currently in a specific game.
 retrievePlayersInGame :: Esql.Key Game -- ^The key of the game.
                       -> IO [Esql.Entity Player]
 retrievePlayersInGame gameKey = runDB $
