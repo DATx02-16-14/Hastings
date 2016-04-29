@@ -176,14 +176,15 @@ allPlayer = [blue,orange,purple,green,red,yellow]
   Given a list of player names, initGame associates each player
   with a color and generates the inital game state
 -}
-initGame :: [String] -> GameState
-initGame players
-    | playerCount `elem` [2,4,6] = createProperGame (players `zip` colors) playerCount
-    | otherwise = error "Not correct number of players for game to start"
-      where
-        colors = take playerCount colorList
-        playerCount = length players
-        colorList = [blue,red,purple,green,orange,yellow]
+initGame players = case (length players) of
+                      2         -> create (zipWith mkPlayer players [blue,orange]) 2
+                      4         -> create (zipWith mkPlayer players [blue,red,purple,orange]) 4
+                      6         -> create (zipWith mkPlayer players [blue,red,purple,green,orange,yellow]) 6
+                      otherwise -> error "Not correct number of players for game to start"
+
+              where mkPlayer a b = (a,b)
+                    create p i = createProperGame p i
+
 
 
 rotatePlayer :: GameState -> GameState
