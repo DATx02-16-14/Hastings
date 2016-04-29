@@ -56,7 +56,7 @@ listenForGameAction api state can = do
                           case fromCoord newState of
                                  Just (x,y) -> do
                                     initTable2' can $ gameTable gs
-                                    renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
+                                    renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y)) (x,y)
                                  Nothing -> initTable2' can $ gameTable gs
                           CC.putMVar state newState
 
@@ -65,17 +65,6 @@ listenForGameAction api state can = do
                 function = undefined -- todo
 
 
-
--- | The inbox, outbox and list of names will be supplied by the server
-
-{-
-gameLoop :: GameChan -> CC.MVar GameState -> IO ()
-gameLoop chan state = do
-                 action <- readChan chan
-                 gs <- takeMVar state
-                 putMVar state $ parseGameAction action gs
-
--}
 -- | Loop to update the current GameState in use of the client, meant to be forked
 updateState :: CC.MVar GameAction -> CC.MVar GameState -> IO ()
 updateState inbox stateOfGame = do

@@ -16,29 +16,40 @@ import Haste.Prim
 
 import ChineseCheckers.ChineseBitmaps (filepath)
 
+
+-- | Constants used when drawing the game, used for scaling purposes
+xShift = 5
+yShift = 5
+width = 30.0
+height = 30.0
+
+widthPiece = 10
+heightPiece = 20
+
 renderTest can = do
       bitmap <- loadBitmap $ filepath ++ "/cooltext170130995424459.gif"
       renderOnTop can $ draw bitmap (10,10)
 
+
 renderSquare2 can space size (Piece col) (x,y)
         |col == blue = do
                 bitmap <- loadBitmap $ filepath ++ "/blue2.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
         |col == green = do
                 bitmap <- loadBitmap $ filepath ++ "/green3.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
         |col == orange = do
                 bitmap <- loadBitmap $ filepath ++ "/orange2.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
         |col == yellow = do
                 bitmap <- loadBitmap $ filepath ++ "/yellow2.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
         |col == purple = do
                 bitmap <- loadBitmap $ filepath ++ "/purple2.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
         |col == red = do
                 bitmap <- loadBitmap $ filepath ++ "/red2.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
 
 starOfDavid' :: Double -> Double -> Shape ()
 starOfDavid' space size =
@@ -54,7 +65,7 @@ starOfDavid' space size =
               ((3.5-1)*space+0*size, size*5+space*(5+5-2)), ((5-1)*space+0*size, size*4+space*(4+5-2)),
               ((8+5-1)*space+8*size, size*4+space*(4+5-2)), ((12+5-1)*space+12*size, space*(5-2))]
 
-initTable2' can = mapM_ (renderSquare can 15 20)
+initTable2' can = mapM_ (renderSquare can widthPiece heightPiece)
 
 --renderTable can  = do
 --        bitmap <- loadBitmap "file:////home/benjamin/Documents/0305509001456402835_chinese_checkers_start_posit.png"
@@ -66,57 +77,57 @@ renderTable can  = do
 
 renderSquare can space size (Square Empty _ (x,y)) = do
         bitmap <- loadBitmap $ filepath ++ "/empty.bmp"
-        renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+        renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
 renderSquare can space size (Square (Piece col) _ (x,y))
         |col == blue = do
                 bitmap <- loadBitmap $ filepath ++ "/blue.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
         |col == green = do
                 bitmap <- loadBitmap $ filepath ++ "/green.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
         |col == orange = do
                 bitmap <- loadBitmap $ filepath ++ "/orange.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
         |col == yellow = do
                 bitmap <- loadBitmap $ filepath ++ "/yellow.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
         |col == purple = do
                 bitmap <- loadBitmap $ filepath ++ "/purple.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
         |col == red = do
                 bitmap <- loadBitmap $ filepath ++ "/red.bmp"
-                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+5)) (size* fromIntegral y+space* fromIntegral (y+5)) 40.0 40.0)
+                renderOnTop can $ drawScaled bitmap (Rect (size*fromIntegral x + space*fromIntegral (x+xShift)) (size* fromIntegral y+space* fromIntegral (y+yShift)) width height)
 
 
 drawSquare :: Double -> Double -> Square -> Picture ()
 drawSquare space size (Square (Piece color) _ (x,y)) = do
     setFillColor color
-    fill $ circle (size*fromIntegral x + space*fromIntegral (x+5),size* fromIntegral y+space* fromIntegral (y+5)) size
+    fill $ circle (size*fromIntegral x + space*fromIntegral (x+xShift),size* fromIntegral y+space* fromIntegral (y+yShift)) size
 drawSquare space size (Square Empty col (x,y)) = do
     setFillColor white
-    fill $ circle (size*fromIntegral x + space*fromIntegral (x+5),size* fromIntegral y+space* fromIntegral (y+5)) size
+    fill $ circle (size*fromIntegral x + space*fromIntegral (x+xShift),size* fromIntegral y+space* fromIntegral (y+yShift)) size
 
 
 radius :: Double
 radius = 30
 
 initTableCoords :: [Square] -> [((Int,Int),(Double,Double))]
-initTableCoords = map (initTableCoord2 15 20)
+initTableCoords = map (initTableCoord2 widthPiece heightPiece)
 
 initTableCoord :: Double -> Double -> Square -> ((Int,Int),(Double,Double))
-initTableCoord space size (Square _ _ (x,y)) = ((x,y), (size*fromIntegral x + space*fromIntegral (x+5),size* fromIntegral y+space* fromIntegral (y+5)))
+initTableCoord space size (Square _ _ (x,y)) = ((x,y), (size*fromIntegral x + space*fromIntegral (x+xShift),size* fromIntegral y+space* fromIntegral (y+yShift)))
 
 initTableCoord2 :: Double -> Double -> Square -> ((Int,Int),(Double,Double))
-initTableCoord2 space size (Square _ _ (x,y)) = ((x,y), (size/2 + size*fromIntegral x + space*fromIntegral (x+5), size/2 + size* fromIntegral y+space* fromIntegral (y+5)))
+initTableCoord2 space size (Square _ _ (x,y)) = ((x,y), (size/2 + size*fromIntegral x + space*fromIntegral (x+xShift), size/2 + size* fromIntegral y+space* fromIntegral (y+yShift)))
 
 initTable' :: Table -> Picture ()
 initTable' t = do
-         fill $ starOfDavid' 15 20
-         mapM_ (drawSquare 15 20) t
+         fill $ starOfDavid' widthPiece heightPiece
+         mapM_ (drawSquare widthPiece heightPiece) t
 
 starOfDavid :: Picture ()
 starOfDavid = do
-    fill $ starOfDavid' 15 20
+    fill $ starOfDavid' widthPiece heightPiece
     initTable' startTable
 
 
@@ -187,7 +198,7 @@ drawGame stateOfGame can can2 button api name = do
                                liftIO $ print $ "(" ++ show x ++ "," ++ show y ++ ")"
                                liftIO $ CC.putMVar stateOfGame newState
                                initTable2' can (gameTable newState)
-                               renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y) ) (x,y)
+                               renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y) ) (x,y)
                                renderOnTop can2 $ text (50,50) "hejsan2"
                                case playerDone (players newState) newState of
                                  Nothing -> graphicGameOver can
@@ -196,7 +207,7 @@ drawGame stateOfGame can can2 button api name = do
                               Nothing -> do
                                liftIO $ CC.putMVar stateOfGame newState
                                initTable2' can (gameTable $ playerAction state (x1,y1))
-                               renderSquare2 can 15 20 (squareContent (gameTable newState) (x,y)) (x,y)
+                               renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y)) (x,y)
                              where colors = map snd
          else do
           liftIO $ CC.putMVar stateOfGame state
