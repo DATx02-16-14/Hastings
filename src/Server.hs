@@ -48,8 +48,11 @@ import qualified Server.Lobby as Lobby
 import qualified Server.Game as Game
 import qualified Server.Chat as Chat
 import ChineseCheckers.Table (GameAction(GameActionError))
+import qualified Database.Esqueleto as Esql
 
+import qualified Hastings.Database.Fields as Fields
 import qualified Hastings.Database.Game as GameDB
+import qualified Hastings.Database.Player as PlayerDB
 
 
 -- |Initial connection with the server
@@ -271,11 +274,7 @@ startGame remoteClientList = do
   sid <- getSessionID
   liftIO $ Game.startGame mVarClientList sid
 
-getNickName :: Server ConcurrentClientList -> Server String
-getNickName remoteClientList = do
-  clientList <- remoteClientList >>= liftIO . CC.readMVar
-  sid <- getSessionID
-  return . maybe
-    "No such nick"
-    name
-    $ sid `lookupClientEntry` clientList
+getNickName :: Server String
+getNickName = do
+  plr <- getSessionID >>= liftIO . PlayerDB.retrieveOnlinePlayer
+  return $ maybe "No such sessionID" (Fields.playerUserName . Esql.entityVal) plr

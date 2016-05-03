@@ -101,4 +101,4 @@ newLobbyAPI (playersList, chatList) =
             <*> REMOTE((Server.writeGameChan            playersList))
             <*> REMOTE((Server.readGameChan             playersList))
             <*> REMOTE((Server.startGame                playersList))
-            <*> REMOTE((Server.getNickName              playersList))
+            <*> REMOTE((Server.getNickName              ))
