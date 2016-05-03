@@ -18,6 +18,7 @@ import Text.Read
 createGameDOM :: LobbyAPI -> Client ()
 createGameDOM api = do
   parentDiv <- createDiv [("id","lobby-game")]
+  boardDiv <- createDiv [("id", "game-board"),("class","hide")]
 
   isOwner <- onServer $ isOwnerOfCurrentGame api
   when isOwner $ createGameOwnerDOM api
@@ -64,7 +65,7 @@ createGameDOM api = do
   addPlayersToPlayerList api tableBody players
 
   addChildrenToParent' parentDiv [header, tableDiv, buttonGroup]
-  addChildrenToCenterColumn [parentDiv]
+  addChildrenToCenterColumn [parentDiv, boardDiv]
 
 -- |Creates DOM for changing game settings
 createGameOwnerDOM :: LobbyAPI -> Client ()
@@ -177,3 +178,13 @@ updateGameHeader api = do
       clearChildren parent
       gameNameText <- newTextElem gameName
       appendChild parent gameNameText
+
+toggleBoardView :: Client ()
+toggleBoardView = do
+  maybeLobbyGame <- elemById "lobby-game"
+  maybeGameBoard <- elemById "game-board"
+  case (maybeLobbyGame, maybeGameBoard) of
+    (Just lobbyGame, Just gameBoard) -> do
+      toggleClass lobbyGame "hide"
+      toggleClass gameBoard "hide"
+  return ()
