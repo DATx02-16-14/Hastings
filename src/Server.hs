@@ -30,7 +30,6 @@ module Server(
   , writeGameChan
   , readGameChan
   , startGame
-  , getNickName
   ) where
 
 import Haste.App
@@ -239,11 +238,10 @@ setPasswordToGame remoteClientList passwordString = do
 isGamePasswordProtected :: String -> Server Bool
 isGamePasswordProtected = liftIO . Game.isGamePasswordProtected
 
-getClientName :: Server ConcurrentClientList -> Server String
-getClientName remoteClientList = do
-  sid <- getSessionID
-  clientList <- remoteClientList >>= liftIO . CC.readMVar
-  return . maybe "No such sessionID" name $ sid `lookupClientEntry` clientList
+getClientName :: Server String
+getClientName = do
+  plr <- getSessionID >>= liftIO . PlayerDB.retrieveOnlinePlayer
+  return $ maybe "No such sessionID" (Fields.playerUserName . Esql.entityVal) plr
 
   -- |Write to the clients current game chan
 writeGameChan :: Server ConcurrentClientList -> GameAction -> Server ()
@@ -273,8 +271,3 @@ startGame remoteClientList = do
   mVarClientList <- remoteClientList
   sid <- getSessionID
   liftIO $ Game.startGame mVarClientList sid
-
-getNickName :: Server String
-getNickName = do
-  plr <- getSessionID >>= liftIO . PlayerDB.retrieveOnlinePlayer
-  return $ maybe "No such sessionID" (Fields.playerUserName . Esql.entityVal) plr

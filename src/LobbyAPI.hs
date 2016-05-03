@@ -67,8 +67,6 @@ data LobbyAPI = LobbyAPI
   , readGameChan              :: Remote (Server GameAction)
     -- |Read from the clients current game chan
   , startGame                 :: Remote (Server ())
-    -- | Returns the clients name based on sessionId
-  , getNickName               :: Remote (Server String)
   }
 
 -- |Creates an instance of the api used by the client to communicate with the server.
@@ -97,8 +95,7 @@ newLobbyAPI (playersList, chatList) =
             <*> REMOTE((Server.isGamePasswordProtected  ))
             <*> REMOTE((Server.remoteIsOwnerOfGame      ))
             <*> REMOTE((Server.leaveGame                playersList))
-            <*> REMOTE((Server.getClientName            playersList))
+            <*> REMOTE((Server.getClientName            ))
             <*> REMOTE((Server.writeGameChan            playersList))
             <*> REMOTE((Server.readGameChan             playersList))
             <*> REMOTE((Server.startGame                playersList))
-            <*> REMOTE((Server.getNickName              ))

@@ -56,7 +56,7 @@ listenForLobbyChanges api = do
     StartGame        -> do
       gameState <- liftIO CC.newEmptyMVar
       playerNames <- onServer $ findPlayersInGame api
-      clientName <- onServer $ getNickName api
+      clientName <- onServer $ getClientName api
       "game-board" `withElem` \gameBoard ->
           runGame gameBoard gameState playerNames clientName api
       toggleBoardView
