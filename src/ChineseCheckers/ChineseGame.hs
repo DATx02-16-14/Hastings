@@ -55,9 +55,9 @@ listenForGameAction api state can = do
                           let newState = parseGameAction ga gs
                           case fromCoord newState of
                                  Just (x,y) -> do
-                                    initTable2' can $ gameTable gs
+                                    initTable2' can $ gameTable newState
                                     renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y)) (x,y)
-                                 Nothing -> initTable2' can $ gameTable gs
+                                 Nothing -> initTable2' can $ gameTable newState
                           CC.putMVar state newState
 
                         listenForGameAction api state can
