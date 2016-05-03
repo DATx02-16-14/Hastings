@@ -31,7 +31,10 @@ mkState _ _ = error "Unable to create GameState from GameAction"
 
 runGame :: Elem -> CC.MVar GameState -> [String] -> String -> LobbyAPI -> Client HandlerInfo
 runGame parent gameState players name api = do
-                                liftIO $ CC.putMVar gameState $ initGame players
+                                createPlayerTurnList parent players
+                                setPlayerTurn name
+
+                                liftIO . CC.putMVar gameState $ initGame players
                                 canvas <- liftIO $ makeCanvas 1030 750 "gameCanvas"
                                 appendChild parent canvas
 
@@ -47,15 +50,15 @@ listenForGameAction :: LobbyAPI -> CC.MVar GameState -> Canvas -> Client ()
 listenForGameAction api state can = do
                         ga <- onServer $ readGameChan api
                         name <- onServer $ getClientName api
-                        liftIO $ do
-                          gs <- CC.takeMVar state
-                          let newState = parseGameAction ga gs
-                          case fromCoord newState of
-                                 Just (x,y) -> do
-                                    initTable2' can $ gameTable newState
-                                    renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y)) (x,y)
-                                 Nothing -> initTable2' can $ gameTable newState
-                          CC.putMVar state newState
+                        gs <- liftIO $ CC.takeMVar state
+                        let newState = parseGameAction ga gs
+                        setPlayerTurn $ currentPlayer newState
+                        case fromCoord newState of
+                               Just (x,y) -> do
+                                  initTable2' can $ gameTable newState
+                                  renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y)) (x,y)
+                               Nothing -> initTable2' can $ gameTable newState
+                        liftIO $ CC.putMVar state newState
 
                         listenForGameAction api state can
         where   function :: LobbyAPI -> Remote (Server GameAction)

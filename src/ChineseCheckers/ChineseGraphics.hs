@@ -257,3 +257,45 @@ showColor color | color == red = "Red"
                 | color == orange = "Orange"
                 | color == green = "Green"
                 | color == purple = "Purple"
+
+createPlayerTurnList :: IsElem parent => parent -> [String] -> Client ()
+createPlayerTurnList parent players = do
+  playerTurnContainer <- newElem "div" `with` [
+      attr "id" =: "player-turn-container"
+    ]
+
+  playerTurnList <- newElem "ul" `with` [
+      attr "id"    =: "player-turn-list",
+      attr "class" =: "nav nav-pills"
+    ]
+
+  mapM_ (\p -> do
+      playerElem <- newElem "li" `with` [
+          attr "id" =: ("player-turn-list-" ++ p)
+        ]
+      textElem <- newTextElem p
+      linkWrapper <- wrapInParent textElem "a"
+      appendChild playerElem linkWrapper
+      appendChild playerTurnList playerElem
+    ) players
+
+  appendChild playerTurnContainer  playerTurnList
+  appendChild parent playerTurnContainer
+  return ()
+    where
+      --wrapInParent :: (IsElem e, MonadIO m) => e -> String -> m e
+      wrapInParent child elemType = do
+        parent <- newElem elemType
+        appendChild parent child
+        return parent
+
+
+setPlayerTurn :: String -> Client ()
+setPlayerTurn playerName = do
+  playerTurnList <- elemById "player-turn-list"
+  maybe (return ()) (\l ->
+      getChildren l >>= mapM_ (\e -> setClass e "active" False)
+    ) playerTurnList
+  playerElem <- elemById ("player-turn-list-" ++ playerName)
+  maybe (return ()) (\e -> setClass e "active" True) playerElem
+  return ()
