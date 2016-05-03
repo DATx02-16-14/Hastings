@@ -170,17 +170,20 @@ drawGame :: CC.MVar GameState -> Canvas -> Canvas -> Elem -> LobbyAPI -> String 
 -- | Inits the graphics
 drawGame stateOfGame can can2 button api name = do
     gameState <- liftIO $ CC.takeMVar stateOfGame
-    absCordsCanvas <- liftIO $ getAbsoluteCords can
-    let (canvasX, canvasY) = intTupleFromString $ fromJSStr absCordsCanvas
+
     initTable2' can $ gameTable gameState
     liftIO $ CC.putMVar stateOfGame gameState
-    onEvent can Click $ \mouse ->
+    onEvent can Click $ \(MouseData (x,y) _ _) -> -- \mouse ->
       do
        state <- liftIO $ CC.takeMVar stateOfGame
        if currentPlayer state == name  -- must save the clients name somehow
-         then
-          let (x,y) = mouseCoords mouse
-             in
+         then do
+          absCordsCanvas <- liftIO $ getAbsoluteCords can
+          let (canvasX, canvasY) = intTupleFromString $ fromJSStr absCordsCanvas
+              --(x,y) = mouseCoords mouse
+            in do
+               liftIO . print $ "CanvasCoords: " ++ (show canvasX) ++ " " ++ (show canvasY)
+               liftIO . print $ "MouseCoords : " ++ (show x) ++ " " ++ (show y)
                case mapCoords (fromIntegral $ x - canvasX, fromIntegral y) of
                  Nothing            ->
                   do
@@ -188,27 +191,27 @@ drawGame stateOfGame can can2 button api name = do
                    liftIO $ CC.putMVar stateOfGame state
                    return ()
                  Just (x1,y1)       ->
-                            do
-                             liftIO $ print $ "(" ++ show x1 ++ "," ++ show y1 ++ ")"
-                             let newState = playerAction state (x1,y1)
-                             onServer $ writeGameChan api <.> Coord (x1,y1)
-                             case fromCoord newState of
+                    do
+                     liftIO $ print $ "(" ++ show x1 ++ "," ++ show y1 ++ ")"
+                     let newState = playerAction state (x1,y1)
+                     onServer $ writeGameChan api <.> Coord (x1,y1)
+                     case fromCoord newState of
 
-                              Just (x,y) -> do
-                               liftIO $ print $ "(" ++ show x ++ "," ++ show y ++ ")"
-                               liftIO $ CC.putMVar stateOfGame newState
-                               initTable2' can (gameTable newState)
-                               renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y) ) (x,y)
-                               renderOnTop can2 $ text (50,50) "hejsan2"
-                               case playerDone (players newState) newState of
-                                 Nothing -> graphicGameOver can
-                                 Just x  -> liftIO $ CC.putMVar stateOfGame x
+                      Just (x,y) -> do
+                       liftIO $ print $ "(" ++ show x ++ "," ++ show y ++ ")"
+                       liftIO $ CC.putMVar stateOfGame newState
+                       initTable2' can (gameTable newState)
+                       renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y) ) (x,y)
+                       renderOnTop can2 $ text (50,50) "hejsan2"
+                       case playerDone (players newState) newState of
+                         Nothing -> graphicGameOver can
+                         Just x  -> liftIO $ CC.putMVar stateOfGame x
 
-                              Nothing -> do
-                               liftIO $ CC.putMVar stateOfGame newState
-                               initTable2' can (gameTable $ playerAction state (x1,y1))
-                               renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y)) (x,y)
-                             where colors = map snd
+                      Nothing -> do
+                       liftIO $ CC.putMVar stateOfGame newState
+                       initTable2' can (gameTable $ playerAction state (x1,y1))
+                       renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y)) (x,y)
+                     where colors = map snd
          else do
           liftIO $ CC.putMVar stateOfGame state
           return ()
