@@ -166,9 +166,9 @@ intTupleFromString str = (read hInt :: Int, read tInt :: Int)
     (h, _:t) = break (==':') str
 
 
-drawGame :: CC.MVar GameState -> Canvas -> Canvas -> Elem -> LobbyAPI -> String -> Client HandlerInfo
+drawGame :: CC.MVar GameState -> Canvas -> Elem -> LobbyAPI -> String -> Client HandlerInfo
 -- | Inits the graphics
-drawGame stateOfGame can can2 button api name = do
+drawGame stateOfGame can button api name = do
     gameState <- liftIO $ CC.takeMVar stateOfGame
 
     initTable2' can $ gameTable gameState
@@ -202,7 +202,6 @@ drawGame stateOfGame can can2 button api name = do
                        liftIO $ CC.putMVar stateOfGame newState
                        initTable2' can (gameTable newState)
                        renderSquare2 can widthPiece heightPiece (squareContent (gameTable newState) (x,y) ) (x,y)
-                       renderOnTop can2 $ text (50,50) "hejsan2"
                        case playerDone (players newState) newState of
                          Nothing -> graphicGameOver can
                          Just x  -> liftIO $ CC.putMVar stateOfGame x

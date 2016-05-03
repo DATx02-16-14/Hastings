@@ -35,16 +35,13 @@ runGame parent gameState players name api = do
                                 canvas <- liftIO $ makeCanvas 1030 750 "gameCanvas"
                                 appendChild parent canvas
 
-                                canvas2 <- liftIO $ makeCanvas 500 800 "textCanvas"
-                                appendChild parent canvas2
                                 Just can <- liftIO $ fromElem canvas --  :: Client (Maybe Canvas)
-                                Just can2 <- liftIO $ fromElem canvas2 -- :: Client (Maybe Canvas)
                                 button <- liftIO $ mkButton "Rotate player"
                                 appendChild parent button
                                 HC.fork $ listenForGameAction api gameState can
                                  -- add function for communication handling
 --                                gameLoop chan gameState
-                                drawGame gameState can can2 button api name
+                                drawGame gameState can button api name
 
 listenForGameAction :: LobbyAPI -> CC.MVar GameState -> Canvas -> Client ()
 listenForGameAction api state can = do
