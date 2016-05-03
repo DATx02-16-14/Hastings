@@ -47,6 +47,9 @@ saveOnlinePlayer :: String -- ^The name of the player to save.
                  -> IO (Esql.Key OnlinePlayer)
 saveOnlinePlayer name sessionID = do
   player <- retrievePlayerByUsername name
+  --let notActualPlayer = fromJust player
+  --print $ "Name: " ++ name
+  --print $ "DBName: " ++ (playerUserName $ Pers.entityVal notActualPlayer)
   case player of
     Just entity -> saveOnlinePlayer' sessionID (Esql.entityKey entity)
     _           -> savePlayer name >>= saveOnlinePlayer' sessionID

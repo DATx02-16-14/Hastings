@@ -180,7 +180,6 @@ drawGame stateOfGame can button api name = do
          then do
           absCordsCanvas <- liftIO $ getAbsoluteCords can
           let (canvasX, canvasY) = intTupleFromString $ fromJSStr absCordsCanvas
-              --(x,y) = mouseCoords mouse
             in do
                liftIO . print $ "CanvasCoords: " ++ (show canvasX) ++ " " ++ (show canvasY)
                liftIO . print $ "MouseCoords : " ++ (show x) ++ " " ++ (show y)
