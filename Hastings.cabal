@@ -56,7 +56,8 @@ executable Hastings-exe
   build-depends:
    base      >= 4.8 && < 4.9,
    Hastings,
-   bytestring
+   bytestring,
+   random
 
   if flag(HasteStandalone)
     build-depends: haste-standalone
