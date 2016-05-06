@@ -7,6 +7,8 @@ import Haste.Concurrent
 import Data.Maybe
 import Control.Monad (when)
 
+import System.Random
+
 import Views.Common
 import Views.Lobby
 import Views.Game
@@ -18,8 +20,9 @@ import Views.Chat
 -- |Main mehtod for the client.
 clientMain :: LobbyAPI -> GameAPI -> Client ()
 clientMain lapi gapi = do
-  name <- prompt "Hello! Please enter your name:"
-  onServer $ connect lapi <.> name
+  --name <- prompt "Hello! Please enter your name:"
+  num <- liftIO $ randomRIO (1, 1000000) :: Client Int
+  onServer $ connect lapi <.> (show num)
 
   initDOM
   createBootstrapTemplate "Hastings"

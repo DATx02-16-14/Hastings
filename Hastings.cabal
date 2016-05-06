@@ -23,10 +23,12 @@ library
   hs-source-dirs:      src
   build-depends:
     base >= 4.7 && < 5,
-    bytestring
+    bytestring,
+    random
   exposed-modules: Hastings.Config, Views.Chat, Views.Lobby, Views.Common, Views.Game, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, GameAPI
   if impl(haste)
     build-depends: haste-lib >= 0.5 && < 0.6
+
   else
     exposed-modules: Server, Hastings.ServerUtils, Server.Game, Server.Chat, Server.Lobby, Hastings.Database.Common, Hastings.Database.Fields, Hastings.Database.Player, Hastings.Database.Game
     build-depends:
