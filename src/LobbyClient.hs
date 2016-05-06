@@ -21,8 +21,7 @@ import Views.Chat
 clientMain :: LobbyAPI -> GameAPI -> Client ()
 clientMain lapi gapi = do
   --name <- prompt "Hello! Please enter your name:"
-  num <- liftIO $ randomRIO (1, 1000000) :: Client Int
-  onServer $ connect lapi <.> (show num)
+  onServer $ connect lapi <.> "testName"
 
   initDOM
   createBootstrapTemplate "Hastings"
