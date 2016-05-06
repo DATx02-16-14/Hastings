@@ -7,8 +7,6 @@ import Haste.Concurrent
 import Data.Maybe
 import Control.Monad (when)
 
-import System.Random
-
 import Views.Common
 import Views.Lobby
 import Views.Game
