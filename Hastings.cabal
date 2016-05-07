@@ -24,11 +24,37 @@ library
   build-depends:
     base >= 4.7 && < 5,
     bytestring
-  exposed-modules: Hastings.Config, Views.Chat, Views.Lobby, Views.Common, Views.Game, LobbyTypes, Hastings.Utils, LobbyClient, LobbyAPI, GameAPI
+  exposed-modules:
+      Hastings.Config
+    , Views.Chat
+    , Views.Lobby
+    , Views.Common
+    , Views.Game
+    , LobbyTypes
+    , Hastings.Utils
+    , LobbyClient
+    , LobbyAPI
+    , ChineseCheckers.Table
+    , ChineseCheckers.ChineseGraphics
+    , ChineseCheckers.ChineseCheckers
+    , ChineseCheckers.ChineseGame
+    , ChineseCheckers.ChineseBitmaps
   if impl(haste)
-    build-depends: haste-lib >= 0.5 && < 0.6
+    build-depends:
+      haste-lib >= 0.5 && < 0.6,
+      haste-prim
+
   else
-    exposed-modules: Server, Hastings.ServerUtils, Server.Game, Server.Chat, Server.Lobby, Hastings.Database.Common, Hastings.Database.Fields, Hastings.Database.Player, Hastings.Database.Game
+    exposed-modules:
+        Server
+      , Hastings.ServerUtils
+      , Server.Game
+      , Server.Chat
+      , Server.Lobby
+      , Hastings.Database.Common
+      , Hastings.Database.Fields
+      , Hastings.Database.Player
+      , Hastings.Database.Game
     build-depends:
       haste-compiler >= 0.5 && < 0.6,
       uuid,

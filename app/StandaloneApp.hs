@@ -9,7 +9,6 @@ import qualified Control.Concurrent as CC
 import Views.Lobby
 
 import LobbyAPI
-import GameAPI
 
 #ifdef __HASTE__
 import LobbyClient (clientMain)
@@ -20,7 +19,7 @@ import LobbyClient (clientMain)
 import Server (disconnect)
 import Hastings.Database.Common (migrateDatabase)
 import Hastings.Database.Player (clearOnlinePlayers)
-#define clientMain (\_ _ -> return ())
+#define clientMain (\_ -> return ())
 #endif
 
 -- |Main method and entry point for the program
@@ -35,4 +34,4 @@ main = runStandaloneApp $ do
 
   onSessionEnd $ disconnect(serverState)
   api <- newLobbyAPI serverState
-  runClient $ clientMain api newGameAPI
+  runClient $ clientMain api

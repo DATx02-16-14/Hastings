@@ -10,18 +10,18 @@ import Control.Monad (when)
 import LobbyTypes
 import LobbyAPI
 import Views.Common
-import GameAPI
 
 import Text.Read
 
 -- |Creates the DOM for a 'LobbyGame' inside the lobby
 -- Useful since the Client is unaware of the specific 'LobbyGame' but can get the name and list with 'Name's of players from the server.
-createGameDOM :: LobbyAPI -> GameAPI -> Client ()
-createGameDOM api gapi = do
+createGameDOM :: LobbyAPI -> Client ()
+createGameDOM api = do
   parentDiv <- createDiv [("id","lobby-game")]
+  boardDiv <- createDiv [("id", "game-board"),("class","hide")]
 
   isOwner <- onServer $ isOwnerOfCurrentGame api
-  when isOwner $ createGameOwnerDOM api gapi
+  when isOwner $ createGameOwnerDOM api
 
   gameName <- onServer $ findGameName api
   players <- onServer $ findPlayersInGame api
@@ -40,13 +40,14 @@ createGameDOM api gapi = do
       attr "class" =: "btn-group",
       attr "role"  =: "group"
     ]
-  createStartGameBtn <- newElem "button" `with`
+  startGameBtn <- newElem "button" `with`
     [
       attr "id"    =: "start-game-button",
       attr "class" =: "btn btn-primary"
     ]
   createStartGameBtnText <- newTextElem "Start game"
-  appendChild createStartGameBtn createStartGameBtnText
+  clickEventElem startGameBtn . onServer $ startGame api
+  appendChild startGameBtn createStartGameBtnText
 
   (tableDiv, tableBody) <- createTable "game-player-list" 500 ["Players"]
 
@@ -59,18 +60,18 @@ createGameDOM api gapi = do
   clickEventElem leaveGameButton $ onServer $ leaveGame api
 
 
-  addChildrenToParent' buttonGroup [leaveGameButton, createStartGameBtn]
+  addChildrenToParent' buttonGroup [leaveGameButton, startGameBtn]
 
   addPlayersToPlayerList api tableBody players
 
   addChildrenToParent' parentDiv [header, tableDiv, buttonGroup]
-  addChildrenToCenterColumn [parentDiv]
+  addChildrenToCenterColumn [parentDiv, boardDiv]
 
 -- |Creates DOM for changing game settings
-createGameOwnerDOM :: LobbyAPI -> GameAPI -> Client ()
-createGameOwnerDOM api gapi = do
+createGameOwnerDOM :: LobbyAPI -> Client ()
+createGameOwnerDOM api = do
   createGameChangeNameDOM api
-  createUpdateMaxNumberPlayersDOM api gapi
+  createUpdateMaxNumberPlayersDOM api
   createSetPasswordDOM api
 
 -- |Creates the DOM for chaning the name of a game.
@@ -90,8 +91,8 @@ createGameChangeNameDOM api = createInputFieldWithButton "game-name" "Game name"
 
 -- |Creates DOM for the updatin the maximum number of players in a game
 -- |Contains an input field and a button. Is placed in the right sidebar
-createUpdateMaxNumberPlayersDOM :: LobbyAPI -> GameAPI-> Client ()
-createUpdateMaxNumberPlayersDOM api gapi =
+createUpdateMaxNumberPlayersDOM :: LobbyAPI -> Client ()
+createUpdateMaxNumberPlayersDOM api =
   createInputFieldWithButton "max-number" "Maximum number of players" maxNumberUpdateFunction
   where
     maxNumberUpdateFunction =
@@ -102,7 +103,7 @@ createUpdateMaxNumberPlayersDOM api gapi =
           Just numberString ->
             case readMaybe numberString of
               Nothing -> return ()
-              Just number | number <= getMaxNumberOfPlayers gapi -> do
+              Just number | number <= 6 -> do --TODO
                 setProp field "value" ""
                 onServer $ changeMaxNumberOfPlayers api <.> number
                           | otherwise -> return ()
@@ -177,3 +178,13 @@ updateGameHeader api = do
       clearChildren parent
       gameNameText <- newTextElem gameName
       appendChild parent gameNameText
+
+toggleBoardView :: Client ()
+toggleBoardView = do
+  maybeLobbyGame <- elemById "lobby-game"
+  maybeGameBoard <- elemById "game-board"
+  case (maybeLobbyGame, maybeGameBoard) of
+    (Just lobbyGame, Just gameBoard) -> do
+      toggleClass lobbyGame "hide"
+      toggleClass gameBoard "hide"
+  return ()

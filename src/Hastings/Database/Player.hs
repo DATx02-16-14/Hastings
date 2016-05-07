@@ -25,7 +25,11 @@ deletePlayer userName = runDB $ Esql.deleteBy $ UniqueUsername userName
 -- |Retrieve a player from the database by their username.
 retrievePlayerByUsername :: String -- ^The username of the player to retrieve.
                          -> IO (Maybe (Esql.Entity Player))
-retrievePlayerByUsername name = runDB $ Esql.getBy $ UniqueUsername name
+retrievePlayerByUsername name = runDB $ do
+  players <- Esql.select . Esql.from $ \players -> do
+      Esql.where_ (players Esql.^. PlayerUserName Esql.==. Esql.val name)
+      return players
+  return $ listToMaybe players
 
 -- |Change the username of a player.
 changeUserName :: String -- ^The old username.
@@ -43,6 +47,9 @@ saveOnlinePlayer :: String -- ^The name of the player to save.
                  -> IO (Esql.Key OnlinePlayer)
 saveOnlinePlayer name sessionID = do
   player <- retrievePlayerByUsername name
+  --let notActualPlayer = fromJust player
+  --print $ "Name: " ++ name
+  --print $ "DBName: " ++ (playerUserName $ Pers.entityVal notActualPlayer)
   case player of
     Just entity -> saveOnlinePlayer' sessionID (Esql.entityKey entity)
     _           -> savePlayer name >>= saveOnlinePlayer' sessionID

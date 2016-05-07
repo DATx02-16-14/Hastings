@@ -26,6 +26,10 @@ module Server(
   , setPasswordToGame
   , isGamePasswordProtected
   , remoteIsOwnerOfGame
+  , getClientName
+  , writeGameChan
+  , readGameChan
+  , startGame
   ) where
 
 import Haste.App
@@ -42,8 +46,12 @@ import Hastings.ServerUtils
 import qualified Server.Lobby as Lobby
 import qualified Server.Game as Game
 import qualified Server.Chat as Chat
+import ChineseCheckers.Table (GameAction(GameActionError))
+import qualified Database.Esqueleto as Esql
 
+import qualified Hastings.Database.Fields as Fields
 import qualified Hastings.Database.Game as GameDB
+import qualified Hastings.Database.Player as PlayerDB
 
 
 -- |Initial connection with the server
@@ -229,3 +237,37 @@ setPasswordToGame remoteClientList passwordString = do
 -- |Returns True if game is password protected, False otherwise. 'String' is the UUID of the game
 isGamePasswordProtected :: String -> Server Bool
 isGamePasswordProtected = liftIO . Game.isGamePasswordProtected
+
+getClientName :: Server String
+getClientName = do
+  plr <- getSessionID >>= liftIO . PlayerDB.retrieveOnlinePlayer
+  return $ maybe "No such sessionID" (Fields.playerUserName . Esql.entityVal) plr
+
+  -- |Write to the clients current game chan
+writeGameChan :: Server ConcurrentClientList -> GameAction -> Server ()
+writeGameChan remoteClientList action = do
+  clientList <- remoteClientList >>= liftIO . CC.readMVar
+  sid <- getSessionID
+  maybe
+    (return ())
+    (\client -> liftIO $ CC.writeChan (gameChannel client) action)
+    $ sid `lookupClientEntry` clientList
+
+  -- |Read from the clients current game chan
+readGameChan :: Server ConcurrentClientList -> Server GameAction
+readGameChan remoteClientList = do
+  clientList <- remoteClientList >>= liftIO . CC.readMVar
+  sid <- getSessionID
+  case sid `lookupClientEntry` clientList of
+    Nothing -> do
+      liftIO . print $ "readGameChan > No such sessionid in client list"
+      return $ GameActionError "readGameChan > No such sessionid in client list"
+    Just client ->
+      liftIO . CC.readChan $ gameChannel client
+
+-- |Read from the clients current game chan
+startGame :: Server ConcurrentClientList -> Server ()
+startGame remoteClientList = do
+  mVarClientList <- remoteClientList
+  sid <- getSessionID
+  liftIO $ Game.startGame mVarClientList sid

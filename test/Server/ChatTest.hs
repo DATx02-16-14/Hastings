@@ -8,6 +8,7 @@ import Control.Concurrent (newMVar, readMVar, newChan, readChan, dupChan)
 import qualified Server.Chat
 import ArbitraryLobbyTypes ()
 import LobbyTypes
+import ChineseCheckers.Table
 
 
 -- stack ghci: :l test/Server/ChatTest.hs test/ArbitraryLobbyTypes.hs
@@ -69,7 +70,8 @@ prop_sendChatMessage randomClientIndex randomChatIndex chatNameList clientList =
   -- pick a subset of the clients
   let (clientHead, clients) = splitAt randomChatIndex' clientList
   cLobbyChan <- run newChan
-  let c = ClientEntry 123456654321 "Sending client" [] cLobbyChan
+  cGameChan <- run newChan
+  let c = ClientEntry 123456654321 "Sending client" [] cLobbyChan cGameChan
   chatList <- run $ makeChatsOfStrings $ makeUnique chatNameList
   let chat@(chatName, chatChan) = chatList !! randomClientIndex'
   mVarChats <- run $ newMVar chatList
