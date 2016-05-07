@@ -9,6 +9,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import Data.ByteString.Char8 (empty)
 
 import LobbyTypes
+import ChineseCheckers.Table
 
 -- Arbitrary instances for the Data types
 
@@ -19,5 +20,6 @@ instance Arbitrary ClientEntry where
   arbitrary = do
     sessionIDWord64 <- elements [1..184467] -- SessionID should be unique, increasing this number will make some props very slow
     clientNr <- arbitrary :: Gen Int
-    let chan = unsafePerformIO newChan
-    return $ ClientEntry sessionIDWord64 ("ClientEntry " ++ show clientNr) [] chan
+    let lobbyChan = unsafePerformIO newChan
+    let gameChan = unsafePerformIO newChan
+    return $ ClientEntry sessionIDWord64 ("ClientEntry " ++ show clientNr) [] lobbyChan gameChan
