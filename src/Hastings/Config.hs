@@ -1,5 +1,5 @@
 module Hastings.Config where
 
 -- Client configuration
-backendHostAddress = "localhost"
+backendHostAddress = "hastings.se"
 backendHostPort    = 24601 :: Int
