@@ -153,7 +153,7 @@ mkButton text = do
 getAbsoluteCords :: Canvas -> IO JSString
 getAbsoluteCords = ffi $ toJSStr "(function(canvas) {\
             \var rect = canvas.getBoundingClientRect();\
-            \return (rect.left + ':' + rect.top)\
+            \return ((rect.left + document.body.scrollLeft) + ':' + (rect.top + document.body.scrollTop))\
           \})"
 
 
