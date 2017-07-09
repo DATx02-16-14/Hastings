@@ -6,7 +6,7 @@ import Haste.Graphics.Canvas
 import ChineseCheckers.Table
 
 filepath :: String
-filepath = "http://hastings.se"
+filepath = "http://hastings.tejp.xyz"
 
 xShift = 5
 yShift = 5
